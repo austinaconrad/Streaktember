@@ -1,227 +1,1069 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Streaktember 🏃‍♂️</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body {
-      background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042);
-      color: #fff; min-height: 100vh; padding: 20px; display: flex; justify-content: center;
-    }
-    .container { width: 100%; max-width: 800px; }
-    h1 { text-align: center; margin-bottom: 20px; font-weight: 700; letter-spacing: 1px; }
-    
-    /* Glassmorphism Navigation */
-    nav {
-      display: flex; gap: 10px; margin-bottom: 20px;
-      background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
-      padding: 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    nav button {
-      flex: 1; padding: 10px; border: none; background: transparent; color: #94a3b8;
-      font-weight: 600; cursor: pointer; border-radius: 8px; transition: 0.3s;
-    }
-    nav button.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0a0a18" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Streaktember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   STREAKTEMBER — glass design system
+   ============================================================ */
+:root{
+  --ink:#f2f4ff;
+  --ink-dim:rgba(242,244,255,.62);
+  --ink-faint:rgba(242,244,255,.38);
+  --mint:#5ef2c0;
+  --violet:#a78bfa;
+  --coral:#ff8fa3;
+  --amber:#ffd166;
+  --glass-bg:linear-gradient(158deg, rgba(255,255,255,.11), rgba(255,255,255,.035));
+  --glass-brd:rgba(255,255,255,.15);
+  --glass-shadow:0 24px 48px -24px rgba(0,0,0,.75);
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:'Outfit',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:var(--ink);
+  background:#070714;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+/* ---- animated aurora backdrop ---- */
+#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+  radial-gradient(1100px 800px at 12% -8%, #2b1e6b 0%, transparent 60%),
+  radial-gradient(900px 700px at 92% 4%, #0d5c68 0%, transparent 58%),
+  radial-gradient(1000px 900px at 50% 108%, #4a1750 0%, transparent 62%),
+  linear-gradient(180deg,#070714 0%,#0a0a1e 55%,#07071a 100%);}
+#bg:before,#bg:after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.36;
+  animation:drift 26s ease-in-out infinite alternate}
+#bg:before{width:60vw;height:60vw;left:-14vw;top:6vh;background:radial-gradient(circle,#7c5cff,transparent 66%)}
+#bg:after{width:55vw;height:55vw;right:-12vw;bottom:2vh;background:radial-gradient(circle,#2ee6b0,transparent 66%);animation-duration:34s}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(6vw,-6vh,0) scale(1.18)}}
+#grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.16;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
+@media (prefers-reduced-motion:reduce){#bg:before,#bg:after{animation:none}}
 
-    /* Glass Cards */
-    .glass-card {
-      background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px); border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.15); padding: 20px; margin-bottom: 20px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    }
+/* ---- glass primitives ---- */
+.glass{background:var(--glass-bg);backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);
+  border:1px solid var(--glass-brd);border-radius:var(--r-lg);box-shadow:var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn{appearance:none;border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(18px);color:var(--ink);
+  font:600 15px/1 'Outfit',sans-serif;padding:14px 20px;border-radius:999px;cursor:pointer;transition:.18s transform,.18s background;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(135deg,var(--mint),#39d3ff 55%,var(--violet));color:#06131a;border:none;
+  box-shadow:0 14px 34px -12px rgba(94,242,192,.6)}
+.btn.danger{background:linear-gradient(135deg,#ff7a8a,#ff4d6d);color:#2a0410;border:none}
+.btn.ghost{background:rgba(255,255,255,.05)}
+.btn:disabled{opacity:.4;pointer-events:none}
+input,textarea{font-family:inherit;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--glass-brd);
+  border-radius:var(--r-sm);padding:13px 14px;font-size:16px;width:100%;outline:none}
+input:focus,textarea:focus{border-color:rgba(94,242,192,.6);background:rgba(255,255,255,.09)}
+::placeholder{color:var(--ink-faint)}
+.mono{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hide{display:none!important}
 
-    /* Forms & Inputs */
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #cbd5e1; }
-    input {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(0, 0, 0, 0.2); color: #fff; outline: none;
-    }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    
-    button.btn-primary {
-      width: 100%; padding: 12px; border: none; border-radius: 8px;
-      background: linear-gradient(90deg, #6366f1, #a855f7); color: white;
-      font-weight: bold; cursor: pointer; margin-top: 10px;
-    }
+/* ---- layout ---- */
+#app{max-width:640px;margin:0 auto;padding:calc(var(--safe-t) + 14px) 16px calc(112px + var(--safe-b));min-height:100%}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--mint),var(--violet));
+  display:grid;place-items:center;font-size:18px;box-shadow:0 8px 20px -8px rgba(124,92,255,.8)}
+.brand h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.brand small{display:block;font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.09em;text-transform:uppercase;margin-top:1px}
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--glass-brd);object-fit:cover;cursor:pointer;background:rgba(255,255,255,.08)}
 
-    #map-picker, .feed-map { height: 200px; width: 100%; border-radius: 8px; margin-top: 10px; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    
-    /* Feed Layout */
-    .post-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .post-user { font-weight: bold; color: #38bdf8; }
-    .post-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
-    .stat-val { font-size: 1.2em; font-weight: bold; color: #f43f5e; }
-    .stat-lbl { font-size: 0.75em; color: #94a3b8; }
-  </style>
+/* ---- today ---- */
+.hero{padding:24px 22px 22px;text-align:center;position:relative;overflow:hidden}
+.hero .datestrip{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.ring-wrap{position:relative;width:210px;height:210px;margin:16px auto 6px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring-center .big{font-size:46px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.ring-center .unit{font-size:13px;color:var(--ink-dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
+.ring-center .goal{font-size:12px;color:var(--ink-faint);margin-top:8px}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.stat{padding:13px 8px;border-radius:var(--r-md);background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}
+.stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.cta{display:grid;gap:10px;margin-top:16px}
+.cta .btn{width:100%;padding:18px;font-size:17px;font-weight:700}
+.done-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
+  background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:12px}
+
+/* ---- section headings ---- */
+.h2{display:flex;align-items:baseline;justify-content:space-between;margin:22px 4px 10px}
+.h2 h2{margin:0;font-size:15px;font-weight:700;letter-spacing:.02em}
+.h2 span{font-size:12px;color:var(--ink-faint)}
+
+/* ---- calendar ---- */
+.cal{padding:16px 16px 18px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.cal-dow{font-size:10px;text-align:center;color:var(--ink-faint);font-weight:700;letter-spacing:.06em}
+.cal-day{aspect-ratio:1;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,.045);color:var(--ink-faint);border:1px solid transparent}
+.cal-day.done{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.28));color:#eafff8;border-color:rgba(94,242,192,.4)}
+.cal-day.miss{background:rgba(255,109,138,.14);color:var(--coral);border-color:rgba(255,109,138,.25)}
+.cal-day.today{outline:2px solid rgba(255,255,255,.55);outline-offset:1px}
+
+/* ---- feed ---- */
+.post{padding:16px;margin-bottom:14px}
+.post-top{display:flex;align-items:center;gap:11px}
+.post-top img{width:40px;height:40px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.1)}
+.post-top .who{flex:1;min-width:0}
+.post-top .who b{display:block;font-size:15px;font-weight:700}
+.post-top .who span{font-size:12px;color:var(--ink-faint)}
+.badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
+  background:rgba(255,209,102,.16);color:var(--amber);border:1px solid rgba(255,209,102,.3)}
+.route{margin:13px 0 0;border-radius:var(--r-md);overflow:hidden;background:
+  linear-gradient(150deg,rgba(124,92,255,.16),rgba(46,230,176,.10));border:1px solid rgba(255,255,255,.1);position:relative}
+.route svg{display:block;width:100%;height:170px}
+.route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pstat{text-align:center;padding:10px 4px;border-radius:var(--r-sm);background:rgba(255,255,255,.05)}
+.pstat b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.pstat span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.note{margin:12px 2px 0;font-size:14.5px;color:rgba(242,244,255,.86);line-height:1.45}
+.reacts{display:flex;gap:7px;margin-top:13px;flex-wrap:wrap;align-items:center}
+.react{padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);
+  font-size:14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.15s;font-weight:600}
+.react:active{transform:scale(.93)}
+.react.on{background:rgba(94,242,192,.18);border-color:rgba(94,242,192,.45)}
+.react .n{font-size:12px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.cbtn{margin-left:auto;font-size:12.5px;color:var(--ink-dim);cursor:pointer;padding:7px 10px;font-weight:600}
+.del{flex:none;appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
+.del:hover{color:var(--coral);border-color:rgba(255,143,163,.4)}
+.comments{margin-top:12px;border-top:1px solid rgba(255,255,255,.09);padding-top:11px}
+.cmt{display:flex;gap:9px;margin-bottom:9px;font-size:13.5px;line-height:1.4}
+.cmt img{width:26px;height:26px;border-radius:50%;flex:none;background:rgba(255,255,255,.1)}
+.cmt b{font-weight:700}
+.cmt-form{display:flex;gap:8px;margin-top:4px}
+.cmt-form input{padding:10px 12px;font-size:14px}
+.cmt-form .btn{padding:10px 16px;font-size:14px;flex:none}
+
+/* ---- standings ---- */
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:var(--r-md);margin-bottom:8px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.row.me{background:linear-gradient(140deg,rgba(94,242,192,.16),rgba(167,139,250,.12));border-color:rgba(94,242,192,.32)}
+.row .rank{width:24px;font-size:15px;font-weight:800;color:var(--ink-faint);text-align:center;flex:none}
+.row img{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;background:rgba(255,255,255,.1)}
+.row .nm{flex:1;min-width:0}
+.row .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm span{font-size:11.5px;color:var(--ink-faint)}
+.row .fig{text-align:right;flex:none}
+.row .fig b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.row .fig span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.flame{color:var(--amber)}
+.dead{opacity:.55}
+
+/* ---- bottom nav ---- */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-b));z-index:40;
+  display:flex;gap:4px;padding:6px;border-radius:999px;background:rgba(18,18,40,.55);backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid var(--glass-brd);box-shadow:0 20px 40px -18px rgba(0,0,0,.8)}
+nav button{appearance:none;border:0;background:transparent;color:var(--ink-faint);font:600 13px/1 'Outfit',sans-serif;
+  padding:12px 20px;border-radius:999px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:.2s}
+nav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0ff)}
+
+/* ---- sign in ---- */
+#signin{position:fixed;inset:0;display:grid;place-items:center;padding:24px;z-index:60}
+#signin .card{padding:34px 28px;text-align:center;max-width:380px;width:100%}
+#signin h1{font-size:34px;margin:14px 0 6px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(120deg,var(--mint),#7ee0ff 45%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+#signin p{color:var(--ink-dim);font-size:14.5px;line-height:1.55;margin:0 0 22px}
+#signin .mark{width:60px;height:60px;border-radius:20px;margin:0 auto;background:linear-gradient(140deg,var(--mint),var(--violet));
+  display:grid;place-items:center;font-size:30px;box-shadow:0 16px 40px -14px rgba(124,92,255,.9)}
+
+/* ---- tracker overlay ---- */
+#tracker{position:fixed;inset:0;z-index:70;background:rgba(6,6,18,.88);backdrop-filter:blur(30px);
+  display:flex;flex-direction:column;padding:calc(var(--safe-t) + 20px) 18px calc(24px + var(--safe-b))}
+.trk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.gps{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-dim);
+  padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px currentColor;animation:pulse 1.6s infinite}
+.dot.ok{background:var(--mint)} .dot.bad{background:var(--coral)}
+@keyframes pulse{50%{opacity:.35}}
+.trk-main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.trk-dist{font-size:88px;font-weight:800;line-height:.95;letter-spacing:-.05em;
+  background:linear-gradient(120deg,#fff,#bff7e6 40%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.trk-unit{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-dim);font-weight:700;margin-top:6px}
+.trk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:380px;margin-top:26px}
+.trk-cell{padding:16px;border-radius:var(--r-md);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.trk-cell b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em}
+.trk-cell span{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+#trkRoute{width:100%;max-width:380px;height:150px;margin-top:16px;border-radius:var(--r-md);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
+.trk-goal{width:100%;max-width:380px;height:6px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:18px;overflow:hidden}
+.trk-goal i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet));transition:width .4s}
+.trk-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:380px;width:100%;margin:22px auto 0}
+.trk-btns .btn{padding:18px;font-size:16px;font-weight:700}
+
+/* ---- sheets ---- */
+.sheet{position:fixed;inset:0;z-index:80;background:rgba(4,4,12,.6);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center}
+.sheet .card{width:100%;max-width:520px;padding:22px 20px calc(22px + var(--safe-b));border-radius:28px 28px 0 0;
+  animation:up .3s cubic-bezier(.2,.9,.3,1)}
+@media(min-width:560px){.sheet{align-items:center}.sheet .card{border-radius:28px;margin:0 16px}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 4px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.sheet .sub{color:var(--ink-faint);font-size:13px;margin:0 0 16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheet-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
+
+/* ---- misc ---- */
+.empty{text-align:center;padding:44px 20px;color:var(--ink-faint);font-size:14px;line-height:1.6}
+.empty .em{font-size:40px;display:block;margin-bottom:12px;opacity:.8}
+#toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(96px + var(--safe-b));z-index:99;
+  padding:12px 20px;border-radius:999px;background:rgba(20,20,44,.9);backdrop-filter:blur(20px);border:1px solid var(--glass-brd);
+  font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.skel{height:140px;border-radius:var(--r-lg);background:linear-gradient(100deg,rgba(255,255,255,.05),rgba(255,255,255,.11),rgba(255,255,255,.05));
+  background-size:220% 100%;animation:sh 1.4s infinite;margin-bottom:14px}
+@keyframes sh{to{background-position:-220% 0}}
+#cfgWarn{margin:16px;padding:18px;line-height:1.6;font-size:14px}
+#cfgWarn code{background:rgba(255,255,255,.1);padding:2px 6px;border-radius:6px;font-size:13px}
+</style>
 </head>
 <body>
+<div id="bg"></div><div id="grain"></div>
 
-<div class="container">
-  <h1>🔥 STREAKTEMBER 🔥</h1>
-
-  <nav>
-    <button id="btn-feed" class="active" onclick="switchTab('feed')">Activity Feed</button>
-    <button id="btn-log" onclick="switchTab('log')">Log Run</button>
-  </nav>
-
-  <div id="tab-log" class="tab-content">
-    <div class="glass-card">
-      <h2>Log Your Miles</h2>
-      <form id="run-form">
-        <div class="form-group" style="margin-top:15px;">
-          <label>Runner Name</label>
-          <input type="text" id="runner-name" required placeholder="e.g. Alex">
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>Distance (Miles)</label>
-            <input type="number" step="0.01" id="run-miles" required placeholder="1.5">
-          </div>
-          <div class="form-group">
-            <label>Time (Minutes)</label>
-            <input type="number" step="1" id="run-time" required placeholder="15">
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label>Click Map to Draw Route Start & End (Optional)</label>
-          <div id="map-picker"></div>
-          <small style="color: #94a3b8;">Click 2 points on the map to display a line route.</small>
-        </div>
-
-        <button type="submit" class="btn-primary">Post Activity</button>
-      </form>
-    </div>
-  </div>
-
-  <div id="tab-feed" class="tab-content active">
-    <div id="feed-container"></div>
+<!-- ======================= SIGN IN ======================= -->
+<div id="signin">
+  <div class="card glass">
+    <div class="mark">🏃</div>
+    <h1>Streaktember</h1>
+    <p>One mile a day. Every day of September.<br>Miss a day, and everyone will know.</p>
+    <button class="btn primary" id="btnGoogle" style="width:100%">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#06131a" d="M21.35 11.1H12v2.98h5.35c-.23 1.4-1.72 4.1-5.35 4.1a5.9 5.9 0 0 1 0-11.8c1.86 0 3.11.79 3.82 1.47l2.6-2.5C16.78 3.7 14.6 2.7 12 2.7a9.3 9.3 0 1 0 0 18.6c5.37 0 8.93-3.78 8.93-9.1 0-.61-.07-1.08-.16-1.55z"/></svg>
+      Continue with Google
+    </button>
+    <p style="margin:16px 0 0;font-size:12px">Sept 1–30 · 1.0 mi minimum daily</p>
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- ======================= APP ======================= -->
+<div id="app" class="hide">
+  <header>
+    <div class="brand">
+      <div class="mark">🏃</div>
+      <div><h1>Streaktember</h1><small id="dayCounter">—</small></div>
+    </div>
+    <img class="avatar" id="meAvatar" alt="You" />
+  </header>
+
+  <!-- ---------- TODAY ---------- -->
+  <section id="tab-today">
+    <div class="hero glass">
+      <div class="datestrip" id="todayLabel">—</div>
+      <div class="ring-wrap">
+        <svg width="210" height="210" viewBox="0 0 210 210">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#5ef2c0"/><stop offset="55%" stop-color="#39d3ff"/><stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <circle cx="105" cy="105" r="88" stroke="rgba(255,255,255,.09)" stroke-width="15" fill="none"/>
+          <circle id="ringFg" cx="105" cy="105" r="88" stroke="url(#ringGrad)" stroke-width="15" fill="none"
+                  stroke-linecap="round" stroke-dasharray="552.9" stroke-dashoffset="552.9"
+                  style="transition:stroke-dashoffset .8s cubic-bezier(.3,.9,.3,1)"/>
+        </svg>
+        <div class="ring-center">
+          <div class="big mono" id="todayMiles">0.00</div>
+          <div class="unit">miles today</div>
+          <div class="goal" id="todayGoalTxt">1.00 mi to go</div>
+        </div>
+      </div>
+      <div id="todayDonePill" class="done-pill hide">✓ Day complete</div>
+      <div class="statrow">
+        <div class="stat"><b class="mono" id="sStreak">0</b><span>Streak</span></div>
+        <div class="stat"><b class="mono" id="sDays">0</b><span>Days done</span></div>
+        <div class="stat"><b class="mono" id="sTotal">0.0</b><span>Total mi</span></div>
+      </div>
+      <div class="cta">
+        <button class="btn primary" id="btnStart"><svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Start Run</button>
+        <button class="btn ghost" id="btnManual">Log without GPS</button>
+      </div>
+    </div>
+
+    <div class="h2"><h2>Your September</h2><span id="calSummary">—</span></div>
+    <div class="cal glass">
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:6px"></div>
+    </div>
+
+    <div class="h2"><h2>Your runs</h2><span id="myRunCount"></span></div>
+    <div id="myRuns"></div>
+  </section>
+
+  <!-- ---------- FEED ---------- -->
+  <section id="tab-feed" class="hide">
+    <div class="h2"><h2>The Feed</h2><span id="feedCount">—</span></div>
+    <div id="feed"><div class="skel"></div><div class="skel"></div></div>
+  </section>
+
+  <!-- ---------- STANDINGS ---------- -->
+  <section id="tab-board" class="hide">
+    <div class="h2"><h2>Standings</h2><span id="boardSub">—</span></div>
+    <div id="board"><div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div></div>
+    <div class="h2"><h2>Challenge</h2></div>
+    <div class="glass" style="padding:18px">
+      <div class="statrow">
+        <div class="stat"><b class="mono" id="cDay">—</b><span>Day of 30</span></div>
+        <div class="stat"><b class="mono" id="cAlive">—</b><span>Still alive</span></div>
+        <div class="stat"><b class="mono" id="cMiles">—</b><span>Group miles</span></div>
+      </div>
+      <p style="color:var(--ink-faint);font-size:13px;line-height:1.6;margin:16px 2px 0">
+        Every player runs or walks at least <b style="color:var(--ink)">1.00 mile</b> per day, Sept 1–30.
+        A day counts once your logged miles for that date reach the mile. Streak breaks the first day you don't.
+      </p>
+      <button class="btn ghost" id="btnSignOut" style="width:100%;margin-top:16px">Sign out</button>
+    </div>
+  </section>
+
+  <nav>
+    <button class="on" data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Today</button>
+    <button data-tab="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</button>
+    <button data-tab="board"><svg viewBox="0 0 24 24"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>Standings</button>
+  </nav>
+</div>
+
+<!-- ======================= TRACKER ======================= -->
+<div id="tracker" class="hide">
+  <div class="trk-top">
+    <span class="gps"><i class="dot" id="gpsDot"></i><span id="gpsTxt">Acquiring GPS…</span></span>
+    <span class="gps mono" id="trkClock">0:00</span>
+  </div>
+  <div class="trk-main">
+    <div class="trk-dist mono" id="trkDist">0.00</div>
+    <div class="trk-unit">Miles</div>
+    <svg id="trkRoute" viewBox="0 0 380 150" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="trk-goal"><i id="trkGoalBar"></i></div>
+    <div class="trk-grid">
+      <div class="trk-cell"><b class="mono" id="trkPace">—:—</b><span>Avg / mile</span></div>
+      <div class="trk-cell"><b class="mono" id="trkNow">—:—</b><span>Current pace</span></div>
+    </div>
+  </div>
+  <div class="trk-btns">
+    <button class="btn ghost" id="btnPause"><svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M8 4.5h3.2v15H8zM12.8 4.5H16v15h-3.2z" fill="currentColor"/></svg>Pause</button>
+    <button class="btn danger" id="btnFinish"><svg viewBox="0 0 24 24" width="14" height="14" style="margin-right:2px"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>Finish</button>
+  </div>
+</div>
+
+<!-- ======================= SAVE SHEET ======================= -->
+<div id="saveSheet" class="sheet hide">
+  <div class="card glass">
+    <h3 id="saveTitle">Nice work</h3>
+    <p class="sub" id="saveSub">—</p>
+    <div class="route" id="savePreview"></div>
+    <div class="pstats" style="margin-top:12px">
+      <div class="pstat"><b class="mono" id="svMiles">—</b><span>Miles</span></div>
+      <div class="pstat"><b class="mono" id="svTime">—</b><span>Time</span></div>
+      <div class="pstat"><b class="mono" id="svPace">—</b><span>Per mile</span></div>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>Say something (optional)</label>
+      <input id="svNote" maxlength="140" placeholder="Legs felt great, hills did not…" />
+    </div>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="svDiscard">Discard</button>
+      <button class="btn primary" id="svPost">Post to feed</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= MANUAL SHEET ======================= -->
+<div id="manualSheet" class="sheet hide">
+  <div class="card glass">
+    <h3>Log without GPS</h3>
+    <p class="sub">Treadmill, dead battery, forgot your phone — it still counts.</p>
+    <div class="two">
+      <div class="field"><label>Miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
+      <div class="field"><label>Minutes</label><input id="mnMins" type="number" inputmode="decimal" step="0.1" min="0" placeholder="12" /></div>
+    </div>
+    <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Treadmill at the gym" /></div>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="mnCancel">Cancel</button>
+      <button class="btn primary" id="mnSave">Log it</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="cfgWarn" class="glass hide"></div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+/* ============================================================
+   1. FIREBASE CONFIG  ← PASTE YOURS HERE
+   Firebase console → Project settings → Your apps → Web app
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDMfqAglERqXN-nvXmdbCQyWsSdfrfnJtI",
+  authDomain: "streaktember.firebaseapp.com",
+  projectId: "streaktember",
+  storageBucket: "streaktember.firebasestorage.app",
+  messagingSenderId: "913456236494",
+  appId: "1:913456236494:web:18df255e169dec4a178d9f"
+};
 
-  // TODO: Replace with your actual Firebase Project Configuration
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+/* ---- Challenge settings ---- */
+const CHALLENGE = {
+  name: "Streaktember",
+  startISO: "2026-09-01",
+  endISO:   "2026-09-30",
+  goalMiles: 1.0
+};
+
+/* ============================================================
+   2. IMPORTS
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+         onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot,
+         query, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ============================================================
+   3. TINY HELPERS
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const show = (el,on=true) => el.classList.toggle('hide', !on);
+const MI = 1609.344;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, ms=2400){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), ms);
+}
+const dayKey = d => new Date(d).toLocaleDateString('en-CA');   // local YYYY-MM-DD
+const todayKey = () => dayKey(Date.now());
+
+function clock(sec){
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+           : `${m}:${String(s).padStart(2,'0')}`;
+}
+function paceStr(secPerMile){
+  if (!isFinite(secPerMile) || secPerMile <= 0 || secPerMile > 5400) return '—:—';
+  const m = Math.floor(secPerMile/60), s = Math.round(secPerMile%60);
+  return s === 60 ? `${m+1}:00` : `${m}:${String(s).padStart(2,'0')}`;
+}
+function ago(ts){
+  if (!ts) return 'just now';
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  if (s < 604800) return Math.floor(s/86400) + 'd ago';
+  return new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+/* great-circle distance in metres */
+function haversine(a, b){
+  const R = 6371000, rad = Math.PI/180;
+  const dLat = (b.lat-a.lat)*rad, dLng = (b.lng-a.lng)*rad;
+  const la1 = a.lat*rad, la2 = b.lat*rad;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.min(1, Math.sqrt(h)));
+}
+/* Ramer–Douglas–Peucker on lat/lng, keeps route shape at a fraction of the points */
+function simplify(pts, eps=0.000018){
+  if (pts.length < 3) return pts.slice();
+  const sq = (x)=>x*x;
+  const segDist = (p,a,b)=>{
+    const kx = Math.cos(a.lat*Math.PI/180);          // rough equirectangular fix
+    let x=(p.lng-a.lng)*kx, y=p.lat-a.lat;
+    const dx=(b.lng-a.lng)*kx, dy=b.lat-a.lat;
+    const L = sq(dx)+sq(dy);
+    if (L>0){ const t=Math.max(0,Math.min(1,(x*dx+y*dy)/L)); x-=dx*t; y-=dy*t; }
+    return Math.sqrt(sq(x)+sq(y));
   };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Map state for logging
-  let pickerMap, pickerPolyline;
-  let clickedCoords = [];
-
-  window.onload = () => {
-    initPickerMap();
-    listenToFeed();
-  };
-
-  function initPickerMap() {
-    pickerMap = L.map('map-picker').setView([40.7128, -74.0060], 13); // Default NYC
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickerMap);
-
-    pickerMap.on('click', (e) => {
-      if (clickedCoords.length >= 2) clickedCoords = [];
-      clickedCoords.push([e.latlng.lat, e.latlng.lng]);
-      
-      if (pickerPolyline) pickerMap.removeLayer(pickerPolyline);
-      if (clickedCoords.length > 0) {
-        pickerPolyline = L.polyline(clickedCoords, {color: '#f43f5e', weight: 4}).addTo(pickerMap);
-      }
-    });
+  const keep = new Array(pts.length).fill(false);
+  keep[0] = keep[pts.length-1] = true;
+  const stack = [[0, pts.length-1]];
+  while (stack.length){
+    const [i,j] = stack.pop();
+    let best = -1, bi = -1;
+    for (let k=i+1; k<j; k++){
+      const d = segDist(pts[k], pts[i], pts[j]);
+      if (d > best){ best = d; bi = k; }
+    }
+    if (best > eps){ keep[bi] = true; stack.push([i,bi],[bi,j]); }
   }
+  return pts.filter((_,i)=>keep[i]);
+}
+/* Render a route as an SVG string, normalised into the viewbox */
+function routeSVG(path, w=380, h=170, id='r'+Math.random().toString(36).slice(2,8)){
+  if (!path || path.length < 2)
+    return `<div class="noroute">No GPS trace for this one</div>`;
+  const lats = path.map(p=>p.lat), lngs = path.map(p=>p.lng);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats);
+  const minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  const kx = Math.cos((minLat+maxLat)/2 * Math.PI/180);
+  const spanX = Math.max((maxLng-minLng)*kx, 1e-7), spanY = Math.max(maxLat-minLat, 1e-7);
+  const pad = 22, availW = w-pad*2, availH = h-pad*2;
+  const scale = Math.min(availW/spanX, availH/spanY);
+  const offX = pad + (availW - spanX*scale)/2, offY = pad + (availH - spanY*scale)/2;
+  const X = p => (offX + (p.lng-minLng)*kx*scale).toFixed(1);
+  const Y = p => (offY + (maxLat-p.lat)*scale).toFixed(1);   // latitude flipped for screen space
+  const d = path.map((p,i)=>`${i?'L':'M'}${X(p)} ${Y(p)}`).join(' ');
+  const a = path[0], z = path[path.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5ef2c0"/><stop offset="50%" stop-color="#39d3ff"/><stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient></defs>
+    <path d="${d}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="url(#${id})" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${X(a)}" cy="${Y(a)}" r="5.5" fill="#5ef2c0" stroke="rgba(7,7,20,.8)" stroke-width="2"/>
+    <circle cx="${X(z)}" cy="${Y(z)}" r="5.5" fill="#ff8fa3" stroke="rgba(7,7,20,.8)" stroke-width="2"/>
+  </svg>`;
+}
 
-  // Handle Form Submission
-  document.getElementById('run-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('runner-name').value;
-    const miles = parseFloat(document.getElementById('run-miles').value);
-    const time = parseInt(document.getElementById('run-time').value);
-    
-    // Pace calculation (Minutes per Mile)
-    const paceMin = Math.floor(time / miles);
-    const paceSec = Math.round(((time / miles) - paceMin) * 60);
-    const paceFormatted = `${paceMin}:${paceSec < 10 ? '0' : ''}${paceSec} /mi`;
+/* ============================================================
+   4. BOOT FIREBASE
+   ============================================================ */
+if (firebaseConfig.apiKey.startsWith('PASTE')) {
+  show($('#signin'), false);
+  const w = $('#cfgWarn'); show(w, true);
+  w.innerHTML = `<h3 style="margin:0 0 8px">Almost there 👋</h3>
+    Open <code>index.html</code> and paste your Firebase web config into the
+    <code>firebaseConfig</code> object at the top of the script.
+    <br><br>Firebase console → ⚙︎ Project settings → Your apps → Web app → Config.`;
+  throw new Error('firebaseConfig not set');
+}
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const runsCol = collection(db, 'runs');
 
-    await addDoc(collection(db, "runs"), {
-      name, miles, time, pace: paceFormatted,
-      route: clickedCoords,
-      timestamp: new Date()
-    });
+/* ============================================================
+   5. STATE
+   ============================================================ */
+let ME = null;              // firebase user
+let RUNS = [];              // all run docs, newest first
+let PLAYERS = [];           // everyone who has ever signed in
+let unsubRuns = null, unsubUsers = null;
+const openComments = new Set();
+const commentCache = new Map();   // runId -> [{...}]
+const commentUnsubs = new Map();
+const REACTS = [
+  {k:'fire',  e:'🔥'},
+  {k:'muscle',e:'💪'},
+  {k:'goat',  e:'🐐'},
+  {k:'clap',  e:'👏'}
+];
 
-    // Reset Form
-    e.target.reset();
-    clickedCoords = [];
-    if(pickerPolyline) pickerMap.removeLayer(pickerPolyline);
-    switchTab('feed');
+/* ============================================================
+   6. AUTH
+   ============================================================ */
+const provider = new GoogleAuthProvider();
+$('#btnGoogle').onclick = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch (e) {
+    if (['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/popup-closed-by-user'].includes(e.code)) {
+      try { await signInWithRedirect(auth, provider); } catch (e2) { toast('Sign-in failed: ' + e2.code); }
+    } else toast('Sign-in failed: ' + (e.code || e.message));
+  }
+};
+getRedirectResult(auth).catch(()=>{});
+$('#btnSignOut').onclick = () => signOut(auth);
+$('#meAvatar').onclick = () => switchTab('board');
+
+onAuthStateChanged(auth, async user => {
+  ME = user;
+  show($('#signin'), !user);
+  show($('#app'), !!user);
+  if (!user) { unsubRuns?.(); unsubUsers?.(); RUNS = []; PLAYERS = []; return; }
+  $('#meAvatar').src = user.photoURL || avatarFor(user.displayName || 'You');
+  // keep a lightweight profile doc so people show up on the board before their first run
+  setDoc(doc(db,'users',user.uid), {
+    uid: user.uid,
+    name: user.displayName || (user.email || 'Runner').split('@')[0],
+    photo: user.photoURL || '',
+    lastSeen: serverTimestamp()
+  }, { merge:true }).catch(()=>{});
+  watchRuns();
+});
+
+function avatarFor(name){
+  const ltr = (name||'?').trim()[0]?.toUpperCase() || '?';
+  return 'data:image/svg+xml,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#3a3a6e"/><text x="50%" y="55%" font-family="sans-serif" font-size="34" fill="#dfe2ff" text-anchor="middle" dominant-baseline="middle">${ltr}</text></svg>`);
+}
+
+/* ============================================================
+   7. LIVE DATA
+   ============================================================ */
+function watchRuns(){
+  if (unsubRuns) unsubRuns();
+  const q = query(runsCol, orderBy('startedAt','desc'), limit(400));
+  unsubRuns = onSnapshot(q, snap => {
+    RUNS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAll();
+  }, err => {
+    console.error(err);
+    toast('Could not load runs — check Firestore rules');
+    $('#feed').innerHTML = `<div class="empty"><span class="em">⚠️</span>Couldn't reach Firestore.<br>Check that the database exists and the rules are published.</div>`;
   });
 
-  // Real-time Feed Listener
-  function listenToFeed() {
-    const q = query(collection(db, "runs"), orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
-      const feedEl = document.getElementById('feed-container');
-      feedEl.innerHTML = '';
+  // everyone who has signed in, so players show on the board before their first mile
+  unsubUsers?.();
+  unsubUsers = onSnapshot(collection(db,'users'), snap => {
+    PLAYERS = snap.docs.map(d => d.data());
+    renderBoard();
+  }, err => console.warn('users listener:', err.code));
+}
 
-      snapshot.forEach((doc) => {
-        const run = doc.data();
-        const post = document.createElement('div');
-        post.className = 'glass-card';
-        const mapId = `map-${doc.id}`;
+/* ============================================================
+   8. DERIVED STATS
+   ============================================================ */
+const inChallenge = k => k >= CHALLENGE.startISO && k <= CHALLENGE.endISO;
 
-        post.innerHTML = `
-          <div class="post-header">
-            <span class="post-user">${run.name}</span>
-            <span style="font-size:0.8em; color:#94a3b8;">${new Date(run.timestamp?.toDate()).toLocaleDateString()}</span>
-          </div>
-          <div class="post-stats">
-            <div><div class="stat-val">${run.miles}</div><div class="stat-lbl">MILES</div></div>
-            <div><div class="stat-val">${run.time}m</div><div class="stat-lbl">TIME</div></div>
-            <div><div class="stat-val">${run.pace}</div><div class="stat-lbl">PACE</div></div>
-          </div>
-          ${run.route && run.route.length > 0 ? `<div id="${mapId}" class="feed-map"></div>` : ''}
-        `;
-        feedEl.appendChild(post);
-
-        // Render mini-map if route data exists
-        if (run.route && run.route.length > 0) {
-          setTimeout(() => {
-            const feedMap = L.map(mapId, { attributionControl: false, zoomControl: false }).setView(run.route[0], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(feedMap);
-            const polyline = L.polyline(run.route, {color: '#f43f5e', weight: 5}).addTo(feedMap);
-            feedMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
-          }, 100);
-        }
-      });
-    });
+function byPlayer(){
+  const map = new Map();
+  const blank = (uid,name,photo) => ({ uid, name:name||'Runner', photo:photo||'', days:new Map(), total:0, seconds:0, runs:0 });
+  for (const u of PLAYERS) if (u.uid) map.set(u.uid, blank(u.uid, u.name, u.photo));
+  for (const r of RUNS){
+    if (!r.uid) continue;
+    let p = map.get(r.uid);
+    if (!p){ p = { uid:r.uid, name:r.name || 'Runner', photo:r.photo || '', days:new Map(), total:0, seconds:0, runs:0 }; map.set(r.uid, p); }
+    if (r.name)  p.name  = r.name;
+    if (r.photo) p.photo = r.photo;
+    p.total   += r.miles || 0;
+    p.seconds += r.seconds || 0;
+    p.runs++;
+    p.days.set(r.day, (p.days.get(r.day) || 0) + (r.miles || 0));
   }
+  for (const p of map.values()){
+    p.completed = [...p.days].filter(([k,m]) => inChallenge(k) && m >= CHALLENGE.goalMiles).map(([k])=>k).sort();
+    p.streak    = streakFrom(new Set(p.completed));
+    p.best      = bestStreak(p.completed);
+    p.alive     = isAlive(new Set(p.completed));
+  }
+  return map;
+}
+/* current streak: consecutive completed days ending today (or yesterday, day not over) */
+function streakFrom(done){
+  let n = 0;
+  const d = new Date();
+  if (!done.has(dayKey(d))) d.setDate(d.getDate() - 1);   // today still in progress
+  while (done.has(dayKey(d)) && inChallenge(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function bestStreak(sortedKeys){
+  let best = 0, run = 0, prev = null;
+  for (const k of sortedKeys){
+    if (prev){
+      const d = new Date(prev + 'T12:00:00'); d.setDate(d.getDate() + 1);
+      run = (dayKey(d) === k) ? run + 1 : 1;
+    } else run = 1;
+    prev = k; best = Math.max(best, run);
+  }
+  return best;
+}
+/* alive = no missed day between challenge start and yesterday (today isn't over yet) */
+function isAlive(done){
+  const start = new Date(CHALLENGE.startISO + 'T12:00:00');
+  const end   = new Date(); end.setDate(end.getDate() - 1);
+  const hardEnd = new Date(CHALLENGE.endISO + 'T12:00:00');
+  if (end > hardEnd) end.setTime(hardEnd.getTime());
+  for (let d = new Date(start); dayKey(d) <= dayKey(end); d.setDate(d.getDate()+1))
+    if (!done.has(dayKey(d))) return false;
+  return true;
+}
+function challengeDay(){
+  const s = new Date(CHALLENGE.startISO + 'T12:00:00');
+  const n = Math.floor((new Date(todayKey()+'T12:00:00') - s) / 86400000) + 1;
+  return Math.min(30, Math.max(0, n));
+}
 
-  // Navigation Logic
-  window.switchTab = (tab) => {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
-    document.getElementById(`tab-${tab}`).classList.add('active');
-    document.getElementById(`btn-${tab}`).classList.add('active');
-    if(tab === 'log') setTimeout(() => pickerMap.invalidateSize(), 200);
-  };
+/* ============================================================
+   9. RENDER
+   ============================================================ */
+function renderAll(){ renderToday(); renderCalendar(); renderMyRuns(); renderFeed(); renderBoard(); }
+
+function renderToday(){
+  const players = byPlayer();
+  const me = players.get(ME?.uid) || { days:new Map(), total:0, streak:0, completed:[] };
+  const today = me.days.get(todayKey()) || 0;
+  const pct = Math.min(1, today / CHALLENGE.goalMiles);
+  const C = 2 * Math.PI * 88;
+  $('#ringFg').setAttribute('stroke-dashoffset', C * (1 - pct));
+  $('#todayMiles').textContent = today.toFixed(2);
+  const left = Math.max(0, CHALLENGE.goalMiles - today);
+  $('#todayGoalTxt').textContent = left > 0 ? `${left.toFixed(2)} mi to go` : `+${(today - CHALLENGE.goalMiles).toFixed(2)} mi over`;
+  show($('#todayDonePill'), left <= 0);
+  $('#sStreak').innerHTML = me.streak + (me.streak ? ' <span class="flame">🔥</span>' : '');
+  $('#sDays').textContent  = me.completed.length;
+  $('#sTotal').textContent = me.total.toFixed(1);
+  $('#todayLabel').textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+  const cd = challengeDay();
+  $('#dayCounter').textContent = cd < 1 ? 'Starts Sept 1' : cd > 30 ? 'Challenge complete' : `Day ${cd} of 30`;
+}
+
+function renderCalendar(){
+  const dowEl = $('#calDow');
+  if (!dowEl.children.length)
+    dowEl.innerHTML = ['S','M','T','W','T','F','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const players = byPlayer();
+  const me = players.get(ME?.uid);
+  const done = new Set(me ? me.completed : []);
+  const start = new Date(CHALLENGE.startISO + 'T12:00:00');
+  const cells = [];
+  for (let i = 0; i < start.getDay(); i++) cells.push('<div></div>');
+  const end = new Date(CHALLENGE.endISO + 'T12:00:00');
+  const tk = todayKey();
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+    const k = dayKey(d), n = d.getDate();
+    const cls = done.has(k) ? 'done' : (k < tk ? 'miss' : '');
+    cells.push(`<div class="cal-day ${cls} ${k===tk?'today':''}" title="${k}">${n}</div>`);
+  }
+  $('#calGrid').innerHTML = cells.join('');
+  const missed = me ? [...Array(30).keys()].map(i=>{
+      const d = new Date(start); d.setDate(d.getDate()+i); return dayKey(d);
+    }).filter(k => k < tk && !done.has(k)).length : 0;
+  $('#calSummary').textContent = me ? `${done.size} done · ${missed} missed` : 'no runs yet';
+}
+
+function renderMyRuns(){
+  const mine = RUNS.filter(r => r.uid === ME?.uid);
+  $('#myRunCount').textContent = mine.length ? `${mine.length} logged` : '';
+  $('#myRuns').innerHTML = mine.length
+    ? mine.slice(0,10).map(r => postHTML(r, true)).join('')
+    : `<div class="empty"><span class="em">👟</span>No runs yet. Hit <b>Start Run</b> and get your mile in.</div>`;
+}
+
+function renderFeed(){
+  const el = $('#feed');
+  $('#feedCount').textContent = RUNS.length ? `${RUNS.length} posts` : '';
+  RUNS.slice(0,25).forEach(r => watchComments(r.id));   // so counts show without opening
+  el.innerHTML = RUNS.length
+    ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
+    : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
+}
+
+function postHTML(r, compact=false){
+  const mine  = r.uid === ME?.uid;
+  const path  = (r.path || []).map(p => ({lat:p.lat ?? p[0], lng:p.lng ?? p[1]}));
+  const when  = r.startedAt ? ago(r.startedAt) : '';
+  const yk    = dayKey(Date.now() - 864e5);
+  const dstr  = !r.day ? '' : r.day === todayKey() ? 'Today' : r.day === yk ? 'Yesterday'
+              : new Date(r.day+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const pace  = r.seconds && r.miles ? paceStr(r.seconds / r.miles) : '—:—';
+  const reactBtns = REACTS.map(x => {
+    const list = (r.reactions && r.reactions[x.k]) || [];
+    const on = ME && list.includes(ME.uid);
+    return `<button class="react ${on?'on':''}" data-react="${x.k}" data-run="${r.id}">
+              ${x.e}${list.length ? `<span class="n">${list.length}</span>` : ''}</button>`;
+  }).join('');
+  const cmts = commentCache.get(r.id) || [];
+  const open = openComments.has(r.id);
+  return `<article class="post glass" data-post="${r.id}">
+    <div class="post-top">
+      <img src="${esc(r.photo || avatarFor(r.name))}" alt="" onerror="this.src='${avatarFor(r.name)}'"/>
+      <div class="who"><b>${esc(r.name || 'Runner')}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
+        <span>${dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}</span></div>
+      ${r.manual ? '<span class="badge">Manual</span>' : ''}
+      ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
+        <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
+      </button>` : ''}
+    </div>
+    <div class="route">${routeSVG(path)}</div>
+    <div class="pstats">
+      <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
+      <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
+      <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
+    </div>
+    ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
+    <div class="reacts">${reactBtns}
+      <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
+    </div>
+    ${open ? `<div class="comments">
+      ${cmts.map(c=>`<div class="cmt"><img src="${esc(c.photo||avatarFor(c.name))}"/><div><b>${esc(c.name)}</b> ${esc(c.text)}</div></div>`).join('') || '<div style="color:var(--ink-faint);font-size:13px;margin-bottom:8px">No comments yet.</div>'}
+      <div class="cmt-form"><input placeholder="Add a comment…" maxlength="200" data-cinput="${r.id}"/>
+        <button class="btn primary" data-csend="${r.id}">Send</button></div>
+    </div>` : ''}
+  </article>`;
+}
+
+function renderBoard(){
+  const players = [...byPlayer().values()].sort((a,b) =>
+    b.streak - a.streak || b.completed.length - a.completed.length || b.total - a.total);
+  const el = $('#board');
+  el.innerHTML = players.length ? players.map((p,i) => `
+    <div class="row ${p.uid===ME?.uid?'me':''} ${p.alive?'':'dead'}">
+      <div class="rank">${i+1}</div>
+      <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+      <div class="nm"><b>${esc(p.name)}</b>
+        <span>${p.runs ? `${p.completed.length}/30 days · ${p.total.toFixed(1)} mi${p.best > 1 ? ` · best ${p.best}` : ''}${p.alive ? '' : ' · streak broken'}` : 'no miles logged yet'}</span></div>
+      <div class="fig"><b>${p.streak}${p.streak?' <span class="flame">🔥</span>':''}</b><span>Streak</span></div>
+    </div>`).join('')
+    : `<div class="empty"><span class="em">🏁</span>Nobody's logged a mile yet.</div>`;
+  const alive = players.filter(p=>p.alive).length;
+  $('#boardSub').textContent = players.length ? `${players.length} players` : '';
+  $('#cDay').textContent   = Math.max(0, challengeDay());
+  $('#cAlive').textContent = `${alive}/${players.length}`;
+  $('#cMiles').textContent = players.reduce((s,p)=>s+p.total,0).toFixed(0);
+}
+
+/* ============================================================
+   10. TABS
+   ============================================================ */
+function switchTab(name){
+  $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  ['today','feed','board'].forEach(t => show($('#tab-'+t), t === name));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$$('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+/* ============================================================
+   11. FEED INTERACTIONS (delegated)
+   ============================================================ */
+document.addEventListener('click', async e => {
+  const react = e.target.closest('[data-react]');
+  const cmt   = e.target.closest('[data-cmt]');
+  const send  = e.target.closest('[data-csend]');
+  const del   = e.target.closest('[data-del]');
+
+  if (react && ME){
+    const runId = react.dataset.run, key = react.dataset.react;
+    const run = RUNS.find(r => r.id === runId); if (!run) return;
+    const has = ((run.reactions || {})[key] || []).includes(ME.uid);
+    react.classList.toggle('on', !has);                       // optimistic
+    try {
+      await updateDoc(doc(db,'runs',runId), {
+        ['reactions.'+key]: has ? arrayRemove(ME.uid) : arrayUnion(ME.uid)
+      });
+    } catch (err) { console.error(err); toast('Reaction failed'); }
+  }
+  if (cmt){
+    const id = cmt.dataset.cmt;
+    if (openComments.has(id)) { openComments.delete(id); }
+    else { openComments.add(id); watchComments(id); }
+    renderFeed(); renderMyRuns();
+  }
+  if (send && ME){
+    const id = send.dataset.csend;
+    const input = document.querySelector(`[data-cinput="${id}"]`);
+    const text = (input?.value || '').trim(); if (!text) return;
+    input.value = '';
+    try {
+      await addDoc(collection(db,'runs',id,'comments'), {
+        uid:ME.uid, name:ME.displayName || 'Runner', photo:ME.photoURL || '',
+        text, createdAt: serverTimestamp(), ts: Date.now()
+      });
+    } catch (err) { console.error(err); toast('Comment failed'); }
+  }
+  if (del && ME){
+    const id = del.dataset.del;
+    if (!confirm('Delete this run? It will stop counting toward your streak.')) return;
+    try { await deleteDoc(doc(db,'runs',id)); toast('Run deleted'); }
+    catch (err) { console.error(err); toast('Delete failed'); }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.dataset?.cinput)
+    document.querySelector(`[data-csend="${e.target.dataset.cinput}"]`)?.click();
+});
+function watchComments(runId){
+  if (commentUnsubs.has(runId)) return;
+  commentUnsubs.set(runId, null);           // claim it first — the callback can fire synchronously
+  const un = onSnapshot(query(collection(db,'runs',runId,'comments'), orderBy('ts','asc'), limit(100)),
+    snap => { commentCache.set(runId, snap.docs.map(d=>d.data())); scheduleRender(); },
+    err => console.error(err));
+  commentUnsubs.set(runId, un);
+}
+/* coalesce bursts of snapshots into one repaint */
+let renderQueued = false;
+function scheduleRender(){
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; renderFeed(); renderMyRuns(); });
+}
+
+/* ============================================================
+   12. GPS RUN TRACKER
+   ============================================================ */
+const T = {
+  active:false, paused:false, watchId:null, wake:null,
+  points:[],            // accepted GPS fixes {lat,lng,t}
+  meters:0, startTs:0, elapsed:0, pauseTs:0, lastTick:0, timer:null, recent:[]
+};
+
+$('#btnStart').onclick = startRun;
+$('#btnPause').onclick = togglePause;
+$('#btnFinish').onclick = finishRun;
+
+async function startRun(){
+  if (!('geolocation' in navigator)) return toast('This browser has no GPS');
+  if (!window.isSecureContext) return toast('GPS needs HTTPS — use the Pages URL, not a local file');
+  Object.assign(T, { active:true, paused:false, points:[], meters:0, elapsed:0, recent:[],
+                     startTs:Date.now(), lastTick:Date.now() });
+  $('#trkRoute').innerHTML = '';
+  paintTracker();
+  show($('#tracker'), true);
+  setGps('wait','Acquiring GPS…');
+  try { T.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  T.watchId = navigator.geolocation.watchPosition(onFix, onGeoErr, {
+    enableHighAccuracy:true, maximumAge:0, timeout:20000
+  });
+  T.timer = setInterval(tick, 250);
+}
+function setGps(state, txt){
+  const d = $('#gpsDot');
+  d.className = 'dot ' + (state === 'ok' ? 'ok' : state === 'bad' ? 'bad' : '');
+  $('#gpsTxt').textContent = txt;
+}
+function onGeoErr(err){
+  setGps('bad', err.code === 1 ? 'Location permission denied' : 'GPS signal lost');
+  if (err.code === 1) toast('Allow location access, then try again');
+}
+function onFix(pos){
+  if (!T.active || T.paused) return;
+  const { latitude:lat, longitude:lng, accuracy:acc } = pos.coords;
+  const t = pos.timestamp || Date.now();
+  setGps(acc <= 12 ? 'ok' : acc <= 30 ? 'wait' : 'bad', `GPS ±${Math.round(acc)} m`);
+  if (acc > 40) return;                                  // too fuzzy to trust
+  const last = T.points[T.points.length - 1];
+  if (!last || T.skipNext) { T.skipNext = false; T.points.push({lat,lng,t}); T.dirty = true; return; }
+  const d  = haversine(last, {lat,lng});
+  const dt = Math.max(0.001, (t - last.t) / 1000);
+  if (d < 2.5) return;                                   // standing-still jitter
+  if (d / dt > 9) { T.points.push({lat,lng,t}); T.dirty = true; return; } // implausible jump: move, don't count
+  T.meters += d;
+  T.points.push({lat,lng,t});
+  T.dirty = true;
+  T.recent.push({d, dt}); if (T.recent.length > 20) T.recent.shift();
+}
+function tick(){
+  const now = Date.now();
+  if (!T.paused) T.elapsed += (now - T.lastTick) / 1000;
+  T.lastTick = now;
+  paintTracker();
+}
+function paintTracker(){
+  const mi = T.meters / MI;
+  $('#trkDist').textContent = mi.toFixed(2);
+  $('#trkClock').textContent = clock(T.elapsed);
+  $('#trkPace').textContent = mi > 0.02 ? paceStr(T.elapsed / mi) : '—:—';
+  const rd = T.recent.reduce((s,x)=>s+x.d,0), rt = T.recent.reduce((s,x)=>s+x.dt,0);
+  $('#trkNow').textContent = rd > 25 ? paceStr(rt / (rd / MI)) : '—:—';
+  $('#trkGoalBar').style.width = Math.min(100, mi / CHALLENGE.goalMiles * 100) + '%';
+  if (T.dirty && T.points.length > 1){
+    T.dirty = false;
+    $('#trkRoute').outerHTML = routeSVG(T.points, 380, 150, 'live').replace('<svg ', '<svg id="trkRoute" ');
+  }
+}
+function togglePause(){
+  T.paused = !T.paused;
+  $('#btnPause').innerHTML = T.paused ? `<svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Resume` : `<svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M8 4.5h3.2v15H8zM12.8 4.5H16v15h-3.2z" fill="currentColor"/></svg>Pause`;
+  setGps(T.paused ? 'wait' : 'ok', T.paused ? 'Paused' : 'Tracking');
+  if (T.paused){ T.recent = []; }
+  else { T.skipNext = true; }   // don't count the distance travelled while paused
+}
+async function stopHardware(){
+  if (T.watchId != null) navigator.geolocation.clearWatch(T.watchId);
+  T.watchId = null;
+  clearInterval(T.timer); T.timer = null;
+  try { await T.wake?.release(); } catch {}
+  T.wake = null;
+}
+async function finishRun(){
+  await stopHardware();
+  T.active = false;
+  show($('#tracker'), false);
+  const mi = T.meters / MI;
+  if (mi < 0.02 && T.elapsed < 30) { toast('Run discarded — nothing recorded'); return; }
+  openSaveSheet(mi, T.elapsed, simplify(T.points).slice(0,300));
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && T.active && !T.wake)
+    try { T.wake = await navigator.wakeLock?.request('screen'); } catch {}
+});
+window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ============================================================
+   13. SAVE SHEET
+   ============================================================ */
+let pending = null;
+function openSaveSheet(miles, seconds, path){
+  pending = { miles, seconds, path, manual:false };
+  $('#saveTitle').textContent = miles >= CHALLENGE.goalMiles ? 'Day secured 🔥' : 'Run finished';
+  $('#saveSub').textContent = miles >= CHALLENGE.goalMiles
+    ? 'That clears the mile. Post it before someone doubts you.'
+    : `${(CHALLENGE.goalMiles - miles).toFixed(2)} mi short of the daily mile — it still logs.`;
+  $('#savePreview').innerHTML = routeSVG(path, 380, 160);
+  $('#svMiles').textContent = miles.toFixed(2);
+  $('#svTime').textContent  = clock(seconds);
+  $('#svPace').textContent  = miles > 0.02 ? paceStr(seconds/miles) : '—:—';
+  $('#svNote').value = '';
+  show($('#saveSheet'), true);
+}
+$('#svDiscard').onclick = () => {
+  if (!confirm('Discard this run? It will not be saved.')) return;
+  pending = null; show($('#saveSheet'), false);
+};
+$('#svPost').onclick = async () => {
+  if (!pending) return;
+  const btn = $('#svPost'); btn.disabled = true; btn.textContent = 'Posting…';
+  const ok = await saveRun({ ...pending, note: $('#svNote').value.trim() });
+  btn.disabled = false; btn.textContent = 'Post to feed';
+  if (ok){ show($('#saveSheet'), false); pending = null; switchTab('feed'); }
+};
+
+/* ---- manual entry ---- */
+$('#btnManual').onclick = () => {
+  $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnNote').value = '';
+  show($('#manualSheet'), true);
+};
+$('#mnCancel').onclick = () => show($('#manualSheet'), false);
+$('#mnSave').onclick = async () => {
+  const miles = parseFloat($('#mnMiles').value);
+  const mins  = parseFloat($('#mnMins').value);
+  if (!(miles > 0)) return toast('Enter your miles');
+  if (miles > 100) return toast('That is a lot of miles');
+  const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
+  const ok = await saveRun({ miles, seconds: (mins > 0 ? mins*60 : 0), path: [], manual:true, note: $('#mnNote').value.trim() });
+  btn.disabled = false; btn.textContent = 'Log it';
+  if (ok){ show($('#manualSheet'), false); switchTab('feed'); }
+};
+
+async function saveRun({miles, seconds, path, manual, note}){
+  if (!ME) { toast('Not signed in'); return false; }
+  try {
+    await addDoc(runsCol, {
+      uid: ME.uid,
+      name: ME.displayName || (ME.email||'Runner').split('@')[0],
+      photo: ME.photoURL || '',
+      day: todayKey(),
+      miles: Math.round(miles * 1000) / 1000,
+      seconds: Math.round(seconds),
+      manual: !!manual,
+      note: note || '',
+      path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
+      reactions: {},
+      startedAt: Date.now(),
+      createdAt: serverTimestamp()
+    });
+    toast(miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
+    return true;
+  } catch (err){
+    console.error(err); toast('Save failed: ' + (err.code || err.message)); return false;
+  }
+}
 </script>
 </body>
 </html>
