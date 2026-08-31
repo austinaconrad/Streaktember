@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streaktember 🏃‍♂️</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042);
+      color: #fff; min-height: 100vh; padding: 20px; display: flex; justify-content: center;
+    }
+    .container { width: 100%; max-width: 800px; }
+    h1 { text-align: center; margin-bottom: 20px; font-weight: 700; letter-spacing: 1px; }
+    
+    /* Glassmorphism Navigation */
+    nav {
+      display: flex; gap: 10px; margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
+      padding: 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    nav button {
+      flex: 1; padding: 10px; border: none; background: transparent; color: #94a3b8;
+      font-weight: 600; cursor: pointer; border-radius: 8px; transition: 0.3s;
+    }
+    nav button.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
+
+    /* Glass Cards */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px); border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15); padding: 20px; margin-bottom: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    /* Forms & Inputs */
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #cbd5e1; }
+    input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0, 0, 0, 0.2); color: #fff; outline: none;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    button.btn-primary {
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      background: linear-gradient(90deg, #6366f1, #a855f7); color: white;
+      font-weight: bold; cursor: pointer; margin-top: 10px;
+    }
+
+    #map-picker, .feed-map { height: 200px; width: 100%; border-radius: 8px; margin-top: 10px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Feed Layout */
+    .post-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .post-user { font-weight: bold; color: #38bdf8; }
+    .post-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 15px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; }
+    .stat-val { font-size: 1.2em; font-weight: bold; color: #f43f5e; }
+    .stat-lbl { font-size: 0.75em; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🔥 STREAKTEMBER 🔥</h1>
+
+  <nav>
+    <button id="btn-feed" class="active" onclick="switchTab('feed')">Activity Feed</button>
+    <button id="btn-log" onclick="switchTab('log')">Log Run</button>
+  </nav>
+
+  <div id="tab-log" class="tab-content">
+    <div class="glass-card">
+      <h2>Log Your Miles</h2>
+      <form id="run-form">
+        <div class="form-group" style="margin-top:15px;">
+          <label>Runner Name</label>
+          <input type="text" id="runner-name" required placeholder="e.g. Alex">
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Distance (Miles)</label>
+            <input type="number" step="0.01" id="run-miles" required placeholder="1.5">
+          </div>
+          <div class="form-group">
+            <label>Time (Minutes)</label>
+            <input type="number" step="1" id="run-time" required placeholder="15">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Click Map to Draw Route Start & End (Optional)</label>
+          <div id="map-picker"></div>
+          <small style="color: #94a3b8;">Click 2 points on the map to display a line route.</small>
+        </div>
+
+        <button type="submit" class="btn-primary">Post Activity</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="tab-feed" class="tab-content active">
+    <div id="feed-container"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // TODO: Replace with your actual Firebase Project Configuration
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Map state for logging
+  let pickerMap, pickerPolyline;
+  let clickedCoords = [];
+
+  window.onload = () => {
+    initPickerMap();
+    listenToFeed();
+  };
+
+  function initPickerMap() {
+    pickerMap = L.map('map-picker').setView([40.7128, -74.0060], 13); // Default NYC
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickerMap);
+
+    pickerMap.on('click', (e) => {
+      if (clickedCoords.length >= 2) clickedCoords = [];
+      clickedCoords.push([e.latlng.lat, e.latlng.lng]);
+      
+      if (pickerPolyline) pickerMap.removeLayer(pickerPolyline);
+      if (clickedCoords.length > 0) {
+        pickerPolyline = L.polyline(clickedCoords, {color: '#f43f5e', weight: 4}).addTo(pickerMap);
+      }
+    });
+  }
+
+  // Handle Form Submission
+  document.getElementById('run-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('runner-name').value;
+    const miles = parseFloat(document.getElementById('run-miles').value);
+    const time = parseInt(document.getElementById('run-time').value);
+    
+    // Pace calculation (Minutes per Mile)
+    const paceMin = Math.floor(time / miles);
+    const paceSec = Math.round(((time / miles) - paceMin) * 60);
+    const paceFormatted = `${paceMin}:${paceSec < 10 ? '0' : ''}${paceSec} /mi`;
+
+    await addDoc(collection(db, "runs"), {
+      name, miles, time, pace: paceFormatted,
+      route: clickedCoords,
+      timestamp: new Date()
+    });
+
+    // Reset Form
+    e.target.reset();
+    clickedCoords = [];
+    if(pickerPolyline) pickerMap.removeLayer(pickerPolyline);
+    switchTab('feed');
+  });
+
+  // Real-time Feed Listener
+  function listenToFeed() {
+    const q = query(collection(db, "runs"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+      const feedEl = document.getElementById('feed-container');
+      feedEl.innerHTML = '';
+
+      snapshot.forEach((doc) => {
+        const run = doc.data();
+        const post = document.createElement('div');
+        post.className = 'glass-card';
+        const mapId = `map-${doc.id}`;
+
+        post.innerHTML = `
+          <div class="post-header">
+            <span class="post-user">${run.name}</span>
+            <span style="font-size:0.8em; color:#94a3b8;">${new Date(run.timestamp?.toDate()).toLocaleDateString()}</span>
+          </div>
+          <div class="post-stats">
+            <div><div class="stat-val">${run.miles}</div><div class="stat-lbl">MILES</div></div>
+            <div><div class="stat-val">${run.time}m</div><div class="stat-lbl">TIME</div></div>
+            <div><div class="stat-val">${run.pace}</div><div class="stat-lbl">PACE</div></div>
+          </div>
+          ${run.route && run.route.length > 0 ? `<div id="${mapId}" class="feed-map"></div>` : ''}
+        `;
+        feedEl.appendChild(post);
+
+        // Render mini-map if route data exists
+        if (run.route && run.route.length > 0) {
+          setTimeout(() => {
+            const feedMap = L.map(mapId, { attributionControl: false, zoomControl: false }).setView(run.route[0], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(feedMap);
+            const polyline = L.polyline(run.route, {color: '#f43f5e', weight: 5}).addTo(feedMap);
+            feedMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+          }, 100);
+        }
+      });
+    });
+  }
+
+  // Navigation Logic
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById(`btn-${tab}`).classList.add('active');
+    if(tab === 'log') setTimeout(() => pickerMap.invalidateSize(), 200);
+  };
+</script>
+</body>
+</html>
