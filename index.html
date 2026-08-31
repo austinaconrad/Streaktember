@@ -129,6 +129,24 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   linear-gradient(150deg,rgba(124,92,255,.16),rgba(46,230,176,.10));border:1px solid rgba(255,255,255,.1);position:relative}
 .route svg{display:block;width:100%;height:170px}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+/* ---- selfie ---- */
+.photoslot{margin-top:12px}
+.photoslot .addbtn{width:100%;padding:14px;font-size:14.5px;border-style:dashed}
+.photoslot figure{margin:0;position:relative;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.14)}
+.photoslot figure img{display:block;width:100%;max-height:280px;object-fit:cover}
+.photoslot .swap{position:absolute;right:9px;bottom:9px;display:flex;gap:7px}
+.photoslot .swap button{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(10,10,25,.62);
+  backdrop-filter:blur(14px);color:var(--ink);font:600 12.5px 'Outfit',sans-serif;padding:8px 13px;border-radius:999px;cursor:pointer}
+.shot{position:relative;margin-top:13px;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);min-height:200px}
+.shot img{display:block;width:100%;max-height:440px;object-fit:cover}
+.shot .inset{position:absolute;right:10px;bottom:10px;width:118px;height:76px;border-radius:12px;overflow:hidden;
+  background:rgba(8,8,22,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 10px 24px -10px rgba(0,0,0,.9)}
+.shot .inset svg{width:100%;height:100%}
+.shot .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-faint);font-size:12.5px;
+  background:linear-gradient(100deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
+  background-size:220% 100%;animation:sh 1.4s infinite}
 .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .pstat{text-align:center;padding:10px 4px;border-radius:var(--r-sm);background:rgba(255,255,255,.05)}
 .pstat b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}
@@ -161,9 +179,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .row .nm{flex:1;min-width:0}
 .row .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .nm span{font-size:11.5px;color:var(--ink-faint)}
-.row .fig{text-align:right;flex:none}
-.row .fig b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.row .figs{display:flex;gap:13px;flex:none;align-items:flex-start}
+.row .fig{text-align:right;flex:none;min-width:40px}
+.row .fig b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
 .row .fig span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.row .fig.mi b{color:var(--ink-dim);font-size:16px}
 .flame{color:var(--amber)}
 .dead{opacity:.55}
 
@@ -292,6 +312,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
         <div class="stat"><b class="mono" id="sTotal">0.0</b><span>Total mi</span></div>
       </div>
       <div class="cta">
+        <button class="btn ghost hide" id="btnUndo" style="font-size:14px;padding:13px;color:var(--coral)">↺ Undo last log</button>
         <button class="btn primary" id="btnStart"><svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Start Run</button>
         <button class="btn ghost" id="btnManual">Log without GPS</button>
       </div>
@@ -367,6 +388,8 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <h3 id="saveTitle">Nice work</h3>
     <p class="sub" id="saveSub">—</p>
     <div class="route" id="savePreview"></div>
+    <div id="svPhoto" class="photoslot"></div>
+    <input type="file" accept="image/*" capture="user" id="svPhotoInput" hidden />
     <div class="pstats" style="margin-top:12px">
       <div class="pstat"><b class="mono" id="svMiles">—</b><span>Miles</span></div>
       <div class="pstat"><b class="mono" id="svTime">—</b><span>Time</span></div>
@@ -393,9 +416,23 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <div class="field"><label>Minutes</label><input id="mnMins" type="number" inputmode="decimal" step="0.1" min="0" placeholder="12" /></div>
     </div>
     <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Treadmill at the gym" /></div>
+    <div id="mnPhoto" class="photoslot"></div>
+    <input type="file" accept="image/*" capture="user" id="mnPhotoInput" hidden />
     <div class="sheet-btns">
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= CONFIRM SHEET ======================= -->
+<div id="confirmSheet" class="sheet hide">
+  <div class="card glass">
+    <h3 id="cfTitle">Are you sure?</h3>
+    <p class="sub" id="cfBody">—</p>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="cfNo">Keep it</button>
+      <button class="btn danger" id="cfYes">Delete</button>
     </div>
   </div>
 </div>
@@ -431,7 +468,7 @@ const CHALLENGE = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
          onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot,
+import { getFirestore, collection, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot,
          query, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -443,6 +480,27 @@ const $$ = s => [...document.querySelectorAll(s)];
 const show = (el,on=true) => el.classList.toggle('hide', !on);
 const MI = 1609.344;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* glassy replacement for confirm() — resolves true/false */
+function askConfirm(title, body, okLabel='Delete'){
+  return new Promise(resolve => {
+    const sheet = document.getElementById('confirmSheet');
+    document.getElementById('cfTitle').textContent = title;
+    document.getElementById('cfBody').textContent  = body;
+    document.getElementById('cfYes').textContent   = okLabel;
+    sheet.classList.remove('hide');
+    const done = val => {
+      sheet.classList.add('hide');
+      document.getElementById('cfYes').onclick = null;
+      document.getElementById('cfNo').onclick  = null;
+      sheet.onclick = null;
+      resolve(val);
+    };
+    document.getElementById('cfYes').onclick = () => done(true);
+    document.getElementById('cfNo').onclick  = () => done(false);
+    sheet.onclick = e => { if (e.target === sheet) done(false); };   // tap the backdrop to cancel
+  });
+}
 
 function toast(msg, ms=2400){
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
@@ -648,6 +706,8 @@ function byPlayer(){
     p.days.set(r.day, (p.days.get(r.day) || 0) + (r.miles || 0));
   }
   for (const p of map.values()){
+    // miles that count toward the challenge (Sept 1–30 only — test runs before it don't pollute the board)
+    p.miles = [...p.days].filter(([k]) => inChallenge(k)).reduce((s,[,m]) => s + m, 0);
     p.completed = [...p.days].filter(([k,m]) => inChallenge(k) && m >= CHALLENGE.goalMiles).map(([k])=>k).sort();
     p.streak    = streakFrom(new Set(p.completed));
     p.best      = bestStreak(p.completed);
@@ -697,7 +757,7 @@ function renderAll(){ renderToday(); renderCalendar(); renderMyRuns(); renderFee
 
 function renderToday(){
   const players = byPlayer();
-  const me = players.get(ME?.uid) || { days:new Map(), total:0, streak:0, completed:[] };
+  const me = players.get(ME?.uid) || { days:new Map(), total:0, miles:0, streak:0, completed:[] };
   const today = me.days.get(todayKey()) || 0;
   const pct = Math.min(1, today / CHALLENGE.goalMiles);
   const C = 2 * Math.PI * 88;
@@ -708,8 +768,12 @@ function renderToday(){
   show($('#todayDonePill'), left <= 0);
   $('#sStreak').innerHTML = me.streak + (me.streak ? ' <span class="flame">🔥</span>' : '');
   $('#sDays').textContent  = me.completed.length;
-  $('#sTotal').textContent = me.total.toFixed(1);
+  $('#sTotal').textContent = (me.miles ?? 0).toFixed(1);
   $('#todayLabel').textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+  // "Undo last log" appears only while you have a run logged today
+  const lastToday = RUNS.find(r => r.uid === ME?.uid && r.day === todayKey());
+  $('#btnUndo').dataset.run = lastToday ? lastToday.id : '';
+  show($('#btnUndo'), !!lastToday);
   const cd = challengeDay();
   $('#dayCounter').textContent = cd < 1 ? 'Starts Sept 1' : cd > 30 ? 'Challenge complete' : `Day ${cd} of 30`;
 }
@@ -744,6 +808,7 @@ function renderMyRuns(){
   $('#myRuns').innerHTML = mine.length
     ? mine.slice(0,10).map(r => postHTML(r, true)).join('')
     : `<div class="empty"><span class="em">👟</span>No runs yet. Hit <b>Start Run</b> and get your mile in.</div>`;
+  observePhotos();
 }
 
 function renderFeed(){
@@ -753,6 +818,7 @@ function renderFeed(){
   el.innerHTML = RUNS.length
     ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
     : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
+  observePhotos();
 }
 
 function postHTML(r, compact=false){
@@ -781,7 +847,12 @@ function postHTML(r, compact=false){
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
     </div>
-    <div class="route">${routeSVG(path)}</div>
+    ${r.hasPhoto
+      ? `<div class="shot" data-photo="${r.id}">
+           ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
+           ${path.length > 1 ? `<div class="inset">${routeSVG(path, 118, 76)}</div>` : ''}
+         </div>`
+      : `<div class="route">${routeSVG(path)}</div>`}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
       <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
@@ -801,22 +872,25 @@ function postHTML(r, compact=false){
 
 function renderBoard(){
   const players = [...byPlayer().values()].sort((a,b) =>
-    b.streak - a.streak || b.completed.length - a.completed.length || b.total - a.total);
+    b.streak - a.streak || b.completed.length - a.completed.length || b.miles - a.miles);
   const el = $('#board');
   el.innerHTML = players.length ? players.map((p,i) => `
     <div class="row ${p.uid===ME?.uid?'me':''} ${p.alive?'':'dead'}">
       <div class="rank">${i+1}</div>
       <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
       <div class="nm"><b>${esc(p.name)}</b>
-        <span>${p.runs ? `${p.completed.length}/30 days · ${p.total.toFixed(1)} mi${p.best > 1 ? ` · best ${p.best}` : ''}${p.alive ? '' : ' · streak broken'}` : 'no miles logged yet'}</span></div>
-      <div class="fig"><b>${p.streak}${p.streak?' <span class="flame">🔥</span>':''}</b><span>Streak</span></div>
+        <span>${p.runs ? `${p.completed.length}/30 days${p.best > 1 ? ` · best ${p.best}` : ''}${p.alive ? '' : ' · streak broken'}` : 'no miles logged yet'}</span></div>
+      <div class="figs">
+        <div class="fig mi"><b class="mono">${p.miles.toFixed(1)}</b><span>Miles</span></div>
+        <div class="fig"><b class="mono">${p.streak}${p.streak?' <span class="flame">🔥</span>':''}</b><span>Streak</span></div>
+      </div>
     </div>`).join('')
     : `<div class="empty"><span class="em">🏁</span>Nobody's logged a mile yet.</div>`;
   const alive = players.filter(p=>p.alive).length;
   $('#boardSub').textContent = players.length ? `${players.length} players` : '';
   $('#cDay').textContent   = Math.max(0, challengeDay());
   $('#cAlive').textContent = `${alive}/${players.length}`;
-  $('#cMiles').textContent = players.reduce((s,p)=>s+p.total,0).toFixed(0);
+  $('#cMiles').textContent = players.reduce((s,p)=>s+p.miles,0).toFixed(0);
 }
 
 /* ============================================================
@@ -869,9 +943,17 @@ document.addEventListener('click', async e => {
   }
   if (del && ME){
     const id = del.dataset.del;
-    if (!confirm('Delete this run? It will stop counting toward your streak.')) return;
-    try { await deleteDoc(doc(db,'runs',id)); toast('Run deleted'); }
-    catch (err) { console.error(err); toast('Delete failed'); }
+    const r  = RUNS.find(x => x.id === id);
+    const ok = await askConfirm('Delete this run?',
+      r ? `${(r.miles||0).toFixed(2)} mi in ${clock(r.seconds||0)}. It stops counting toward that day and disappears from the feed. This can't be undone.`
+        : `It stops counting toward that day and disappears from the feed.`);
+    if (!ok) return;
+    try {
+      if (r?.hasPhoto) await deleteDoc(doc(db,'runs',id,'media','photo')).catch(()=>{});
+      await deleteDoc(doc(db,'runs',id));
+      photoCache.delete(id);
+      toast('Run deleted');
+    } catch (err) { console.error(err); toast('Delete failed'); }
   }
 });
 document.addEventListener('keydown', e => {
@@ -901,6 +983,23 @@ const T = {
   active:false, paused:false, watchId:null, wake:null,
   points:[],            // accepted GPS fixes {lat,lng,t}
   meters:0, startTs:0, elapsed:0, pauseTs:0, lastTick:0, timer:null, recent:[]
+};
+
+$('#btnUndo').onclick = async () => {
+  const id = $('#btnUndo').dataset.run;
+  const r  = RUNS.find(x => x.id === id);
+  if (!r) return;
+  const ok = await askConfirm('Undo your last log?',
+    `${(r.miles||0).toFixed(2)} mi in ${clock(r.seconds||0)}, logged today. It comes off your total and out of the feed.`,
+    'Undo it');
+  if (!ok) return;
+  try {
+    if (r.hasPhoto) await deleteDoc(doc(db,'runs',id,'media','photo')).catch(()=>{});
+    await deleteDoc(doc(db,'runs',id));
+    photoCache.delete(id);
+    toast('Log undone');
+  }
+  catch (err) { console.error(err); toast('Could not undo: ' + (err.code || err.message)); }
 };
 
 $('#btnStart').onclick = startRun;
@@ -996,6 +1095,94 @@ document.addEventListener('visibilitychange', async () => {
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ============================================================
+   12b. SELFIE — captured, shrunk, and stored inside the run doc's
+   own sub-document so the feed query never drags the bytes along.
+   ============================================================ */
+const PHOTO_MAX_BYTES = 700000;      // Firestore caps a document at ~1 MB
+
+async function shrinkImage(file, maxDim = 900, quality = 0.62){
+  let src;
+  try { src = await createImageBitmap(file, { imageOrientation:'from-image' }); }
+  catch {                                            // older Safari: fall back to <img>
+    src = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i); i.onerror = rej;
+      i.src = URL.createObjectURL(file);
+    });
+  }
+  const w0 = src.width, h0 = src.height;
+  const k  = Math.min(1, maxDim / Math.max(w0, h0));
+  const c  = document.createElement('canvas');
+  c.width  = Math.round(w0 * k);
+  c.height = Math.round(h0 * k);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  src.close?.();
+  let q = quality, url = c.toDataURL('image/jpeg', q);
+  while (url.length > PHOTO_MAX_BYTES && q > 0.28){ q -= 0.09; url = c.toDataURL('image/jpeg', q); }
+  if (url.length > PHOTO_MAX_BYTES) throw new Error('too-big');
+  return url;
+}
+
+/* wire one capture slot (save sheet / manual sheet) */
+function photoSlot(slotId, inputId){
+  const slot  = document.getElementById(slotId);
+  const input = document.getElementById(inputId);
+  const state = { url: null };
+  const paint = () => {
+    slot.innerHTML = state.url
+      ? `<figure><img src="${state.url}" alt="Your post-run selfie"/>
+           <div class="swap"><button data-act="retake">Retake</button><button data-act="drop">Remove</button></div>
+         </figure>`
+      : `<button class="btn ghost addbtn" data-act="add">📸 Add a selfie</button>`;
+  };
+  slot.onclick = e => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'add' || act === 'retake'){ input.value = ''; input.click(); }
+    if (act === 'drop'){ state.url = null; paint(); }
+  };
+  input.onchange = async () => {
+    const f = input.files?.[0]; if (!f) return;
+    slot.innerHTML = `<button class="btn ghost addbtn" disabled>Shrinking photo…</button>`;
+    try { state.url = await shrinkImage(f); }
+    catch (err){ console.error(err); toast(err.message === 'too-big' ? 'That photo is too large' : 'Could not read that photo'); state.url = null; }
+    paint();
+  };
+  state.reset = () => { state.url = null; input.value = ''; paint(); };
+  paint();
+  return state;
+}
+const svPhoto = photoSlot('svPhoto', 'svPhotoInput');
+const mnPhoto = photoSlot('mnPhoto', 'mnPhotoInput');
+
+/* ---- lazy-load photos into the feed only as posts scroll into view ---- */
+const photoCache = new Map();       // runId -> dataURL | null
+const photoSeen  = new IntersectionObserver(async entries => {
+  for (const e of entries){
+    if (!e.isIntersecting) continue;
+    const el = e.target, id = el.dataset.photo;
+    photoSeen.unobserve(el);
+    if (photoCache.has(id)){ paintPhoto(el, photoCache.get(id)); continue; }
+    try {
+      const snap = await getDoc(doc(db, 'runs', id, 'media', 'photo'));
+      const url  = snap.exists() ? snap.data().img : null;
+      photoCache.set(id, url);
+      paintPhoto(el, url);
+    } catch (err){ console.error('photo load', err); paintPhoto(el, null); }
+  }
+}, { rootMargin: '400px 0px' });
+
+function paintPhoto(el, url){
+  const ph = el.querySelector('.ph');
+  if (!url){ if (ph) ph.textContent = 'Photo unavailable'; return; }
+  const img = new Image();
+  img.alt = 'Run selfie';
+  img.onload = () => { ph?.remove(); el.prepend(img); };
+  img.src = url;
+}
+/* call after any feed repaint */
+function observePhotos(){ $$('[data-photo]').forEach(el => photoSeen.observe(el)); }
+
+/* ============================================================
    13. SAVE SHEET
    ============================================================ */
 let pending = null;
@@ -1010,23 +1197,25 @@ function openSaveSheet(miles, seconds, path){
   $('#svTime').textContent  = clock(seconds);
   $('#svPace').textContent  = miles > 0.02 ? paceStr(seconds/miles) : '—:—';
   $('#svNote').value = '';
+  svPhoto.reset();
   show($('#saveSheet'), true);
 }
-$('#svDiscard').onclick = () => {
-  if (!confirm('Discard this run? It will not be saved.')) return;
+$('#svDiscard').onclick = async () => {
+  if (!await askConfirm('Discard this run?', 'It will not be saved and the GPS trace is gone for good.', 'Discard')) return;
   pending = null; show($('#saveSheet'), false);
 };
 $('#svPost').onclick = async () => {
   if (!pending) return;
   const btn = $('#svPost'); btn.disabled = true; btn.textContent = 'Posting…';
-  const ok = await saveRun({ ...pending, note: $('#svNote').value.trim() });
+  const ok = await saveRun({ ...pending, note: $('#svNote').value.trim(), photo: svPhoto.url });
   btn.disabled = false; btn.textContent = 'Post to feed';
-  if (ok){ show($('#saveSheet'), false); pending = null; switchTab('feed'); }
+  if (ok){ show($('#saveSheet'), false); pending = null; svPhoto.reset(); switchTab('feed'); }
 };
 
 /* ---- manual entry ---- */
 $('#btnManual').onclick = () => {
   $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnNote').value = '';
+  mnPhoto.reset();
   show($('#manualSheet'), true);
 };
 $('#mnCancel').onclick = () => show($('#manualSheet'), false);
@@ -1036,15 +1225,16 @@ $('#mnSave').onclick = async () => {
   if (!(miles > 0)) return toast('Enter your miles');
   if (miles > 100) return toast('That is a lot of miles');
   const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
-  const ok = await saveRun({ miles, seconds: (mins > 0 ? mins*60 : 0), path: [], manual:true, note: $('#mnNote').value.trim() });
+  const ok = await saveRun({ miles, seconds: (mins > 0 ? mins*60 : 0), path: [], manual:true,
+                             note: $('#mnNote').value.trim(), photo: mnPhoto.url });
   btn.disabled = false; btn.textContent = 'Log it';
-  if (ok){ show($('#manualSheet'), false); switchTab('feed'); }
+  if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); switchTab('feed'); }
 };
 
-async function saveRun({miles, seconds, path, manual, note}){
+async function saveRun({miles, seconds, path, manual, note, photo}){
   if (!ME) { toast('Not signed in'); return false; }
   try {
-    await addDoc(runsCol, {
+    const ref = await addDoc(runsCol, {
       uid: ME.uid,
       name: ME.displayName || (ME.email||'Runner').split('@')[0],
       photo: ME.photoURL || '',
@@ -1055,9 +1245,21 @@ async function saveRun({miles, seconds, path, manual, note}){
       note: note || '',
       path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
       reactions: {},
+      hasPhoto: !!photo,
       startedAt: Date.now(),
       createdAt: serverTimestamp()
     });
+    if (photo){
+      try {
+        await setDoc(doc(db, 'runs', ref.id, 'media', 'photo'), { uid: ME.uid, img: photo, ts: Date.now() });
+        photoCache.set(ref.id, photo);                     // show instantly, no re-fetch
+      } catch (err){
+        console.error(err);
+        await updateDoc(ref, { hasPhoto: false });         // run still counts; photo just didn't stick
+        toast('Run saved, but the photo failed to upload');
+        return true;
+      }
+    }
     toast(miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
     return true;
   } catch (err){
