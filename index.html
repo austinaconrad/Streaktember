@@ -149,6 +149,23 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .route{height:200px}
 .route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+/* ---- mile splits ---- */
+.splitrow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.splitrow .n{flex:none;width:52px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.splitrow .timepair{flex:1}
+.splitrow .x{flex:none;width:30px;height:30px;border-radius:50%;appearance:none;cursor:pointer;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);font-size:14px}
+.splitfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.splitfoot .linkbtn{padding:6px 0}
+.splits{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.splitchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;font-size:11.5px;
+  font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+  font-variant-numeric:tabular-nums;color:var(--ink-dim)}
+.splitchip i{font-style:normal;color:var(--ink-faint);font-size:10px}
+.splitchip.best{background:rgba(94,242,192,.15);border-color:rgba(94,242,192,.38);color:var(--ink)}
+.splitchip.best i{color:var(--mint)}
+
 /* ---- weather ---- */
 .wxslot{margin:2px 0 4px}
 .wxslot .btn{width:100%;padding:12px;font-size:13.5px;border-style:dashed}
@@ -603,6 +620,15 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     </div>
     <div id="mnPace" class="pacehint">—</div>
     <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Legs felt great, hills did not…" /></div>
+    <button class="linkbtn" id="mnSplitToggle" style="width:100%;margin:-4px 0 8px">＋ Add mile splits</button>
+    <div id="mnSplitWrap" class="field hide">
+      <label>Mile splits</label>
+      <div id="mnSplits"></div>
+      <div class="splitfoot">
+        <button class="linkbtn" id="mnSplitAdd">＋ another mile</button>
+        <span id="mnSplitSum" class="pacehint" style="margin:0"></span>
+      </div>
+    </div>
     <button class="linkbtn" id="mnWhenToggle" style="width:100%;margin:-4px 0 8px">🕗 Log for a different time</button>
     <div id="mnWhenWrap" class="field hide">
       <label>When did you run?</label>
@@ -1475,6 +1501,7 @@ function postHTML(r, compact=false){
       <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
       <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
     </div>
+    ${splitChips(r.splits)}
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
     <div class="reacts">
       <div class="ract-l">${reactBtns}</div>
@@ -1497,9 +1524,13 @@ function postHTML(r, compact=false){
    ============================================================ */
 const RECORDS = [
   { emoji:'⚡', title:'Fastest mile', unit:'Per mile', better:'min', fmt:paceStr,
-    note:'best pace on any run of a mile or more',
-    value: p => Math.min(...p.runList.filter(r => r.miles >= 1 && r.seconds > 30)
-                               .map(r => r.seconds / r.miles), Infinity) },
+    note:'fastest single mile — a logged split where there is one, otherwise best average pace',
+    value: p => Math.min(
+      // a real split beats an average: a 5-miler at 8:00 can hide a 6:45 mile
+      ...p.runList.flatMap(r => Array.isArray(r.splits) ? r.splits.filter(s => s > 60) : []),
+      ...p.runList.filter(r => r.miles >= 1 && r.seconds > 30 && !(r.splits || []).length)
+                 .map(r => r.seconds / r.miles),
+      Infinity) },
   { emoji:'🎯', title:'Best average pace', unit:'Per mile', better:'min', fmt:paceStr,
     note:'every timed September mile, divided by every September minute',
     value: p => p.timedMiles >= 1 && p.timedSeconds > 0 ? p.timedSeconds / p.timedMiles : Infinity },
@@ -1517,7 +1548,9 @@ const ordinal = n => { const s = ['th','st','nd','rd'], v = n % 100; return n + 
 
 const ACHIEVEMENTS = [
   { key:'speed', emoji:'⚡', title:'Speed Demon', req:'Log a mile under 8:00 pace',
-    earned: p => p.runList.some(r => r.miles >= 1 && paceOf(r) && paceOf(r) < 480) },
+    earned: p => p.runList.some(r =>
+      (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
+      (r.miles >= 1 && paceOf(r) && paceOf(r) < 480)) },
 
   { key:'cruise', emoji:'👟', title:'Steady Cruiser', req:'Hold the same pace (±5s) across 3 runs in a row',
     earned: p => {
@@ -1954,6 +1987,103 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ============================================================
+   10c. MILE SPLITS
+   Optional and collapsed — the log flow stays two taps for anyone who doesn't
+   care. When splits are entered the total time is summed from them, so nobody
+   types the same number twice, and the fastest split makes the "Fastest mile"
+   record mean what it says instead of "best average over a long run".
+   ============================================================ */
+const MAX_SPLITS = 20;
+
+function splitRowHTML(i){
+  return `<div class="splitrow" data-split="${i}">
+    <span class="n">Mile ${i + 1}</span>
+    <div class="timepair">
+      <input type="number" inputmode="numeric" step="1" min="0" max="120" placeholder="9"  data-sm="${i}" aria-label="Mile ${i+1} minutes" />
+      <span>:</span>
+      <input type="number" inputmode="numeric" step="1" min="0" max="59"  placeholder="00" data-ss="${i}" aria-label="Mile ${i+1} seconds" />
+    </div>
+    <button class="x" data-sx="${i}" aria-label="Remove mile ${i + 1}">✕</button>
+  </div>`;
+}
+
+function readSplits(){
+  return [...$$('#mnSplits .splitrow')].map(row => {
+    const m = parseFloat(row.querySelector('[data-sm]').value) || 0;
+    const s = parseFloat(row.querySelector('[data-ss]').value) || 0;
+    return Math.round(m * 60 + s);
+  });
+}
+/* only the splits that were actually filled in count */
+const filledSplits = () => readSplits().filter(v => v > 0);
+
+function renderSplitRows(n){
+  const current = readSplits();
+  $('#mnSplits').innerHTML = [...Array(n)].map((_, i) => splitRowHTML(i)).join('');
+  current.slice(0, n).forEach((secs, i) => {
+    if (!secs) return;
+    $(`[data-sm="${i}"]`).value = Math.floor(secs / 60);
+    $(`[data-ss="${i}"]`).value = String(secs % 60).padStart(2, '0');
+  });
+  updateSplitSum();
+}
+
+function updateSplitSum(){
+  const vals = filledSplits();
+  const el = $('#mnSplitSum');
+  if (!vals.length){ el.textContent = ''; el.classList.remove('on'); return; }
+  const total = vals.reduce((a, b) => a + b, 0);
+  const best  = Math.min(...vals);
+  el.textContent = `${vals.length} mile${vals.length > 1 ? 's' : ''} · ${clock(total)} · best ${paceStr(best)}`;
+  el.classList.add('on');
+  // splits are the source of truth once they exist — fill the total in for them
+  $('#mnMins').value = Math.floor(total / 60);
+  $('#mnSecs').value = String(total % 60).padStart(2, '0');
+  updatePaceHint();
+}
+
+$('#mnSplitToggle').onclick = () => {
+  const wrap = $('#mnSplitWrap'), opening = wrap.classList.contains('hide');
+  show(wrap, opening);
+  $('#mnSplitToggle').textContent = opening ? '✕ Drop the splits' : '＋ Add mile splits';
+  if (opening){
+    // start with as many rows as their mileage suggests, but never fewer than one
+    const mi = parseFloat($('#mnMiles').value);
+    renderSplitRows(Math.max(1, Math.min(MAX_SPLITS, Math.floor(mi || 1))));
+  } else {
+    $('#mnSplits').innerHTML = '';
+    updateSplitSum();
+  }
+};
+$('#mnSplitAdd').onclick = () => {
+  const n = $$('#mnSplits .splitrow').length;
+  if (n >= MAX_SPLITS) return toast('That is a lot of miles');
+  renderSplitRows(n + 1);
+};
+$('#mnSplits').oninput = updateSplitSum;
+$('#mnSplits').onclick = e => {
+  const x = e.target.closest('[data-sx]');
+  if (!x) return;
+  const rows = readSplits();
+  rows.splice(+x.dataset.sx, 1);
+  $('#mnSplits').innerHTML = rows.map((_, i) => splitRowHTML(i)).join('');
+  rows.forEach((secs, i) => {
+    if (!secs) return;
+    $(`[data-sm="${i}"]`).value = Math.floor(secs / 60);
+    $(`[data-ss="${i}"]`).value = String(secs % 60).padStart(2, '0');
+  });
+  updateSplitSum();
+};
+
+/* the chips shown on a feed post */
+function splitChips(splits){
+  if (!Array.isArray(splits) || splits.length < 2) return '';
+  const best = Math.min(...splits);
+  return `<div class="splits">${splits.map((s, i) =>
+    `<span class="splitchip ${s === best ? 'best' : ''}"><i>${i + 1}</i>${paceStr(s)}</span>`).join('')}</div>`;
+}
 
 /* ============================================================
    11a. WEATHER
@@ -2416,6 +2546,9 @@ $('#btnManual').onclick = () => {
   updateWhenHint();
   mnPhoto.reset(); mnShot.reset(); updatePaceHint();
   mnWx = null; maybeAutoWeather();
+  show($('#mnSplitWrap'), false);
+  $('#mnSplitToggle').textContent = '＋ Add mile splits';
+  $('#mnSplits').innerHTML = ''; $('#mnSplitSum').textContent = '';
   show($('#manualSheet'), true);
 };
 /* datetime-local wants a local ISO string with no timezone suffix */
@@ -2506,12 +2639,13 @@ $('#mnSave').onclick = async () => {
   const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
   const ok = await saveRun({ miles, seconds: secs, path: [], manual:true,
                              note: $('#mnNote').value.trim(), photo: mnPhoto.url, shot: mnShot.url,
-                             day: dayKey(when), startedAt: when.getTime(), weather: mnWx });
+                             day: dayKey(when), startedAt: when.getTime(), weather: mnWx,
+                             splits: filledSplits() });
   btn.disabled = false; btn.textContent = 'Log it';
   if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); mnShot.reset(); switchTab('feed'); }
 };
 
-async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather}){
+async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather, splits}){
   if (!ME) { toast('Not signed in'); return false; }
 
   // With the offline cache on, a write promise settles only when the SERVER acks —
@@ -2540,6 +2674,7 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
     hasPath: pts.length > 1,
     pathN: pts.length,
     ...(weather ? { weather } : {}),
+    ...(splits && splits.length ? { splits } : {}),
     startedAt: startedAt || Date.now(),
     createdAt: serverTimestamp()
   }).then(() => null, e => ({ what:'run', e }));
