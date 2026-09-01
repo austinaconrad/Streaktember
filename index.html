@@ -134,6 +134,35 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .route{height:200px}
 .route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+/* ---- fullscreen interactive map ---- */
+#mapView{position:fixed;inset:0;z-index:90;background:#0a0a18;display:flex;flex-direction:column}
+#mapCanvas{position:absolute;inset:0;z-index:0;background:#0a0a18}
+.mv-bar{position:relative;z-index:5;display:flex;align-items:center;gap:12px;
+  padding:calc(var(--safe-t) + 12px) 14px 12px;
+  background:linear-gradient(180deg,rgba(8,8,20,.9),rgba(8,8,20,0))}
+.mv-who{flex:1;min-width:0}
+.mv-who b{display:block;font-size:16px;font-weight:700}
+.mv-who span{font-size:12px;color:var(--ink-faint)}
+.mv-close{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  color:var(--ink);border:1px solid var(--glass-brd);background:rgba(20,20,44,.72);backdrop-filter:blur(18px)}
+.mv-stats{position:relative;z-index:5;margin-top:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  padding:12px 14px calc(14px + var(--safe-b));
+  background:linear-gradient(0deg,rgba(8,8,20,.92),rgba(8,8,20,0))}
+.mv-stats .pstat{background:rgba(20,20,44,.72);backdrop-filter:blur(18px);border:1px solid var(--glass-brd)}
+.mv-fit{appearance:none;color:var(--ink);cursor:pointer;font-family:inherit}
+.mv-fit b{color:var(--mint)}
+/* Leaflet's own chrome, restyled to match */
+#mapCanvas .leaflet-control-zoom a{background:rgba(20,20,44,.85);color:#eef1ff;border-color:rgba(255,255,255,.14)}
+#mapCanvas .leaflet-control-zoom a:hover{background:rgba(40,40,80,.9)}
+#mapCanvas .leaflet-control-attribution{background:rgba(8,8,20,.6);color:rgba(255,255,255,.55);font-size:9.5px}
+#mapCanvas .leaflet-control-attribution a{color:rgba(255,255,255,.7)}
+/* a hint that the thumbnail opens */
+.route,.shot .inset{position:relative}
+.route[data-map],.shot .inset[data-map]{cursor:zoom-in}
+.expand{position:absolute;left:9px;top:9px;z-index:2;pointer-events:none;
+  padding:5px 9px;border-radius:999px;font:700 9.5px 'Outfit',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.82);background:rgba(8,8,20,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16)}
+
 /* ---- profile ---- */
 .prof{display:flex;gap:14px;align-items:center}
 .prof-av{position:relative;width:76px;height:76px;flex:none;border-radius:50%;overflow:hidden;padding:0;cursor:pointer;
@@ -184,6 +213,42 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .cmt-form input{padding:10px 12px;font-size:14px}
 .cmt-form .btn{padding:10px 16px;font-size:14px;flex:none}
 
+/* ---- badges ---- */
+.badge-card{display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:11px}
+.badge-ico{width:50px;height:50px;flex:none;border-radius:16px;display:grid;place-items:center;font-size:24px;
+  background:linear-gradient(145deg,rgba(94,242,192,.2),rgba(167,139,250,.16));border:1px solid rgba(255,255,255,.13)}
+.badge-body{flex:1;min-width:0}
+.badge-body .ttl{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint)}
+.badge-body .who{display:flex;align-items:center;gap:7px;margin-top:4px}
+.badge-body .who img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.badge-body .who b{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge-body .mine{font-size:11.5px;color:var(--ink-faint);margin-top:3px}
+.badge-val{flex:none;text-align:right}
+.badge-val b{display:block;font-size:19px;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(120deg,var(--mint),#7ee0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.badge-val span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.badge-card.empty-b{opacity:.45}
+.badge-card.empty-b .badge-val b{background:none;color:var(--ink-faint)}
+
+/* ---- achievements ---- */
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.ach{padding:14px 13px 12px;text-align:center;position:relative;opacity:.62;transition:.25s}
+.ach.on{opacity:1;border-color:rgba(94,242,192,.4);
+  background:linear-gradient(158deg,rgba(94,242,192,.15),rgba(167,139,250,.08))}
+.ach-ico{font-size:29px;line-height:1;filter:grayscale(1) opacity(.55);transition:.25s}
+.ach.on .ach-ico{filter:none;text-shadow:0 6px 18px rgba(94,242,192,.5)}
+.ach b{display:block;font-size:14px;font-weight:700;margin-top:8px;letter-spacing:-.01em}
+.ach span{display:block;font-size:11px;line-height:1.4;color:var(--ink-faint);margin-top:4px;min-height:31px}
+.ach-bar{height:4px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
+.ach-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet))}
+.ach-prog{font-size:10px;color:var(--ink-faint);margin-top:4px;font-variant-numeric:tabular-nums;font-weight:600}
+.ach-who{display:flex;justify-content:center;align-items:center;gap:-4px;margin-top:10px;min-height:24px}
+.ach-who img{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(12,12,30,.9);
+  margin-left:-6px;background:rgba(255,255,255,.12)}
+.ach-who img:first-child{margin-left:0}
+.ach-who .more{font-size:11px;color:var(--ink-faint);margin-left:5px;font-weight:600}
+.ach-who .none{font-size:10.5px;color:var(--ink-faint);letter-spacing:.04em}
+
 /* ---- standings ---- */
 .row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:var(--r-md);margin-bottom:8px;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
@@ -199,15 +264,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .row .fig span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
 .row .fig.mi b{color:var(--ink-dim);font-size:16px}
 .flame{color:var(--amber)}
+.tick{font-size:22px;line-height:1;font-weight:800}
+.tick.yes{color:var(--mint)} .tick.no{color:var(--coral);opacity:.75}
 .dead{opacity:.55}
 
 /* ---- bottom nav ---- */
 nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-b));z-index:40;
   display:flex;gap:4px;padding:6px;border-radius:999px;background:rgba(18,18,40,.55);backdrop-filter:blur(28px) saturate(180%);
   -webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid var(--glass-brd);box-shadow:0 20px 40px -18px rgba(0,0,0,.8)}
-nav button{appearance:none;border:0;background:transparent;color:var(--ink-faint);font:600 13px/1 'Outfit',sans-serif;
-  padding:12px 20px;border-radius:999px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:.2s}
-nav button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+nav button{appearance:none;border:0;background:transparent;color:var(--ink-faint);font:600 11.5px/1 'Outfit',sans-serif;
+  padding:11px 13px;border-radius:999px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:.2s}
+@media(min-width:400px){nav button{padding:11px 17px;font-size:12.5px}}
+nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0ff)}
 
 /* ---- sign in ---- */
@@ -330,7 +398,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       </div>
       <div class="cta">
         <button class="btn ghost hide" id="btnUndo" style="font-size:14px;padding:13px;color:var(--coral)">↺ Undo last log</button>
-        <button class="btn primary" id="btnImport">⌚ Import from watch</button>
+        <button class="btn primary" id="btnImport">📝 Import Run</button>
         <button class="btn ghost" id="btnManual">Log manually</button>
         <button class="linkbtn" id="btnStart">or track it live in the browser →</button>
         <input type="file" accept=".gpx,.tcx,application/gpx+xml,text/xml,application/xml" id="gpxInput" hidden />
@@ -353,9 +421,15 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <div id="feed"><div class="skel"></div><div class="skel"></div></div>
   </section>
 
+  <!-- ---------- BADGES ---------- -->
+  <section id="tab-badges" class="hide">
+    <div class="h2"><h2>Badges</h2><span id="badgeSub">—</span></div>
+    <div id="badges"></div>
+  </section>
+
   <!-- ---------- STANDINGS ---------- -->
   <section id="tab-board" class="hide">
-    <div class="h2"><h2>Standings</h2><span id="boardSub">—</span></div>
+    <div class="h2"><h2>Standings</h2><span id="boardToday">—</span></div>
     <div id="board"><div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div></div>
     <div class="h2"><h2>Challenge</h2></div>
     <div class="glass" style="padding:18px">
@@ -375,6 +449,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   <nav>
     <button class="on" data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Today</button>
     <button data-tab="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</button>
+    <button data-tab="badges"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5"/></svg>Badges</button>
     <button data-tab="board"><svg viewBox="0 0 24 24"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>Standings</button>
   </nav>
 </div>
@@ -442,6 +517,23 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
     </div>
+  </div>
+</div>
+
+<!-- ======================= FULLSCREEN MAP ======================= -->
+<div id="mapView" class="hide">
+  <div id="mapCanvas"></div>
+  <div class="mv-bar">
+    <div class="mv-who"><b id="mvName">—</b><span id="mvWhen">—</span></div>
+    <button class="mv-close" id="mvClose" aria-label="Close map">
+      <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
+    </button>
+  </div>
+  <div class="mv-stats">
+    <div class="pstat"><b class="mono" id="mvMiles">—</b><span>Miles</span></div>
+    <div class="pstat"><b class="mono" id="mvTime">—</b><span>Time</span></div>
+    <div class="pstat"><b class="mono" id="mvPace">—</b><span>Per mile</span></div>
+    <button class="pstat mv-fit" id="mvFit"><b>⤢</b><span>Fit route</span></button>
   </div>
 </div>
 
@@ -647,8 +739,12 @@ function routeSVG(path, w=380, h=170, id='r'+Math.random().toString(36).slice(2,
    Tiles are CARTO's public dark basemap (no key, attribution required).
    Falls back to the plain SVG line whenever tiles can't be reached.
    ============================================================ */
-const TILE = 256, MAX_TILES = 16;
-const TILE_URL = (z,x,y) => `https://${'abcd'[(x+y) % 4]}.basemaps.cartocdn.com/dark_nolabels/${z}/${x}/${y}@2x.png`;
+const TILE = 256, MAX_TILES = 28;
+/* Esri's World Dark Gray Canvas: no API key, no watermark, and it suits the theme.
+   (CARTO's public tiles now come stamped "API KEY REQUIRED".) Note the y/x order. */
+const TILE_URL = (z,x,y) =>
+  `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+const MAP_CREDIT = '© Esri · © OpenStreetMap';
 const lngToPx = (lng, z) => (lng + 180) / 360 * Math.pow(2, z) * TILE;
 const latToPx = (lat, z) => {
   const s = Math.sin(Math.max(-85, Math.min(85, lat)) * Math.PI / 180);
@@ -667,13 +763,16 @@ function loadTile(url){
 }
 
 /* Returns a <canvas> with the route over a map, or null if it can't be built. */
-async function renderRouteMap(path, w, h){
+async function renderRouteMap(path, cssW, cssH){
   if (!path || path.length < 2) return null;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const pad = Math.max(18, Math.min(w, h) * 0.14);
+  // Work in DEVICE pixels throughout: 256 px tiles then land 1:1 on a retina
+  // screen instead of being upscaled into mush.
+  const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+  const pad = Math.max(18 * dpr, Math.min(w, h) * 0.14);
 
   // biggest zoom at which the whole route still fits inside the frame
-  let z = 17, box = null;
+  let z = 18, box = null;
   for (; z >= 2; z--){
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const p of path){
@@ -703,12 +802,11 @@ async function renderRouteMap(path, w, h){
   if (!tiles.some(t => t.img)) return null;                      // offline / blocked → caller falls back
 
   const cv  = document.createElement('canvas');
-  cv.width  = Math.round(w * dpr);
-  cv.height = Math.round(h * dpr);
+  cv.width  = w;
+  cv.height = h;
   cv.style.width = '100%';
   cv.style.height = '100%';
   const ctx = cv.getContext('2d');
-  ctx.scale(dpr, dpr);
   ctx.fillStyle = '#12122a';
   ctx.fillRect(0, 0, w, h);
   for (const { img, tx, ty } of tiles)
@@ -728,35 +826,35 @@ async function renderRouteMap(path, w, h){
 
   line();                                    // dark casing, so the line survives a pale street
   ctx.strokeStyle = 'rgba(0,0,0,.55)';
-  ctx.lineWidth = Math.max(5, w/62);
+  ctx.lineWidth = Math.max(5*dpr, w/62);
   ctx.stroke();
 
   const grad = ctx.createLinearGradient(0, 0, w, h);
   grad.addColorStop(0, '#5ef2c0'); grad.addColorStop(.5, '#39d3ff'); grad.addColorStop(1, '#a78bfa');
   line();
   ctx.strokeStyle = grad;
-  ctx.lineWidth = Math.max(2.6, w/125);
+  ctx.lineWidth = Math.max(2.6*dpr, w/125);
   ctx.shadowColor = 'rgba(94,242,192,.55)';
-  ctx.shadowBlur = Math.max(6, w/40);
+  ctx.shadowBlur = Math.max(6*dpr, w/40);
   ctx.stroke();
   ctx.shadowBlur = 0;
 
   const dot = ([x,y], fill) => {
-    ctx.beginPath(); ctx.arc(x, y, Math.max(3.6, w/78), 0, 7);
+    ctx.beginPath(); ctx.arc(x, y, Math.max(3.6*dpr, w/78), 0, 7);
     ctx.fillStyle = fill; ctx.fill();
-    ctx.lineWidth = Math.max(1.4, w/220); ctx.strokeStyle = 'rgba(7,7,20,.85)'; ctx.stroke();
+    ctx.lineWidth = Math.max(1.4*dpr, w/220); ctx.strokeStyle = 'rgba(7,7,20,.85)'; ctx.stroke();
   };
   dot(pts[0], '#5ef2c0');
   dot(pts[pts.length-1], '#ff8fa3');
 
-  if (w > 150){                                          // required attribution
-    ctx.font = `500 ${Math.max(7.5, w/44)}px Outfit, sans-serif`;
-    const label = '© OpenStreetMap © CARTO';
-    const tw = ctx.measureText(label).width;
+  if (cssW > 150){                                       // required attribution
+    const fs = Math.max(7.5 * dpr, w/48), padY = 5*dpr;
+    ctx.font = `500 ${fs}px Outfit, sans-serif`;
+    const tw = ctx.measureText(MAP_CREDIT).width;
     ctx.fillStyle = 'rgba(6,6,18,.5)';
-    ctx.fillRect(w - tw - 10, h - 15, tw + 10, 15);
+    ctx.fillRect(w - tw - 10*dpr, h - fs - padY*1.6, tw + 10*dpr, fs + padY*1.6);
     ctx.fillStyle = 'rgba(255,255,255,.5)';
-    ctx.fillText(label, w - tw - 5, h - 4.5);
+    ctx.fillText(MAP_CREDIT, w - tw - 5*dpr, h - padY);
   }
   return cv;
 }
@@ -798,6 +896,7 @@ async function upgradeToMap(el){
     if (!cv){ mapCache.set(key, 'failed'); return; }               // keep the SVG we already drew
     mapCache.set(key, cv);
     el.replaceChildren(copyCanvas(cv));
+    if (hint) el.appendChild(hint);
   } catch (err){ console.warn('map render', err); mapCache.set(key, 'failed'); }
 }
 const mapPaths = new Map();                  // key -> path, so markup stays small
@@ -921,7 +1020,8 @@ const inChallenge = k => k >= CHALLENGE.startISO && k <= CHALLENGE.endISO;
 
 function byPlayer(){
   const map = new Map();
-  const blank = (uid,name,photo) => ({ uid, name:name||'Runner', photo:photo||'', days:new Map(), total:0, seconds:0, runs:0 });
+  const blank = (uid,name,photo) => ({ uid, name:name||'Runner', photo:photo||'', days:new Map(),
+                                       total:0, seconds:0, runs:0, runList:[], timedMiles:0, timedSeconds:0 });
   for (const u of PLAYERS) if (u.uid) map.set(u.uid, blank(u.uid, u.name, u.photo));
   for (const r of RUNS){
     if (!r.uid) continue;
@@ -932,6 +1032,13 @@ function byPlayer(){
     p.total   += r.miles || 0;
     p.seconds += r.seconds || 0;
     p.runs++;
+    if (inChallenge(r.day)){
+      p.runList.push(r);
+      if (r.seconds > 30 && r.miles > 0){       // untimed manual logs would wreck a pace average
+        p.timedMiles   += r.miles;
+        p.timedSeconds += r.seconds;
+      }
+    }
     p.days.set(r.day, (p.days.get(r.day) || 0) + (r.miles || 0));
   }
   for (const p of map.values()){
@@ -939,6 +1046,7 @@ function byPlayer(){
     p.miles = [...p.days].filter(([k]) => inChallenge(k)).reduce((s,[,m]) => s + m, 0);
     p.completed = [...p.days].filter(([k,m]) => inChallenge(k) && m >= CHALLENGE.goalMiles).map(([k])=>k).sort();
     p.streak    = streakFrom(new Set(p.completed));
+    p.doneToday = (p.days.get(todayKey()) || 0) >= CHALLENGE.goalMiles;
     p.best      = bestStreak(p.completed);
     p.alive     = isAlive(new Set(p.completed));
   }
@@ -982,7 +1090,7 @@ function challengeDay(){
 /* ============================================================
    9. RENDER
    ============================================================ */
-function renderAll(){ renderToday(); renderCalendar(); renderMyRuns(); renderFeed(); renderBoard(); }
+function renderAll(){ renderToday(); renderCalendar(); renderMyRuns(); renderFeed(); renderBadges(); renderBoard(); }
 
 function renderToday(){
   const players = byPlayer();
@@ -1088,7 +1196,7 @@ function postHTML(r, compact=false){
              ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
              ${path.length > 1 ? `<div class="inset"${mapAttr}>${routeSVG(path, 118, 76)}</div>` : ''}
            </div>`
-        : `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
+        : `<div class="route"${mapAttr}>${path.length > 1 ? '<span class="expand">⤢ Tap to explore</span>' : ''}${routeSVG(path)}</div>`;
     })()}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
@@ -1107,24 +1215,147 @@ function postHTML(r, compact=false){
   </article>`;
 }
 
+/* ============================================================
+   RECORDS — one holder each, decided by the numbers.
+   ============================================================ */
+const RECORDS = [
+  { emoji:'⚡', title:'Fastest mile', unit:'Per mile', better:'min', fmt:paceStr,
+    note:'best pace on any run of a mile or more',
+    value: p => Math.min(...p.runList.filter(r => r.miles >= 1 && r.seconds > 30)
+                               .map(r => r.seconds / r.miles), Infinity) },
+  { emoji:'🎯', title:'Best average pace', unit:'Per mile', better:'min', fmt:paceStr,
+    note:'every timed September mile, divided by every September minute',
+    value: p => p.timedMiles >= 1 && p.timedSeconds > 0 ? p.timedSeconds / p.timedMiles : Infinity },
+  { emoji:'👑', title:'Most miles', unit:'Miles', better:'max', fmt: v => v.toFixed(1),
+    note:'the overachiever award',
+    value: p => p.miles }
+];
+
+/* ============================================================
+   ACHIEVEMENTS — earnable by anyone, as many times over as they like.
+   `progress` drives the bar on the ones you can work toward.
+   ============================================================ */
+const paceOf = r => (r.seconds > 30 && r.miles > 0) ? r.seconds / r.miles : null;
+const ordinal = n => { const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); };
+
+const ACHIEVEMENTS = [
+  { key:'speed', emoji:'⚡', title:'Speed Demon', req:'Log a mile under 8:00 pace',
+    earned: p => p.runList.some(r => r.miles >= 1 && paceOf(r) && paceOf(r) < 480) },
+
+  { key:'cruise', emoji:'👟', title:'Steady Cruiser', req:'Hold the same pace (±5s) across 3 runs in a row',
+    earned: p => {
+      const paces = [...p.runList].sort((a,b) => (a.startedAt||0) - (b.startedAt||0))
+                                  .map(paceOf).filter(Boolean);
+      for (let i = 0; i + 2 < paces.length; i++){
+        const w = paces.slice(i, i+3);
+        if (Math.max(...w) - Math.min(...w) <= 5) return true;
+      }
+      return false;
+    } },
+
+  { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row',
+    earned: p => p.best >= 15,
+    progress: p => [Math.min(p.best, 15), 15] },
+
+  { key:'iron', emoji:'🏆', title:'Iron Legs', req:'All 30 days of September, no misses',
+    earned: p => p.completed.length >= 30,
+    progress: p => [p.completed.length, 30] },
+
+  { key:'night', emoji:'🌙', title:'Night Owl', req:'Log a run after 9:00 PM',
+    earned: p => p.runList.some(r => r.startedAt && new Date(r.startedAt).getHours() >= 21) },
+
+  { key:'early', emoji:'🌅', title:'Early Bird', req:'Log a run before 7:00 AM',
+    earned: p => p.runList.some(r => r.startedAt && new Date(r.startedAt).getHours() < 7) },
+
+  { key:'long', emoji:'🥾', title:'Long Hauler', req:'A single run of 3 miles or more',
+    earned: p => p.runList.some(r => r.miles >= 3),
+    progress: p => [Math.min(Math.max(...p.runList.map(r => r.miles), 0), 3), 3] }
+];
+
+function renderBadges(){
+  const players = [...byPlayer().values()].filter(p => p.runs > 0);
+  const me = players.find(p => p.uid === ME?.uid);
+
+  // ---- records ----
+  const recHTML = RECORDS.map(b => {
+    const scored = players.map(p => ({ p, v: b.value(p) })).filter(x => isFinite(x.v) && x.v > 0);
+    if (!scored.length)
+      return `<div class="badge-card glass empty-b">
+        <div class="badge-ico">${b.emoji}</div>
+        <div class="badge-body"><div class="ttl">${b.title}</div>
+          <div class="mine" style="margin-top:5px">${esc(b.note)} — nobody qualifies yet</div></div>
+        <div class="badge-val"><b>—</b><span>${b.unit}</span></div></div>`;
+    scored.sort((x, y) => b.better === 'min' ? x.v - y.v : y.v - x.v);
+    const win = scored[0], mine = scored.find(x => x.p.uid === ME?.uid);
+    const rank = mine ? scored.indexOf(mine) + 1 : 0;
+    const isMe = win.p.uid === ME?.uid;
+    return `<div class="badge-card glass">
+      <div class="badge-ico">${b.emoji}</div>
+      <div class="badge-body">
+        <div class="ttl">${b.title}</div>
+        <div class="who"><img src="${esc(win.p.photo || avatarFor(win.p.name))}" alt=""/>
+          <b>${esc(win.p.name)}${isMe ? ' 🎉' : ''}</b></div>
+        <div class="mine">${isMe ? esc(b.note)
+          : mine ? `You: ${b.fmt(mine.v)} · ${ordinal(rank)} of ${scored.length}`
+                 : esc(b.note)}</div>
+      </div>
+      <div class="badge-val"><b>${b.fmt(win.v)}</b><span>${b.unit}</span></div>
+    </div>`;
+  }).join('');
+
+  // ---- achievements ----
+  const achHTML = ACHIEVEMENTS.map(a => {
+    const holders = players.filter(p => { try { return a.earned(p); } catch { return false; } });
+    const mineHas = !!me && holders.some(h => h.uid === me.uid);
+    let bar = '';
+    if (!mineHas && a.progress && me){
+      const [cur, goal] = a.progress(me);
+      const pct = Math.max(0, Math.min(100, cur / goal * 100));
+      bar = `<div class="ach-bar"><i style="width:${pct}%"></i></div>
+             <div class="ach-prog">${typeof cur === 'number' && !Number.isInteger(cur) ? cur.toFixed(1) : cur} / ${goal}</div>`;
+    }
+    return `<div class="ach glass ${mineHas ? 'on' : ''}">
+      <div class="ach-ico">${a.emoji}</div>
+      <b>${a.title}</b>
+      <span>${esc(a.req)}</span>
+      ${bar}
+      <div class="ach-who">${
+        holders.length
+          ? holders.slice(0,6).map(h => `<img src="${esc(h.photo || avatarFor(h.name))}" title="${esc(h.name)}" alt="${esc(h.name)}"/>`).join('')
+            + (holders.length > 6 ? `<span class="more">+${holders.length-6}</span>` : '')
+          : '<span class="none">Nobody yet</span>'
+      }</div>
+    </div>`;
+  }).join('');
+
+  const mineCount = me ? ACHIEVEMENTS.filter(a => { try { return a.earned(me); } catch { return false; } }).length : 0;
+  $('#badgeSub').textContent = me ? `${mineCount} of ${ACHIEVEMENTS.length} earned` : '';
+  $('#badges').innerHTML = players.length
+    ? `<div class="h2" style="margin-top:0"><h2>Records</h2><span>one holder each</span></div>${recHTML}
+       <div class="h2"><h2>Achievements</h2><span>${mineCount ? 'lit ones are yours' : 'go get one'}</span></div>
+       <div class="ach-grid">${achHTML}</div>`
+    : `<div class="empty"><span class="em">🏅</span>Nothing to award yet.<br>Log a mile and the race starts.</div>`;
+}
+
 function renderBoard(){
   const players = [...byPlayer().values()].sort((a,b) =>
-    b.streak - a.streak || b.completed.length - a.completed.length || b.miles - a.miles);
+    b.completed.length - a.completed.length || (b.doneToday?1:0) - (a.doneToday?1:0) || b.miles - a.miles);
   const el = $('#board');
   el.innerHTML = players.length ? players.map((p,i) => `
     <div class="row ${p.uid===ME?.uid?'me':''} ${p.alive?'':'dead'}">
       <div class="rank">${i+1}</div>
       <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
       <div class="nm"><b>${esc(p.name)}</b>
-        <span>${p.runs ? `${p.completed.length}/30 days${p.best > 1 ? ` · best ${p.best}` : ''}${p.alive ? '' : ' · streak broken'}` : 'no miles logged yet'}</span></div>
+        <span>${p.runs ? `${p.completed.length}/30 days${p.streak ? ` · ${p.streak}🔥 streak` : ''}${p.alive ? '' : ' · broken'}` : 'no miles logged yet'}</span></div>
       <div class="figs">
         <div class="fig mi"><b class="mono">${p.miles.toFixed(1)}</b><span>Miles</span></div>
-        <div class="fig"><b class="mono">${p.streak}${p.streak?' <span class="flame">🔥</span>':''}</b><span>Streak</span></div>
+        <div class="fig"><b class="tick ${p.doneToday ? 'yes' : 'no'}">${p.doneToday ? '✓' : '✕'}</b><span>Today</span></div>
       </div>
     </div>`).join('')
     : `<div class="empty"><span class="em">🏁</span>Nobody's logged a mile yet.</div>`;
   const alive = players.filter(p=>p.alive).length;
-  $('#boardSub').textContent = players.length ? `${players.length} players` : '';
+  const doneN = players.filter(p=>p.doneToday).length;
+  $('#boardToday').textContent = players.length ? `${doneN} of ${players.length} in today` : '';
   $('#cDay').textContent   = Math.max(0, challengeDay());
   $('#cAlive').textContent = `${alive}/${players.length}`;
   $('#cMiles').textContent = players.reduce((s,p)=>s+p.miles,0).toFixed(0);
@@ -1135,7 +1366,7 @@ function renderBoard(){
    ============================================================ */
 function switchTab(name){
   $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
-  ['today','feed','board'].forEach(t => show($('#tab-'+t), t === name));
+  ['today','feed','badges','board'].forEach(t => show($('#tab-'+t), t === name));
   window.scrollTo({top:0, behavior:'smooth'});
 }
 $$('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
@@ -1148,6 +1379,8 @@ document.addEventListener('click', async e => {
   const cmt   = e.target.closest('[data-cmt]');
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
+  const opener = e.target.closest('[data-map]');
+  if (opener && !opener.dataset.noopen && !react && !cmt && !send && !del) openMapView(opener.dataset.map);
 
   if (react && ME){
     const runId = react.dataset.run, key = react.dataset.react;
@@ -1347,6 +1580,75 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ============================================================
+   11a. FULLSCREEN INTERACTIVE MAP
+   The feed keeps fast static thumbnails — sixty live maps in a
+   scrolling list would be miserable, and a pinch-zoomable map inline
+   traps your finger while you're trying to scroll past it. Tapping a
+   route opens the real thing, with Leaflet loaded only at that moment.
+   ============================================================ */
+let leafletP = null;
+function loadLeaflet(){
+  if (leafletP) return leafletP;
+  leafletP = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    js.onload = () => resolve(window.L);
+    js.onerror = () => reject(new Error('Leaflet failed to load'));
+    document.head.appendChild(js);
+  });
+  return leafletP;
+}
+
+let LMAP = null, LROUTE = null, LPINS = [];
+async function openMapView(runId){
+  const r = RUNS.find(x => x.id === runId);
+  const path = mapPaths.get(runId);
+  if (!r || !path || path.length < 2) return;
+
+  $('#mvName').textContent  = nameOf(r.uid, r.name);
+  $('#mvWhen').textContent  = r.day ? new Date(r.day+'T12:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'}) : '';
+  $('#mvMiles').textContent = (r.miles||0).toFixed(2);
+  $('#mvTime').textContent  = clock(r.seconds||0);
+  $('#mvPace').textContent  = r.seconds && r.miles ? paceStr(r.seconds/r.miles) : '—:—';
+  show($('#mapView'), true);
+
+  let L;
+  try { L = await loadLeaflet(); }
+  catch { show($('#mapView'), false); return toast('Could not load the map library'); }
+
+  if (!LMAP){
+    LMAP = L.map('mapCanvas', { zoomControl:true, attributionControl:true, preferCanvas:true });
+    L.tileLayer(TILE_URL(0,0,0).replace('/0/0/0','/{z}/{y}/{x}'), {
+      maxZoom: 19, attribution: MAP_CREDIT
+    }).addTo(LMAP);
+  }
+  LROUTE?.remove();
+  LPINS.forEach(p => p.remove()); LPINS = [];
+
+  const latlngs = path.map(p => [p.lat, p.lng]);
+  L.polyline(latlngs, { color:'rgba(0,0,0,.55)', weight:8, lineJoin:'round' }).addTo(LMAP);
+  LROUTE = L.polyline(latlngs, { color:'#5ef2c0', weight:4, lineJoin:'round' }).addTo(LMAP);
+  const pin = (ll, color) => L.circleMarker(ll, {
+    radius:7, color:'rgba(7,7,20,.9)', weight:2, fillColor:color, fillOpacity:1 }).addTo(LMAP);
+  LPINS = [ pin(latlngs[0], '#5ef2c0'), pin(latlngs[latlngs.length-1], '#ff8fa3') ];
+
+  requestAnimationFrame(() => {           // the overlay must be laid out before Leaflet measures it
+    LMAP.invalidateSize();
+    LMAP.fitBounds(LROUTE.getBounds(), { padding:[40,40] });
+  });
+}
+function closeMapView(){ show($('#mapView'), false); }
+$('#mvClose').onclick = closeMapView;
+$('#mvFit').onclick = () => LROUTE && LMAP.fitBounds(LROUTE.getBounds(), { padding:[40,40] });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#mapView').classList.contains('hide')) closeMapView();
+});
 
 /* ============================================================
    11b. PROFILE
@@ -1600,6 +1902,7 @@ function openSaveSheet(miles, seconds, path, blackout = 0, meta = null){
     const key = 'preview-' + Date.now();
     mapPaths.set(key, path);
     $('#savePreview').dataset.map = key;
+    $('#savePreview').dataset.noopen = '1';
     delete $('#savePreview').dataset.done;
     upgradeToMap($('#savePreview'));
   } else { delete $('#savePreview').dataset.map; }
