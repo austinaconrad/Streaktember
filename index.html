@@ -98,6 +98,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .stat span{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
 .cta{display:grid;gap:10px;margin-top:16px}
 .cta .btn{width:100%;padding:18px;font-size:17px;font-weight:700}
+.linkbtn{appearance:none;background:none;border:0;color:var(--ink-faint);font:500 13px 'Outfit',sans-serif;
+  padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.2)}
+.linkbtn:hover{color:var(--ink-dim)}
 .done-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
   background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:12px}
 
@@ -125,10 +128,21 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .post-top .who span{font-size:12px;color:var(--ink-faint)}
 .badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
   background:rgba(255,209,102,.16);color:var(--amber);border:1px solid rgba(255,209,102,.3)}
+.badge.imp{background:rgba(94,242,192,.14);color:var(--mint);border-color:rgba(94,242,192,.3)}
 .route{margin:13px 0 0;border-radius:var(--r-md);overflow:hidden;background:
   linear-gradient(150deg,rgba(124,92,255,.16),rgba(46,230,176,.10));border:1px solid rgba(255,255,255,.1);position:relative}
-.route svg{display:block;width:100%;height:170px}
+.route{height:200px}
+.route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+/* ---- profile ---- */
+.prof{display:flex;gap:14px;align-items:center}
+.prof-av{position:relative;width:76px;height:76px;flex:none;border-radius:50%;overflow:hidden;padding:0;cursor:pointer;
+  border:1.5px solid var(--glass-brd);background:rgba(255,255,255,.06)}
+.prof-av img{width:100%;height:100%;object-fit:cover;display:block}
+.prof-av span{position:absolute;left:0;right:0;bottom:0;padding:4px 0 5px;font:700 9px 'Outfit',sans-serif;
+  letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(6,6,18,.72);backdrop-filter:blur(8px)}
+.prof-av:active{transform:scale(.96)}
+
 /* ---- selfie ---- */
 .photoslot{margin-top:12px}
 .photoslot .addbtn{width:100%;padding:14px;font-size:14.5px;border-style:dashed}
@@ -143,7 +157,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .shot .inset{position:absolute;right:10px;bottom:10px;width:118px;height:76px;border-radius:12px;overflow:hidden;
   background:rgba(8,8,22,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);
   box-shadow:0 10px 24px -10px rgba(0,0,0,.9)}
-.shot .inset svg{width:100%;height:100%}
+.shot .inset svg,.shot .inset canvas{display:block;width:100%;height:100%}
 .shot .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-faint);font-size:12.5px;
   background:linear-gradient(100deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
   background-size:220% 100%;animation:sh 1.4s infinite}
@@ -226,7 +240,10 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
 .trk-goal{width:100%;max-width:380px;height:6px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:18px;overflow:hidden}
 .trk-goal i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet));transition:width .4s}
-.trk-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:380px;width:100%;margin:22px auto 0}
+#trkHint{max-width:380px;width:100%;margin:16px auto 0;text-align:center;font-size:11.5px;line-height:1.5;
+  color:var(--ink-faint);transition:.3s}
+#trkHint.warn{color:var(--amber);font-weight:600;font-size:12.5px}
+.trk-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:380px;width:100%;margin:18px auto 0}
 .trk-btns .btn{padding:18px;font-size:16px;font-weight:700}
 
 /* ---- sheets ---- */
@@ -313,8 +330,10 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       </div>
       <div class="cta">
         <button class="btn ghost hide" id="btnUndo" style="font-size:14px;padding:13px;color:var(--coral)">↺ Undo last log</button>
-        <button class="btn primary" id="btnStart"><svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>Start Run</button>
-        <button class="btn ghost" id="btnManual">Log without GPS</button>
+        <button class="btn primary" id="btnImport">⌚ Import from watch</button>
+        <button class="btn ghost" id="btnManual">Log manually</button>
+        <button class="linkbtn" id="btnStart">or track it live in the browser →</button>
+        <input type="file" accept=".gpx,.tcx,application/gpx+xml,text/xml,application/xml" id="gpxInput" hidden />
       </div>
     </div>
 
@@ -349,7 +368,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
         Every player runs or walks at least <b style="color:var(--ink)">1.00 mile</b> per day, Sept 1–30.
         A day counts once your logged miles for that date reach the mile. Streak breaks the first day you don't.
       </p>
-      <button class="btn ghost" id="btnSignOut" style="width:100%;margin-top:16px">Sign out</button>
+      <button class="btn ghost" id="btnSignOut" style="width:100%;margin-top:16px">Edit your profile</button>
     </div>
   </section>
 
@@ -376,6 +395,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <div class="trk-cell"><b class="mono" id="trkNow">—:—</b><span>Current pace</span></div>
     </div>
   </div>
+  <p id="trkHint">Keep this screen on and the app in front — phones stop GPS for background tabs.</p>
   <div class="trk-btns">
     <button class="btn ghost" id="btnPause"><svg viewBox="0 0 24 24" width="15" height="15" style="margin-right:2px"><path d="M8 4.5h3.2v15H8zM12.8 4.5H16v15h-3.2z" fill="currentColor"/></svg>Pause</button>
     <button class="btn danger" id="btnFinish"><svg viewBox="0 0 24 24" width="14" height="14" style="margin-right:2px"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>Finish</button>
@@ -422,6 +442,37 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
     </div>
+  </div>
+</div>
+
+<!-- ======================= PROFILE SHEET ======================= -->
+<div id="profileSheet" class="sheet hide">
+  <div class="card glass">
+    <h3>Your profile</h3>
+    <p class="sub">How you show up in the feed and the standings.</p>
+    <div class="prof">
+      <button class="prof-av" id="pfPick" title="Change photo">
+        <img id="pfImg" alt="" />
+        <span>Change</span>
+      </button>
+      <div style="flex:1">
+        <div class="field" style="margin:0">
+          <label>Display name</label>
+          <input id="pfName" maxlength="24" placeholder="Your name" />
+        </div>
+      </div>
+    </div>
+    <input type="file" accept="image/*" id="pfInput" hidden />
+    <div class="pstats" style="margin-top:16px">
+      <div class="pstat"><b class="mono" id="pfDays">—</b><span>Days done</span></div>
+      <div class="pstat"><b class="mono" id="pfMiles">—</b><span>Miles</span></div>
+      <div class="pstat"><b class="mono" id="pfStreak">—</b><span>Streak</span></div>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="pfCancel">Cancel</button>
+      <button class="btn primary" id="pfSave">Save</button>
+    </div>
+    <button class="linkbtn" id="pfSignOut" style="width:100%;margin-top:12px">Sign out</button>
   </div>
 </div>
 
@@ -591,6 +642,168 @@ function routeSVG(path, w=380, h=170, id='r'+Math.random().toString(36).slice(2,
 }
 
 /* ============================================================
+   3b. BASEMAP — composites dark map tiles onto a canvas and draws
+   the route on top, so a run reads as a place instead of a squiggle.
+   Tiles are CARTO's public dark basemap (no key, attribution required).
+   Falls back to the plain SVG line whenever tiles can't be reached.
+   ============================================================ */
+const TILE = 256, MAX_TILES = 16;
+const TILE_URL = (z,x,y) => `https://${'abcd'[(x+y) % 4]}.basemaps.cartocdn.com/dark_nolabels/${z}/${x}/${y}@2x.png`;
+const lngToPx = (lng, z) => (lng + 180) / 360 * Math.pow(2, z) * TILE;
+const latToPx = (lat, z) => {
+  const s = Math.sin(Math.max(-85, Math.min(85, lat)) * Math.PI / 180);
+  return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * Math.pow(2, z) * TILE;
+};
+
+function loadTile(url){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => resolve(null);      // a missing tile is a hole, not a failure
+    img.src = url;
+    setTimeout(() => resolve(img.complete && img.naturalWidth ? img : null), 6000);
+  });
+}
+
+/* Returns a <canvas> with the route over a map, or null if it can't be built. */
+async function renderRouteMap(path, w, h){
+  if (!path || path.length < 2) return null;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const pad = Math.max(18, Math.min(w, h) * 0.14);
+
+  // biggest zoom at which the whole route still fits inside the frame
+  let z = 17, box = null;
+  for (; z >= 2; z--){
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of path){
+      const x = lngToPx(p.lng, z), y = latToPx(p.lat, z);
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 - x0 <= w - pad*2 && y1 - y0 <= h - pad*2){ box = {x0,x1,y0,y1}; break; }
+  }
+  if (!box) return null;
+
+  const left = (box.x0 + box.x1)/2 - w/2;      // world pixel at canvas x=0
+  const top  = (box.y0 + box.y1)/2 - h/2;
+  const tx0 = Math.floor(left / TILE), tx1 = Math.floor((left + w) / TILE);
+  const ty0 = Math.floor(top  / TILE), ty1 = Math.floor((top  + h) / TILE);
+  if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > MAX_TILES) return null;
+
+  const span = Math.pow(2, z);
+  const jobs = [];
+  for (let tx = tx0; tx <= tx1; tx++)
+    for (let ty = ty0; ty <= ty1; ty++){
+      if (ty < 0 || ty >= span) continue;
+      const wrapped = ((tx % span) + span) % span;               // wrap across the date line
+      jobs.push(loadTile(TILE_URL(z, wrapped, ty)).then(img => ({ img, tx, ty })));
+    }
+  const tiles = await Promise.all(jobs);
+  if (!tiles.some(t => t.img)) return null;                      // offline / blocked → caller falls back
+
+  const cv  = document.createElement('canvas');
+  cv.width  = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  cv.style.width = '100%';
+  cv.style.height = '100%';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#12122a';
+  ctx.fillRect(0, 0, w, h);
+  for (const { img, tx, ty } of tiles)
+    if (img) ctx.drawImage(img, tx*TILE - left, ty*TILE - top, TILE, TILE);
+
+  // knock the basemap back so the route reads as the subject
+  ctx.fillStyle = 'rgba(10,10,26,.34)';
+  ctx.fillRect(0, 0, w, h);
+
+  const pts = path.map(p => [lngToPx(p.lng, z) - left, latToPx(p.lat, z) - top]);
+  const line = () => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  };
+  ctx.lineJoin = ctx.lineCap = 'round';
+
+  line();                                    // dark casing, so the line survives a pale street
+  ctx.strokeStyle = 'rgba(0,0,0,.55)';
+  ctx.lineWidth = Math.max(5, w/62);
+  ctx.stroke();
+
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#5ef2c0'); grad.addColorStop(.5, '#39d3ff'); grad.addColorStop(1, '#a78bfa');
+  line();
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = Math.max(2.6, w/125);
+  ctx.shadowColor = 'rgba(94,242,192,.55)';
+  ctx.shadowBlur = Math.max(6, w/40);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  const dot = ([x,y], fill) => {
+    ctx.beginPath(); ctx.arc(x, y, Math.max(3.6, w/78), 0, 7);
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.lineWidth = Math.max(1.4, w/220); ctx.strokeStyle = 'rgba(7,7,20,.85)'; ctx.stroke();
+  };
+  dot(pts[0], '#5ef2c0');
+  dot(pts[pts.length-1], '#ff8fa3');
+
+  if (w > 150){                                          // required attribution
+    ctx.font = `500 ${Math.max(7.5, w/44)}px Outfit, sans-serif`;
+    const label = '© OpenStreetMap © CARTO';
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(6,6,18,.5)';
+    ctx.fillRect(w - tw - 10, h - 15, tw + 10, 15);
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.fillText(label, w - tw - 5, h - 4.5);
+  }
+  return cv;
+}
+
+/* Swap a rendered SVG route for the map version once it scrolls into view. */
+const mapCache = new Map();                  // key -> canvas | 'failed'
+const mapSeen = new IntersectionObserver(entries => {
+  for (const e of entries){
+    if (!e.isIntersecting) continue;
+    const el = e.target;
+    mapSeen.unobserve(el);
+    upgradeToMap(el);
+  }
+}, { rootMargin: '500px 0px' });
+
+/* cloneNode on a canvas copies the element but NOT its pixels — repaint instead */
+function copyCanvas(src){
+  const cv = document.createElement('canvas');
+  cv.width = src.width; cv.height = src.height;
+  cv.style.width = '100%'; cv.style.height = '100%';
+  cv.getContext('2d').drawImage(src, 0, 0);
+  return cv;
+}
+
+async function upgradeToMap(el){
+  const key = el.dataset.map;
+  const path = mapPaths.get(key);
+  if (!path || el.dataset.done) return;
+  const cached = mapCache.get(key);
+  if (cached === 'failed') return;
+  el.dataset.done = '1';
+  if (cached instanceof HTMLCanvasElement){ el.replaceChildren(copyCanvas(cached)); return; }
+  const r = el.getBoundingClientRect();
+  const w = Math.round(r.width  || el.clientWidth  || 380);
+  const h = Math.round(r.height || el.clientHeight || 170);
+  if (w < 20 || h < 20){ delete el.dataset.done; return; }         // not laid out yet — try next paint
+  try {
+    const cv = await renderRouteMap(path, w, h);
+    if (!cv){ mapCache.set(key, 'failed'); return; }               // keep the SVG we already drew
+    mapCache.set(key, cv);
+    el.replaceChildren(copyCanvas(cv));
+  } catch (err){ console.warn('map render', err); mapCache.set(key, 'failed'); }
+}
+const mapPaths = new Map();                  // key -> path, so markup stays small
+function observeMaps(){ $$('[data-map]').forEach(el => { if (!el.dataset.done) mapSeen.observe(el); }); }
+
+/* ============================================================
    4. BOOT FIREBASE
    ============================================================ */
 if (firebaseConfig.apiKey.startsWith('PASTE')) {
@@ -613,6 +826,7 @@ const runsCol = collection(db, 'runs');
 let ME = null;              // firebase user
 let RUNS = [];              // all run docs, newest first
 let PLAYERS = [];           // everyone who has ever signed in
+const PROFILE = new Map();  // uid -> {name, photo}; the live source of truth for display
 let unsubRuns = null, unsubUsers = null;
 const openComments = new Set();
 const commentCache = new Map();   // runId -> [{...}]
@@ -637,8 +851,7 @@ $('#btnGoogle').onclick = async () => {
   }
 };
 getRedirectResult(auth).catch(()=>{});
-$('#btnSignOut').onclick = () => signOut(auth);
-$('#meAvatar').onclick = () => switchTab('board');
+$('#btnSignOut').onclick = () => openProfile();
 
 onAuthStateChanged(auth, async user => {
   ME = user;
@@ -646,15 +859,29 @@ onAuthStateChanged(auth, async user => {
   show($('#app'), !!user);
   if (!user) { unsubRuns?.(); unsubUsers?.(); RUNS = []; PLAYERS = []; return; }
   $('#meAvatar').src = user.photoURL || avatarFor(user.displayName || 'You');
-  // keep a lightweight profile doc so people show up on the board before their first run
-  setDoc(doc(db,'users',user.uid), {
-    uid: user.uid,
-    name: user.displayName || (user.email || 'Runner').split('@')[0],
-    photo: user.photoURL || '',
-    lastSeen: serverTimestamp()
-  }, { merge:true }).catch(()=>{});
+  // Seed a profile doc from Google on first sign-in only — after that the
+  // name and photo are the player's to change, and we must not clobber them.
+  try {
+    const uref = doc(db, 'users', user.uid);
+    const snap = await getDoc(uref);
+    if (!snap.exists()){
+      await setDoc(uref, {
+        uid: user.uid,
+        name: user.displayName || (user.email || 'Runner').split('@')[0],
+        photo: user.photoURL || '',
+        joinedAt: serverTimestamp(),
+        lastSeen: serverTimestamp()
+      });
+    } else {
+      await setDoc(uref, { lastSeen: serverTimestamp() }, { merge:true });
+    }
+  } catch (err){ console.warn('profile', err.code || err); }
   watchRuns();
 });
+
+/* Names and photos are read live so a rename applies to old posts too. */
+const nameOf  = (uid, fallback) => (PROFILE.get(uid)?.name  || fallback || 'Runner');
+const photoOf = (uid, fallback) => (PROFILE.get(uid)?.photo || fallback || '');
 
 function avatarFor(name){
   const ltr = (name||'?').trim()[0]?.toUpperCase() || '?';
@@ -681,7 +908,9 @@ function watchRuns(){
   unsubUsers?.();
   unsubUsers = onSnapshot(collection(db,'users'), snap => {
     PLAYERS = snap.docs.map(d => d.data());
-    renderBoard();
+    PROFILE.clear();
+    for (const u of PLAYERS) if (u.uid) PROFILE.set(u.uid, { name: u.name, photo: u.photo });
+    renderAll();                       // a rename must reach every rendered surface
   }, err => console.warn('users listener:', err.code));
 }
 
@@ -697,9 +926,9 @@ function byPlayer(){
   for (const r of RUNS){
     if (!r.uid) continue;
     let p = map.get(r.uid);
-    if (!p){ p = { uid:r.uid, name:r.name || 'Runner', photo:r.photo || '', days:new Map(), total:0, seconds:0, runs:0 }; map.set(r.uid, p); }
-    if (r.name)  p.name  = r.name;
-    if (r.photo) p.photo = r.photo;
+    if (!p){ p = blank(r.uid, nameOf(r.uid, r.name), photoOf(r.uid, r.photo)); map.set(r.uid, p); }
+    p.name  = nameOf(r.uid, r.name || p.name);
+    p.photo = photoOf(r.uid, r.photo || p.photo);
     p.total   += r.miles || 0;
     p.seconds += r.seconds || 0;
     p.runs++;
@@ -776,6 +1005,10 @@ function renderToday(){
   show($('#btnUndo'), !!lastToday);
   const cd = challengeDay();
   $('#dayCounter').textContent = cd < 1 ? 'Starts Sept 1' : cd > 30 ? 'Challenge complete' : `Day ${cd} of 30`;
+  if (ME){
+    const p = PROFILE.get(ME.uid);
+    $('#meAvatar').src = p?.photo || ME.photoURL || avatarFor(p?.name || ME.displayName || 'You');
+  }
 }
 
 function renderCalendar(){
@@ -808,7 +1041,7 @@ function renderMyRuns(){
   $('#myRuns').innerHTML = mine.length
     ? mine.slice(0,10).map(r => postHTML(r, true)).join('')
     : `<div class="empty"><span class="em">👟</span>No runs yet. Hit <b>Start Run</b> and get your mile in.</div>`;
-  observePhotos();
+  observePhotos(); observeMaps();
 }
 
 function renderFeed(){
@@ -818,7 +1051,7 @@ function renderFeed(){
   el.innerHTML = RUNS.length
     ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
     : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
-  observePhotos();
+  observePhotos(); observeMaps();
 }
 
 function postHTML(r, compact=false){
@@ -839,20 +1072,24 @@ function postHTML(r, compact=false){
   const open = openComments.has(r.id);
   return `<article class="post glass" data-post="${r.id}">
     <div class="post-top">
-      <img src="${esc(r.photo || avatarFor(r.name))}" alt="" onerror="this.src='${avatarFor(r.name)}'"/>
-      <div class="who"><b>${esc(r.name || 'Runner')}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
+      <img src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
+      <div class="who"><b>${esc(nameOf(r.uid, r.name))}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
         <span>${dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}</span></div>
-      ${r.manual ? '<span class="badge">Manual</span>' : ''}
+      ${r.manual ? '<span class="badge">Manual</span>' : r.imported ? '<span class="badge imp">⌚ Watch</span>' : ''}
       ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
     </div>
-    ${r.hasPhoto
-      ? `<div class="shot" data-photo="${r.id}">
-           ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
-           ${path.length > 1 ? `<div class="inset">${routeSVG(path, 118, 76)}</div>` : ''}
-         </div>`
-      : `<div class="route">${routeSVG(path)}</div>`}
+    ${(() => {
+      if (path.length > 1) mapPaths.set(r.id, path);
+      const mapAttr = path.length > 1 ? ` data-map="${r.id}"` : '';
+      return r.hasPhoto
+        ? `<div class="shot" data-photo="${r.id}">
+             ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
+             ${path.length > 1 ? `<div class="inset"${mapAttr}>${routeSVG(path, 118, 76)}</div>` : ''}
+           </div>`
+        : `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
+    })()}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
       <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
@@ -863,7 +1100,7 @@ function postHTML(r, compact=false){
       <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
     </div>
     ${open ? `<div class="comments">
-      ${cmts.map(c=>`<div class="cmt"><img src="${esc(c.photo||avatarFor(c.name))}"/><div><b>${esc(c.name)}</b> ${esc(c.text)}</div></div>`).join('') || '<div style="color:var(--ink-faint);font-size:13px;margin-bottom:8px">No comments yet.</div>'}
+      ${cmts.map(c=>`<div class="cmt"><img src="${esc(photoOf(c.uid, c.photo) || avatarFor(nameOf(c.uid, c.name)))}"/><div><b>${esc(nameOf(c.uid, c.name))}</b> ${esc(c.text)}</div></div>`).join('') || '<div style="color:var(--ink-faint);font-size:13px;margin-bottom:8px">No comments yet.</div>'}
       <div class="cmt-form"><input placeholder="Add a comment…" maxlength="200" data-cinput="${r.id}"/>
         <button class="btn primary" data-csend="${r.id}">Send</button></div>
     </div>` : ''}
@@ -1010,7 +1247,10 @@ async function startRun(){
   if (!('geolocation' in navigator)) return toast('This browser has no GPS');
   if (!window.isSecureContext) return toast('GPS needs HTTPS — use the Pages URL, not a local file');
   Object.assign(T, { active:true, paused:false, points:[], meters:0, elapsed:0, recent:[],
-                     startTs:Date.now(), lastTick:Date.now() });
+                     startTs:Date.now(), lastTick:Date.now(), blackout:0, hiddenAt:0 });
+  const hint = $('#trkHint');
+  hint.classList.remove('warn');
+  hint.textContent = 'Keep this screen on and the app in front — phones stop GPS for background tabs.';
   $('#trkRoute').innerHTML = '';
   paintTracker();
   show($('#tracker'), true);
@@ -1086,13 +1326,158 @@ async function finishRun(){
   show($('#tracker'), false);
   const mi = T.meters / MI;
   if (mi < 0.02 && T.elapsed < 30) { toast('Run discarded — nothing recorded'); return; }
-  openSaveSheet(mi, T.elapsed, simplify(T.points).slice(0,300));
+  openSaveSheet(mi, T.elapsed, simplify(T.points).slice(0,300), T.blackout || 0);
 }
+/* A backgrounded tab gets its GPS cut off by the OS. We can't prevent that, so we
+   measure the blackout and tell the truth about it instead of silently under-counting. */
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && T.active && !T.wake)
-    try { T.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  if (!T.active) return;
+  if (document.visibilityState === 'hidden'){ T.hiddenAt = Date.now(); return; }
+
+  try { if (!T.wake) T.wake = await navigator.wakeLock?.request('screen'); } catch {}
+  const gap = T.hiddenAt ? (Date.now() - T.hiddenAt) / 1000 : 0;
+  T.hiddenAt = 0;
+  T.skipNext = true;                     // don't draw a fake straight line across the blackout
+  if (gap > 15){
+    T.blackout = (T.blackout || 0) + gap;
+    const hint = $('#trkHint');
+    hint.classList.add('warn');
+    hint.textContent = `GPS was off for ${clock(gap)} while the app was in the background — distance is short by whatever you covered then.`;
+    toast('Tracking gap — keep the screen on', 3600);
+  }
 });
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ============================================================
+   11b. PROFILE
+   ============================================================ */
+let pfPhoto = null;                     // pending photo change, null = unchanged
+
+function openProfile(){
+  if (!ME) return;
+  const me = byPlayer().get(ME.uid);
+  const cur = PROFILE.get(ME.uid) || {};
+  pfPhoto = null;
+  $('#pfName').value = cur.name || ME.displayName || '';
+  $('#pfImg').src    = cur.photo || ME.photoURL || avatarFor(cur.name || ME.displayName);
+  $('#pfDays').textContent   = me ? me.completed.length : 0;
+  $('#pfMiles').textContent  = me ? me.miles.toFixed(1) : '0.0';
+  $('#pfStreak').textContent = me ? me.streak : 0;
+  show($('#profileSheet'), true);
+}
+$('#meAvatar').onclick = openProfile;
+$('#pfCancel').onclick = () => { pfPhoto = null; show($('#profileSheet'), false); };
+$('#pfPick').onclick   = () => { $('#pfInput').value = ''; $('#pfInput').click(); };
+$('#pfSignOut').onclick = async () => {
+  if (!await askConfirm('Sign out?', 'Your runs stay saved — sign back in with the same Google account to get them.', 'Sign out')) return;
+  show($('#profileSheet'), false);
+  signOut(auth);
+};
+$('#pfInput').onchange = async () => {
+  const f = $('#pfInput').files?.[0]; if (!f) return;
+  try {
+    // avatars are small and live in the users doc, which everyone loads once
+    pfPhoto = await shrinkImage(f, 220, 0.72);
+    if (pfPhoto.length > 60000) pfPhoto = await shrinkImage(f, 160, 0.6);
+    $('#pfImg').src = pfPhoto;
+  } catch (err){ console.error(err); toast('Could not read that photo'); }
+};
+$('#pfSave').onclick = async () => {
+  const name = $('#pfName').value.trim();
+  if (!name) return toast('Pick a name people will recognise');
+  const btn = $('#pfSave'); btn.disabled = true; btn.textContent = 'Saving…';
+  const patch = { name };
+  if (pfPhoto) patch.photo = pfPhoto;
+  try {
+    await setDoc(doc(db,'users',ME.uid), patch, { merge:true });
+    if (pfPhoto) $('#meAvatar').src = pfPhoto;
+    pfPhoto = null;
+    show($('#profileSheet'), false);
+    toast('Profile updated');
+  } catch (err){
+    console.error(err);
+    toast('Could not save: ' + (err.code || err.message));
+  }
+  btn.disabled = false; btn.textContent = 'Save';
+};
+
+/* ============================================================
+   12a. GPX / TCX IMPORT
+   Every watch and app exports one of these. They're plain XML with
+   timestamped coordinates — the same thing watchPosition gives us,
+   just recorded by a device with a real GPS chip.
+   ============================================================ */
+function parseTrackFile(text){
+  const xml = new DOMParser().parseFromString(text, 'application/xml');
+  if (xml.querySelector('parsererror')) throw new Error("That file isn't valid XML.");
+
+  let pts = [];
+  // --- GPX: <trkpt lat="" lon=""><time/></trkpt>, falling back to route points ---
+  let nodes = [...xml.getElementsByTagName('trkpt')];
+  if (!nodes.length) nodes = [...xml.getElementsByTagName('rtept')];
+  if (nodes.length){
+    pts = nodes.map(n => ({
+      lat: parseFloat(n.getAttribute('lat')),
+      lng: parseFloat(n.getAttribute('lon')),
+      t:   Date.parse(n.getElementsByTagName('time')[0]?.textContent || '') || 0
+    }));
+  } else {
+    // --- TCX: <Trackpoint><Position><LatitudeDegrees/>… ---
+    nodes = [...xml.getElementsByTagName('Trackpoint')];
+    pts = nodes.map(n => ({
+      lat: parseFloat(n.getElementsByTagName('LatitudeDegrees')[0]?.textContent),
+      lng: parseFloat(n.getElementsByTagName('LongitudeDegrees')[0]?.textContent),
+      t:   Date.parse(n.getElementsByTagName('Time')[0]?.textContent || '') || 0
+    }));
+  }
+  pts = pts.filter(p => isFinite(p.lat) && isFinite(p.lng));
+  if (pts.length < 2) throw new Error('No GPS track found in that file.');
+
+  // distance, using the same jitter guards as live tracking so imports and
+  // live runs are measured by one ruler
+  let meters = 0;
+  for (let i = 1; i < pts.length; i++){
+    const d = haversine(pts[i-1], pts[i]);
+    if (d < 1) continue;
+    const dt = (pts[i].t && pts[i-1].t) ? (pts[i].t - pts[i-1].t)/1000 : 1;
+    if (dt > 0 && d/dt > 12) continue;          // teleport in the data
+    meters += d;
+  }
+
+  // prefer a TCX's own totals when present — the watch measured it better than we can
+  const tcxDist = [...xml.getElementsByTagName('DistanceMeters')].pop();
+  const lapDist = [...xml.getElementsByTagName('Lap')]
+    .map(l => parseFloat(l.getElementsByTagName('DistanceMeters')[0]?.textContent))
+    .filter(isFinite).reduce((a,b) => a+b, 0);
+  if (lapDist > 0) meters = lapDist;
+  else if (tcxDist && isFinite(parseFloat(tcxDist.textContent))) meters = parseFloat(tcxDist.textContent);
+
+  const times = pts.map(p => p.t).filter(Boolean);
+  const seconds = times.length > 1 ? (Math.max(...times) - Math.min(...times)) / 1000 : 0;
+  const started = times.length ? Math.min(...times) : Date.now();
+  const name = xml.getElementsByTagName('name')[0]?.textContent?.trim() || '';
+
+  return { miles: meters / MI, seconds, path: pts, started, name, points: pts.length };
+}
+
+$('#btnImport').onclick = () => { $('#gpxInput').value = ''; $('#gpxInput').click(); };
+$('#gpxInput').onchange = async () => {
+  const f = $('#gpxInput').files?.[0]; if (!f) return;
+  if (f.size > 25e6) return toast('That file is enormous — is it a full data export?');
+  try {
+    const parsed = parseTrackFile(await f.text());
+    if (parsed.miles < 0.01) return toast('That track has no distance in it');
+    openSaveSheet(parsed.miles, parsed.seconds, simplify(parsed.path).slice(0,300), 0, {
+      imported: true,
+      when: parsed.started,
+      label: parsed.name,
+      points: parsed.points
+    });
+  } catch (err){
+    console.error(err);
+    toast(err.message || "Couldn't read that file");
+  }
+};
 
 /* ============================================================
    12b. SELFIE — captured, shrunk, and stored inside the run doc's
@@ -1186,13 +1571,38 @@ function observePhotos(){ $$('[data-photo]').forEach(el => photoSeen.observe(el)
    13. SAVE SHEET
    ============================================================ */
 let pending = null;
-function openSaveSheet(miles, seconds, path){
-  pending = { miles, seconds, path, manual:false };
-  $('#saveTitle').textContent = miles >= CHALLENGE.goalMiles ? 'Day secured 🔥' : 'Run finished';
-  $('#saveSub').textContent = miles >= CHALLENGE.goalMiles
-    ? 'That clears the mile. Post it before someone doubts you.'
-    : `${(CHALLENGE.goalMiles - miles).toFixed(2)} mi short of the daily mile — it still logs.`;
-  $('#savePreview').innerHTML = routeSVG(path, 380, 160);
+function openSaveSheet(miles, seconds, path, blackout = 0, meta = null){
+  const imported = !!meta?.imported;
+  const day      = imported ? dayKey(meta.when) : todayKey();
+  pending = { miles, seconds, path, manual:false, imported, day,
+              startedAt: imported ? meta.when : Date.now() };
+
+  $('#saveTitle').textContent = imported
+    ? (meta.label || 'Imported activity')
+    : miles >= CHALLENGE.goalMiles ? 'Day secured 🔥' : 'Run finished';
+
+  if (imported){
+    const dayName = new Date(day + 'T12:00:00').toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+    const already = RUNS.some(r => r.uid === ME?.uid && r.day === day && Math.abs((r.miles||0) - miles) < 0.02);
+    $('#saveSub').textContent =
+      already ? `Careful — you already have a run this close to ${miles.toFixed(2)} mi on ${dayName}. Posting again would double-count it.`
+      : !inChallenge(day) ? `${meta.points.toLocaleString()} track points. This is dated ${dayName}, outside Sept 1–30, so it won't count toward the challenge.`
+      : `${meta.points.toLocaleString()} track points from your watch. Counts toward ${dayName}, not today.`;
+  } else {
+    $('#saveSub').textContent = blackout > 15
+      ? `Heads up: GPS was off for ${clock(blackout)} while the app was backgrounded, so this distance is short. Fix it on the manual log if you need to.`
+      : miles >= CHALLENGE.goalMiles
+        ? 'That clears the mile. Post it before someone doubts you.'
+        : `${(CHALLENGE.goalMiles - miles).toFixed(2)} mi short of the daily mile — it still logs.`;
+  }
+  $('#savePreview').innerHTML = routeSVG(path, 380, 200);
+  if (path.length > 1){
+    const key = 'preview-' + Date.now();
+    mapPaths.set(key, path);
+    $('#savePreview').dataset.map = key;
+    delete $('#savePreview').dataset.done;
+    upgradeToMap($('#savePreview'));
+  } else { delete $('#savePreview').dataset.map; }
   $('#svMiles').textContent = miles.toFixed(2);
   $('#svTime').textContent  = clock(seconds);
   $('#svPace').textContent  = miles > 0.02 ? paceStr(seconds/miles) : '—:—';
@@ -1231,22 +1641,23 @@ $('#mnSave').onclick = async () => {
   if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); switchTab('feed'); }
 };
 
-async function saveRun({miles, seconds, path, manual, note, photo}){
+async function saveRun({miles, seconds, path, manual, note, photo, imported, day, startedAt}){
   if (!ME) { toast('Not signed in'); return false; }
   try {
     const ref = await addDoc(runsCol, {
       uid: ME.uid,
       name: ME.displayName || (ME.email||'Runner').split('@')[0],
       photo: ME.photoURL || '',
-      day: todayKey(),
+      day: day || todayKey(),
       miles: Math.round(miles * 1000) / 1000,
       seconds: Math.round(seconds),
       manual: !!manual,
+      imported: !!imported,
       note: note || '',
       path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
       reactions: {},
       hasPhoto: !!photo,
-      startedAt: Date.now(),
+      startedAt: startedAt || Date.now(),
       createdAt: serverTimestamp()
     });
     if (photo){
@@ -1260,7 +1671,7 @@ async function saveRun({miles, seconds, path, manual, note, photo}){
         return true;
       }
     }
-    toast(miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
+    toast(imported ? 'Activity imported' : miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
     return true;
   } catch (err){
     console.error(err); toast('Save failed: ' + (err.code || err.message)); return false;
