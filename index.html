@@ -139,7 +139,6 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .post-top .who span{font-size:12px;color:var(--ink-faint)}
 .badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
   background:rgba(255,209,102,.16);color:var(--amber);border:1px solid rgba(255,209,102,.3)}
-.badge.imp{background:rgba(94,242,192,.14);color:var(--mint);border-color:rgba(94,242,192,.3)}
 .route{margin:13px 0 0;border-radius:var(--r-md);overflow:hidden;background:
   linear-gradient(150deg,rgba(124,92,255,.16),rgba(46,230,176,.10));border:1px solid rgba(255,255,255,.1);position:relative}
 .route{height:200px}
@@ -719,9 +718,12 @@ function routeSVG(path, w=380, h=170, id='r'+Math.random().toString(36).slice(2,
    ============================================================ */
 const TILE = 256, MAX_TILES = 28;
 /* Esri's World Dark Gray Canvas: no API key, no watermark, and it suits the theme.
-   (CARTO's public tiles now come stamped "API KEY REQUIRED".) Note the y/x order. */
+   (CARTO's public tiles now come stamped "API KEY REQUIRED".) Note the y/x order.
+   Its cache stops at zoom 16 — ask for 17+ and it serves a grey "Map data not yet
+   available" placard. blankTile=false turns any gap into an honest 404 instead. */
+const MAX_ZOOM = 16;
 const TILE_URL = (z,x,y) =>
-  `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+  `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}?blankTile=false`;
 const MAP_CREDIT = '© Esri · © OpenStreetMap';
 const lngToPx = (lng, z) => (lng + 180) / 360 * Math.pow(2, z) * TILE;
 const latToPx = (lat, z) => {
@@ -749,8 +751,12 @@ async function renderRouteMap(path, cssW, cssH){
   const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
   const pad = Math.max(18 * dpr, Math.min(w, h) * 0.14);
 
-  // biggest zoom at which the whole route still fits inside the frame
-  let z = 18, box = null;
+  // Deepest zoom at which the whole route still fits the frame. A one-mile loop
+  // wants ~18, but Esri's cache stops at 16 — so fit at z, fetch tiles at the
+  // deepest level that exists, and upscale them, exactly as a slippy map does.
+  // Two levels of upscale (4x) is the most that still looks like a map.
+  const FIT_MAX = MAX_ZOOM + 2;
+  let z = FIT_MAX, box = null;
   for (; z >= 2; z--){
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const p of path){
@@ -762,23 +768,32 @@ async function renderRouteMap(path, cssW, cssH){
   }
   if (!box){ console.debug('[map] route does not fit any zoom', {cssW, cssH}); return null; }
 
-  const left = (box.x0 + box.x1)/2 - w/2;      // world pixel at canvas x=0
+  const zTile = Math.min(z, MAX_ZOOM);           // level we can actually fetch
+  const up    = Math.pow(2, z - zTile);          // how much to blow each tile up
+  const size  = TILE * up;                       // drawn size of one tile
+
+  const left = (box.x0 + box.x1)/2 - w/2;        // world pixel (at z) for canvas x=0
   const top  = (box.y0 + box.y1)/2 - h/2;
-  const tx0 = Math.floor(left / TILE), tx1 = Math.floor((left + w) / TILE);
-  const ty0 = Math.floor(top  / TILE), ty1 = Math.floor((top  + h) / TILE);
+  const tx0 = Math.floor(left / size), tx1 = Math.floor((left + w) / size);
+  const ty0 = Math.floor(top  / size), ty1 = Math.floor((top  + h) / size);
   const need = (tx1 - tx0 + 1) * (ty1 - ty0 + 1);
   if (need > MAX_TILES){ console.debug('[map] too many tiles', need, 'zoom', z); return null; }
 
-  const span = Math.pow(2, z);
+  const span = Math.pow(2, zTile);
   const jobs = [];
   for (let tx = tx0; tx <= tx1; tx++)
     for (let ty = ty0; ty <= ty1; ty++){
       if (ty < 0 || ty >= span) continue;
       const wrapped = ((tx % span) + span) % span;               // wrap across the date line
-      jobs.push(loadTile(TILE_URL(z, wrapped, ty)).then(img => ({ img, tx, ty })));
+      jobs.push(loadTile(TILE_URL(zTile, wrapped, ty)).then(img => ({ img, tx, ty })));
     }
   const tiles = await Promise.all(jobs);
-  if (!tiles.some(t => t.img)){ console.debug('[map] no tiles loaded — offline or blocked'); return null; }
+  // A mostly-empty map looks broken; the plain gradient line looks deliberate.
+  const got = tiles.filter(t => t.img).length;
+  if (got < Math.ceil(tiles.length / 2)){
+    console.debug('[map] only', got, 'of', tiles.length, 'tiles — falling back to the line');
+    return null;
+  }
 
   const cv  = document.createElement('canvas');
   cv.width  = w;
@@ -789,7 +804,7 @@ async function renderRouteMap(path, cssW, cssH){
   ctx.fillStyle = '#12122a';
   ctx.fillRect(0, 0, w, h);
   for (const { img, tx, ty } of tiles)
-    if (img) ctx.drawImage(img, tx*TILE - left, ty*TILE - top, TILE, TILE);
+    if (img) ctx.drawImage(img, tx*size - left, ty*size - top, size, size);
 
   // knock the basemap back so the route reads as the subject
   ctx.fillStyle = 'rgba(10,10,26,.34)';
@@ -1194,7 +1209,7 @@ function postHTML(r, compact=false){
       <img src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
       <div class="who"><b>${esc(nameOf(r.uid, r.name))}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
         <span>${dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}</span></div>
-      ${r.manual ? '<span class="badge">Manual</span>' : r.imported ? '<span class="badge imp">⌚ Watch</span>' : ''}
+      ${r.manual ? '<span class="badge">Manual</span>' : ''}
       ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
