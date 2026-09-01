@@ -723,8 +723,12 @@ const TILE = 256, MAX_TILES = 28;
    available" placard. blankTile=false turns any gap into an honest 404 instead. */
 const MAX_ZOOM = 16;
 /* How much of the card the route itself takes up. Lower = zoomed further out,
-   more surrounding streets for context. 1.0 would crop it to the edges. */
-const MAP_FILL = 0.60;
+   more surrounding streets for context. 1.0 would crop it to the edges.
+   Append ?fill=0.35 to the URL to preview a different value without editing this. */
+const MAP_FILL = (() => {
+  const q = parseFloat(new URLSearchParams(location.search).get('fill'));
+  return (q > 0.1 && q <= 1) ? q : 0.45;
+})();
 const TILE_URL = (z,x,y) =>
   `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}?blankTile=false`;
 const MAP_CREDIT = '© Esri · © OpenStreetMap';
@@ -855,6 +859,8 @@ async function renderRouteMap(path, cssW, cssH){
   }
   return cv;
 }
+
+window.__renderRouteMap = renderRouteMap;   // used by the framing preview harness
 
 /* Swap a rendered SVG route for the map version once it scrolls into view. */
 const mapCache = new Map();                  // key -> canvas | 'failed'
