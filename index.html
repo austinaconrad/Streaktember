@@ -171,6 +171,13 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .shot .inset{position:absolute;right:10px;bottom:10px;width:118px;height:76px;border-radius:12px;overflow:hidden;
   background:rgba(8,8,22,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);
   box-shadow:0 10px 24px -10px rgba(0,0,0,.9)}
+/* selfie tucked into the map's bottom-left corner (the credit sits bottom-right) */
+.selfie{position:absolute;left:10px;bottom:10px;width:92px;height:118px;border-radius:13px;overflow:hidden;z-index:2;
+  background:rgba(8,8,22,.55);border:1.5px solid rgba(255,255,255,.28);
+  box-shadow:0 12px 28px -10px rgba(0,0,0,.95)}
+.selfie img{display:block;width:100%;height:100%;object-fit:cover}
+.selfie .ph{position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,.05),rgba(255,255,255,.13),rgba(255,255,255,.05));
+  background-size:220% 100%;animation:sh 1.4s infinite}
 .shot .inset svg,.shot .inset canvas{display:block;width:100%;height:100%}
 .shot .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-faint);font-size:12.5px;
   background:linear-gradient(100deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
@@ -196,6 +203,9 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
 .picker .react.pick{padding:6px 10px;font-size:16px;background:transparent;border:0}
 .picker .react.pick:hover{background:rgba(255,255,255,.1)}
+.addphoto{appearance:none;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.18);
+  border-radius:999px;margin-left:auto;color:var(--ink-dim)}
+.addphoto + .cbtn{margin-left:10px}
 .cbtn{margin-left:auto;font-size:12.5px;color:var(--ink-dim);cursor:pointer;padding:7px 10px;font-weight:600}
 .del{flex:none;appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);
   width:30px;height:30px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
@@ -424,6 +434,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
         <button class="btn ghost" id="btnManual">Log manually</button>
         <button class="linkbtn" id="btnStart">or track it live in the browser →</button>
         <input type="file" id="gpxInput" class="vh" />
+        <input type="file" accept="image/*" id="addPhotoInput" class="vh" />
       </div>
     </div>
 
@@ -929,7 +940,9 @@ async function upgradeToMap(el){
   if (cached === 'failed') return false;              // keep the SVG line we already drew
 
   const paint = cv => {
-    el.replaceChildren(copyCanvas(cv));
+    // keep any overlay children (the selfie inset) — replaceChildren would drop them
+    const keep = [...el.children].filter(n => n.classList.contains('selfie'));
+    el.replaceChildren(copyCanvas(cv), ...keep);
     el.dataset.done = '1';
   };
   if (cached instanceof HTMLCanvasElement){ paint(cached); return true; }
@@ -1311,12 +1324,17 @@ function postHTML(r, compact=false){
     ${(() => {
       if (path.length > 1) mapPaths.set(r.id, path);
       const mapAttr = path.length > 1 ? ` data-map="${r.id}"` : '';
-      return r.hasPhoto
-        ? `<div class="shot" data-photo="${r.id}">
-             ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
-             ${path.length > 1 ? `<div class="inset"${mapAttr}>${routeSVG(path, 118, 76)}</div>` : ''}
-           </div>`
-        : `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
+      const cached  = photoCache.get(r.id);
+      const selfie  = r.hasPhoto
+        ? `<div class="selfie" data-photo="${r.id}">${
+             cached ? `<img src="${cached}" alt="Run selfie"/>` : `<div class="ph"></div>`}</div>`
+        : '';
+      // The map is the record of the run, so it leads; the selfie tucks into the corner.
+      // With no GPS trace there's no map worth leading with, so the photo takes over.
+      return (path.length > 1 || !r.hasPhoto)
+        ? `<div class="route"${mapAttr}>${routeSVG(path)}${selfie}</div>`
+        : `<div class="shot" data-photo="${r.id}">${
+             cached ? `<img src="${cached}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}</div>`;
     })()}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
@@ -1325,6 +1343,7 @@ function postHTML(r, compact=false){
     </div>
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
     <div class="reacts">${reactBtns}
+      ${mine && !r.hasPhoto ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
       <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
     </div>
     ${open ? `<div class="comments">
@@ -1567,6 +1586,13 @@ document.addEventListener('click', async e => {
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
+
+  const addPhoto = e.target.closest('[data-addphoto]');
+  if (addPhoto && ME){
+    pendingPhotoRun = addPhoto.dataset.addphoto;
+    $('#addPhotoInput').value = '';
+    $('#addPhotoInput').click();
+  }
 
   if (pick){
     const id = pick.dataset.pick;
@@ -1976,6 +2002,36 @@ function photoSlot(slotId, inputId){
 const svPhoto = photoSlot('svPhoto', 'svPhotoInput');
 const mnPhoto = photoSlot('mnPhoto', 'mnPhotoInput');
 
+/* Attach a photo to a run that was already posted — for the times the upload
+   failed, or you only remembered to take the picture afterwards. */
+let pendingPhotoRun = null;
+$('#addPhotoInput').onchange = async () => {
+  const f = $('#addPhotoInput').files?.[0];
+  const id = pendingPhotoRun;
+  pendingPhotoRun = null;
+  if (!f || !id || !ME) return;
+  const run = RUNS.find(r => r.id === id);
+  if (!run || run.uid !== ME.uid) return toast('You can only add photos to your own runs');
+
+  toast('Adding photo…');
+  let url;
+  try { url = await shrinkImage(f); }
+  catch (err){
+    console.error(err);
+    return toast(err.message === 'too-big' ? 'That photo is too large' : 'Could not read that photo', 4200);
+  }
+  try {
+    await setDoc(doc(db, 'runs', id, 'media', 'photo'), { uid: ME.uid, img: url, ts: Date.now() });
+    await setDoc(doc(db, 'runs', id), { hasPhoto: true }, { merge:true });
+    photoCache.set(id, url);
+    scheduleRender();
+    toast('Photo added');
+  } catch (err){
+    console.error(err);
+    toast('Photo did not save: ' + (err.code || err.message), 7000);
+  }
+};
+
 /* ---- lazy-load photos into the feed only as posts scroll into view ---- */
 const photoCache = new Map();       // runId -> dataURL | null
 const photoSeen  = new IntersectionObserver(async entries => {
@@ -1996,13 +2052,22 @@ const photoSeen  = new IntersectionObserver(async entries => {
 function paintPhoto(el, url){
   const ph = el.querySelector('.ph');
   if (!url){ if (ph) ph.textContent = 'Photo unavailable'; return; }
+  if (el.querySelector(':scope > img')) return;      // postHTML already drew it from cache
   const img = new Image();
   img.alt = 'Run selfie';
-  img.onload = () => { ph?.remove(); el.prepend(img); };
+  img.onload = () => {
+    if (!el.isConnected) return;                     // the post was re-rendered mid-load
+    el.querySelectorAll(':scope > img').forEach(n => n.remove());   // never stack two
+    ph?.remove();
+    el.prepend(img);
+  };
   img.src = url;
 }
-/* call after any feed repaint */
-function observePhotos(){ $$('[data-photo]').forEach(el => photoSeen.observe(el)); }
+/* Call after any feed repaint. Posts whose photo is already on screen are skipped —
+   observing them again is how the same selfie ended up drawn twice. */
+function observePhotos(){
+  $$('[data-photo]').forEach(el => { if (!el.querySelector(':scope > img')) photoSeen.observe(el); });
+}
 
 /* ============================================================
    13. SAVE SHEET
