@@ -30,6 +30,7 @@
   --glass-brd:rgba(255,255,255,.15);
   --glass-shadow:0 24px 48px -24px rgba(0,0,0,.75);
   --r-lg:26px; --r-md:18px; --r-sm:12px;
+  --photo-h:270px;          /* how tall a feed photo may get before it's cropped */
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
 }
@@ -178,9 +179,12 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .photoslot .swap button{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(10,10,25,.62);
   backdrop-filter:blur(14px);color:var(--ink);font:600 12.5px 'Outfit',sans-serif;padding:8px 13px;border-radius:999px;cursor:pointer}
 .shot{position:relative;margin-top:13px;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.04);min-height:200px}
-.shot img{display:block;width:100%;max-height:440px;object-fit:cover}
-.shot{position:relative}
+  background:rgba(255,255,255,.04);min-height:140px}
+/* A portrait phone screenshot at full width eats a whole screen, so photos are
+   capped and cover-cropped. --photo-h is the dial; the tap-to-open view shows
+   the whole uncropped image. */
+.shot img{display:block;width:100%;max-height:var(--photo-h);object-fit:cover;cursor:zoom-in}
+.shot .selfie img{cursor:zoom-in}
 .shot .inset{position:absolute;right:10px;bottom:10px;width:118px;height:76px;border-radius:12px;overflow:hidden;
   background:rgba(8,8,22,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);
   box-shadow:0 10px 24px -10px rgba(0,0,0,.9)}
@@ -370,6 +374,12 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
 /* ---- misc ---- */
 .empty{text-align:center;padding:44px 20px;color:var(--ink-faint);font-size:14px;line-height:1.6}
 .empty .em{font-size:40px;display:block;margin-bottom:12px;opacity:.8}
+#photoView{position:fixed;inset:0;z-index:88;background:rgba(4,4,12,.94);backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:center;padding:calc(var(--safe-t) + 40px) 12px calc(24px + var(--safe-b))}
+#photoView img{max-width:100%;max-height:100%;object-fit:contain;border-radius:14px}
+#pvClose{position:absolute;top:calc(var(--safe-t) + 12px);right:14px;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--glass-brd);background:rgba(20,20,44,.8);backdrop-filter:blur(18px);color:var(--ink);
+  font:600 16px 'Outfit',sans-serif;cursor:pointer}
 #offline{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--safe-t) + 8px);z-index:95;
   padding:8px 16px;border-radius:999px;font-size:12.5px;font-weight:600;text-align:center;max-width:92vw;
   background:rgba(255,209,102,.16);border:1px solid rgba(255,209,102,.36);color:var(--amber);
@@ -637,6 +647,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   </div>
 </div>
 
+<div id="photoView" class="hide"><img id="pvImg" alt="" /><button id="pvClose" aria-label="Close">✕</button></div>
 <div id="offline" class="hide">⚠ Offline — anything you log is saved and syncs later</div>
 <div id="toast"></div>
 <div id="cfgWarn" class="glass hide"></div>
@@ -1633,6 +1644,13 @@ document.addEventListener('click', async e => {
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
 
+  const bigPhoto = e.target.closest('.shot > img, .selfie > img');
+  if (bigPhoto){
+    $('#pvImg').src = bigPhoto.src;
+    show($('#photoView'), true);
+    return;
+  }
+
   const addPhoto = e.target.closest('[data-addphoto]');
   if (addPhoto && ME){
     pendingPhotoRun = addPhoto.dataset.addphoto;
@@ -2230,6 +2248,13 @@ $('#mnWhenToggle').onclick = () => {
   updateWhenHint();
 };
 $('#mnWhen').oninput = updateWhenHint;
+
+const closePhotoView = () => { show($('#photoView'), false); $('#pvImg').src = ''; };
+$('#pvClose').onclick = closePhotoView;
+$('#photoView').onclick = e => { if (e.target !== $('#pvImg')) closePhotoView(); };
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#photoView').classList.contains('hide')) closePhotoView();
+});
 
 function updatePaceHint(){
   const mi = parseFloat($('#mnMiles').value), secs = mnSeconds();
