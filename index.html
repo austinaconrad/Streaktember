@@ -2080,39 +2080,73 @@ $('#mnSave').onclick = async () => {
 
 async function saveRun({miles, seconds, path, manual, note, photo, imported, day, startedAt}){
   if (!ME) { toast('Not signed in'); return false; }
-  try {
-    const ref = await addDoc(runsCol, {
-      uid: ME.uid,
-      name: ME.displayName || (ME.email||'Runner').split('@')[0],
-      photo: ME.photoURL || '',
-      day: day || todayKey(),
-      miles: Math.round(miles * 1000) / 1000,
-      seconds: Math.round(seconds),
-      manual: !!manual,
-      imported: !!imported,
-      note: note || '',
-      path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
-      reactions: {},
-      hasPhoto: !!photo,
-      startedAt: startedAt || Date.now(),
-      createdAt: serverTimestamp()
-    });
-    if (photo){
-      try {
-        await setDoc(doc(db, 'runs', ref.id, 'media', 'photo'), { uid: ME.uid, img: photo, ts: Date.now() });
-        photoCache.set(ref.id, photo);                     // show instantly, no re-fetch
-      } catch (err){
-        console.error(err);
-        await updateDoc(ref, { hasPhoto: false });         // run still counts; photo just didn't stick
-        toast('Run saved, but the photo failed to upload');
-        return true;
-      }
-    }
-    toast(imported ? 'Activity imported' : miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
-    return true;
-  } catch (err){
-    console.error(err); toast('Save failed: ' + (err.code || err.message)); return false;
+
+  // With the offline cache on, a write promise settles only when the SERVER acks —
+  // not when the local write lands. Awaiting one in a dead zone hangs forever, and
+  // awaiting the run before writing the photo is how a run ends up posted photo-less.
+  // So: generate the id ourselves, fire both writes together, and report failures
+  // asynchronously rather than blocking on them.
+  const ref = doc(runsCol);
+  const runWrite = setDoc(ref, {
+    uid: ME.uid,
+    name: ME.displayName || (ME.email||'Runner').split('@')[0],
+    photo: ME.photoURL || '',
+    day: day || todayKey(),
+    miles: Math.round(miles * 1000) / 1000,
+    seconds: Math.round(seconds),
+    manual: !!manual,
+    imported: !!imported,
+    note: note || '',
+    path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
+    reactions: {},
+    hasPhoto: !!photo,
+    startedAt: startedAt || Date.now(),
+    createdAt: serverTimestamp()
+  }).then(() => null, e => ({ what:'run', e }));
+
+  let photoWrite = null;
+  if (photo){
+    photoCache.set(ref.id, photo);                        // show it instantly from memory
+    photoWrite = setDoc(doc(db, 'runs', ref.id, 'media', 'photo'),
+      { uid: ME.uid, img: photo, ts: Date.now() }
+    ).then(() => null, e => ({ what:'photo', e }));
   }
+
+  const jobs = [runWrite, photoWrite].filter(Boolean);
+  const report = fails => {
+    const runFail   = fails.find(f => f?.what === 'run');
+    const photoFail = fails.find(f => f?.what === 'photo');
+    if (runFail){
+      console.error(runFail.e);
+      toast('Run did not save: ' + (runFail.e.code || runFail.e.message), 6000);
+      return;
+    }
+    if (photoFail){
+      console.error(photoFail.e);
+      photoCache.delete(ref.id);
+      setDoc(ref, { hasPhoto: false }, { merge:true }).catch(()=>{});   // don't leave a broken photo slot
+      toast('Photo did not save: ' + (photoFail.e.code || photoFail.e.message)
+            + '. The run still counts.', 7000);
+    }
+  };
+
+  // Wait briefly so an online failure (denied rules, bad data) is reported right away,
+  // but never block the UI on a queued offline write.
+  const settled = await Promise.race([
+    Promise.all(jobs),
+    new Promise(r => setTimeout(() => r(null), 4000))
+  ]);
+
+  if (settled){
+    const fails = settled.filter(Boolean);
+    if (fails.length){ report(fails); return !fails.some(f => f.what === 'run'); }
+  } else {
+    Promise.all(jobs).then(rs => { const f = rs.filter(Boolean); if (f.length) report(f); });
+    toast('Saved — will sync when you\'re back online', 4200);
+    return true;
+  }
+  toast(imported ? 'Activity imported' : miles >= CHALLENGE.goalMiles ? 'Day logged 🔥' : 'Run logged');
+  return true;
 }
 </script>
 </body>
