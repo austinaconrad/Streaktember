@@ -40,7 +40,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 /* ---- animated aurora backdrop ---- */
-#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+#bg{position:fixed;inset:0;height:100lvh;min-height:100%;z-index:-2;overflow:hidden;background:
   radial-gradient(1100px 800px at 12% -8%, #2b1e6b 0%, transparent 60%),
   radial-gradient(900px 700px at 92% 4%, #0d5c68 0%, transparent 58%),
   radial-gradient(1000px 900px at 50% 108%, #4a1750 0%, transparent 62%),
@@ -50,7 +50,7 @@ body{
 #bg:before{width:60vw;height:60vw;left:-14vw;top:6vh;background:radial-gradient(circle,#7c5cff,transparent 66%)}
 #bg:after{width:55vw;height:55vw;right:-12vw;bottom:2vh;background:radial-gradient(circle,#2ee6b0,transparent 66%);animation-duration:34s}
 @keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(6vw,-6vh,0) scale(1.18)}}
-#grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.16;mix-blend-mode:overlay;
+#grain{position:fixed;inset:0;height:100lvh;min-height:100%;z-index:-1;pointer-events:none;opacity:.10;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
 @media (prefers-reduced-motion:reduce){#bg:before,#bg:after{animation:none}}
 
@@ -74,8 +74,15 @@ input:focus,textarea:focus{border-color:rgba(94,242,192,.6);background:rgba(255,
 .hide{display:none!important}
 
 /* ---- layout ---- */
-#app{max-width:640px;margin:0 auto;padding:calc(var(--safe-t) + 14px) 16px calc(112px + var(--safe-b));min-height:100%}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+/* iOS detaches position:fixed elements during momentum scrolling, which makes a
+   fixed nav drift and a fixed background clip. Scrolling an inner container
+   instead of the document keeps every fixed layer nailed down. */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+#app{position:fixed;inset:0;max-width:640px;margin:0 auto;display:flex;flex-direction:column}
+#scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:0 16px calc(116px + var(--safe-b))}
+header{flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--safe-t) + 14px) 16px 14px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand .mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--mint),var(--violet));
   display:grid;place-items:center;font-size:18px;box-shadow:0 8px 20px -8px rgba(124,92,255,.8)}
@@ -134,35 +141,6 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .route{height:200px}
 .route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
-/* ---- fullscreen interactive map ---- */
-#mapView{position:fixed;inset:0;z-index:90;background:#0a0a18;display:flex;flex-direction:column}
-#mapCanvas{position:absolute;inset:0;z-index:0;background:#0a0a18}
-.mv-bar{position:relative;z-index:5;display:flex;align-items:center;gap:12px;
-  padding:calc(var(--safe-t) + 12px) 14px 12px;
-  background:linear-gradient(180deg,rgba(8,8,20,.9),rgba(8,8,20,0))}
-.mv-who{flex:1;min-width:0}
-.mv-who b{display:block;font-size:16px;font-weight:700}
-.mv-who span{font-size:12px;color:var(--ink-faint)}
-.mv-close{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
-  color:var(--ink);border:1px solid var(--glass-brd);background:rgba(20,20,44,.72);backdrop-filter:blur(18px)}
-.mv-stats{position:relative;z-index:5;margin-top:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
-  padding:12px 14px calc(14px + var(--safe-b));
-  background:linear-gradient(0deg,rgba(8,8,20,.92),rgba(8,8,20,0))}
-.mv-stats .pstat{background:rgba(20,20,44,.72);backdrop-filter:blur(18px);border:1px solid var(--glass-brd)}
-.mv-fit{appearance:none;color:var(--ink);cursor:pointer;font-family:inherit}
-.mv-fit b{color:var(--mint)}
-/* Leaflet's own chrome, restyled to match */
-#mapCanvas .leaflet-control-zoom a{background:rgba(20,20,44,.85);color:#eef1ff;border-color:rgba(255,255,255,.14)}
-#mapCanvas .leaflet-control-zoom a:hover{background:rgba(40,40,80,.9)}
-#mapCanvas .leaflet-control-attribution{background:rgba(8,8,20,.6);color:rgba(255,255,255,.55);font-size:9.5px}
-#mapCanvas .leaflet-control-attribution a{color:rgba(255,255,255,.7)}
-/* a hint that the thumbnail opens */
-.route,.shot .inset{position:relative}
-.route[data-map],.shot .inset[data-map]{cursor:zoom-in}
-.expand{position:absolute;left:9px;top:9px;z-index:2;pointer-events:none;
-  padding:5px 9px;border-radius:999px;font:700 9.5px 'Outfit',sans-serif;letter-spacing:.08em;text-transform:uppercase;
-  color:rgba(255,255,255,.82);background:rgba(8,8,20,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16)}
-
 /* ---- profile ---- */
 .prof{display:flex;gap:14px;align-items:center}
 .prof-av{position:relative;width:76px;height:76px;flex:none;border-radius:50%;overflow:hidden;padding:0;cursor:pointer;
@@ -201,6 +179,16 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .react:active{transform:scale(.93)}
 .react.on{background:rgba(94,242,192,.18);border-color:rgba(94,242,192,.45)}
 .react .n{font-size:12px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.react.on .n{color:var(--mint)}
+.addreact{appearance:none;cursor:pointer;font:600 13px/1 'Outfit',sans-serif;color:var(--ink-faint);
+  padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.17);
+  transition:.15s}
+.addreact:hover{color:var(--ink-dim);border-color:rgba(255,255,255,.3)}
+.addreact.on{border-style:solid;background:rgba(255,255,255,.09);color:var(--ink)}
+.picker{display:inline-flex;gap:6px;padding:4px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.picker .react.pick{padding:6px 10px;font-size:16px;background:transparent;border:0}
+.picker .react.pick:hover{background:rgba(255,255,255,.1)}
 .cbtn{margin-left:auto;font-size:12.5px;color:var(--ink-dim);cursor:pointer;padding:7px 10px;font-weight:600}
 .del{flex:none;appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);
   width:30px;height:30px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
@@ -269,7 +257,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .dead{opacity:.55}
 
 /* ---- bottom nav ---- */
-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-b));z-index:40;
+nav{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-b));z-index:40;
   display:flex;gap:4px;padding:6px;border-radius:999px;background:rgba(18,18,40,.55);backdrop-filter:blur(28px) saturate(180%);
   -webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid var(--glass-brd);box-shadow:0 20px 40px -18px rgba(0,0,0,.8)}
 nav button{appearance:none;border:0;background:transparent;color:var(--ink-faint);font:600 11.5px/1 'Outfit',sans-serif;
@@ -368,6 +356,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <img class="avatar" id="meAvatar" alt="You" />
   </header>
 
+  <div id="scroll">
   <!-- ---------- TODAY ---------- -->
   <section id="tab-today">
     <div class="hero glass">
@@ -446,6 +435,8 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     </div>
   </section>
 
+  </div><!-- /#scroll -->
+
   <nav>
     <button class="on" data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Today</button>
     <button data-tab="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</button>
@@ -517,23 +508,6 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
     </div>
-  </div>
-</div>
-
-<!-- ======================= FULLSCREEN MAP ======================= -->
-<div id="mapView" class="hide">
-  <div id="mapCanvas"></div>
-  <div class="mv-bar">
-    <div class="mv-who"><b id="mvName">—</b><span id="mvWhen">—</span></div>
-    <button class="mv-close" id="mvClose" aria-label="Close map">
-      <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
-    </button>
-  </div>
-  <div class="mv-stats">
-    <div class="pstat"><b class="mono" id="mvMiles">—</b><span>Miles</span></div>
-    <div class="pstat"><b class="mono" id="mvTime">—</b><span>Time</span></div>
-    <div class="pstat"><b class="mono" id="mvPace">—</b><span>Per mile</span></div>
-    <button class="pstat mv-fit" id="mvFit"><b>⤢</b><span>Fit route</span></button>
   </div>
 </div>
 
@@ -782,13 +756,14 @@ async function renderRouteMap(path, cssW, cssH){
     }
     if (x1 - x0 <= w - pad*2 && y1 - y0 <= h - pad*2){ box = {x0,x1,y0,y1}; break; }
   }
-  if (!box) return null;
+  if (!box){ console.debug('[map] route does not fit any zoom', {cssW, cssH}); return null; }
 
   const left = (box.x0 + box.x1)/2 - w/2;      // world pixel at canvas x=0
   const top  = (box.y0 + box.y1)/2 - h/2;
   const tx0 = Math.floor(left / TILE), tx1 = Math.floor((left + w) / TILE);
   const ty0 = Math.floor(top  / TILE), ty1 = Math.floor((top  + h) / TILE);
-  if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > MAX_TILES) return null;
+  const need = (tx1 - tx0 + 1) * (ty1 - ty0 + 1);
+  if (need > MAX_TILES){ console.debug('[map] too many tiles', need, 'zoom', z); return null; }
 
   const span = Math.pow(2, z);
   const jobs = [];
@@ -799,7 +774,7 @@ async function renderRouteMap(path, cssW, cssH){
       jobs.push(loadTile(TILE_URL(z, wrapped, ty)).then(img => ({ img, tx, ty })));
     }
   const tiles = await Promise.all(jobs);
-  if (!tiles.some(t => t.img)) return null;                      // offline / blocked → caller falls back
+  if (!tiles.some(t => t.img)){ console.debug('[map] no tiles loaded — offline or blocked'); return null; }
 
   const cv  = document.createElement('canvas');
   cv.width  = w;
@@ -864,11 +839,11 @@ const mapCache = new Map();                  // key -> canvas | 'failed'
 const mapSeen = new IntersectionObserver(entries => {
   for (const e of entries){
     if (!e.isIntersecting) continue;
-    const el = e.target;
-    mapSeen.unobserve(el);
-    upgradeToMap(el);
+    // Stop watching only once the swap actually succeeded. A card in a hidden tab
+    // measures zero; it must stay observed or it never becomes a map.
+    upgradeToMap(e.target).then(ok => { if (ok) mapSeen.unobserve(e.target); });
   }
-}, { rootMargin: '500px 0px' });
+}, { root: document.getElementById('scroll'), rootMargin: '600px 0px' });
 
 /* cloneNode on a canvas copies the element but NOT its pixels — repaint instead */
 function copyCanvas(src){
@@ -879,28 +854,47 @@ function copyCanvas(src){
   return cv;
 }
 
+/* Returns true once this element is showing a map, false if it should be retried. */
 async function upgradeToMap(el){
-  const key = el.dataset.map;
+  const key  = el.dataset.map;
   const path = mapPaths.get(key);
-  if (!path || el.dataset.done) return;
+  if (!path || el.dataset.done) return false;
   const cached = mapCache.get(key);
-  if (cached === 'failed') return;
-  el.dataset.done = '1';
-  if (cached instanceof HTMLCanvasElement){ el.replaceChildren(copyCanvas(cached)); return; }
+  if (cached === 'failed') return false;              // keep the SVG line we already drew
+
+  const paint = cv => {
+    el.replaceChildren(copyCanvas(cv));
+    el.dataset.done = '1';
+  };
+  if (cached instanceof HTMLCanvasElement){ paint(cached); return true; }
+
   const r = el.getBoundingClientRect();
-  const w = Math.round(r.width  || el.clientWidth  || 380);
-  const h = Math.round(r.height || el.clientHeight || 170);
-  if (w < 20 || h < 20){ delete el.dataset.done; return; }         // not laid out yet — try next paint
+  const w = Math.round(r.width), h = Math.round(r.height);
+  if (w < 20 || h < 20) return false;                 // hidden tab or not laid out yet — retry later
+
+  el.dataset.done = '1';                              // claim it so two callbacks don't both render
   try {
     const cv = await renderRouteMap(path, w, h);
-    if (!cv){ mapCache.set(key, 'failed'); return; }               // keep the SVG we already drew
+    if (!cv){ mapCache.set(key, 'failed'); delete el.dataset.done; return false; }
     mapCache.set(key, cv);
-    el.replaceChildren(copyCanvas(cv));
-    if (hint) el.appendChild(hint);
-  } catch (err){ console.warn('map render', err); mapCache.set(key, 'failed'); }
+    if (el.isConnected) paint(cv);                    // the element can be replaced mid-render
+    return true;
+  } catch (err){
+    console.warn('map render failed', err);
+    mapCache.set(key, 'failed');
+    delete el.dataset.done;
+    return false;
+  }
 }
 const mapPaths = new Map();                  // key -> path, so markup stays small
-function observeMaps(){ $$('[data-map]').forEach(el => { if (!el.dataset.done) mapSeen.observe(el); }); }
+function observeMaps(){
+  for (const el of $$('[data-map]')){
+    if (el.dataset.done) continue;
+    // already rendered once? paint it straight from cache, no observer round-trip
+    if (mapCache.get(el.dataset.map) instanceof HTMLCanvasElement) upgradeToMap(el);
+    else mapSeen.observe(el);
+  }
+}
 
 /* ============================================================
    4. BOOT FIREBASE
@@ -928,6 +922,7 @@ let PLAYERS = [];           // everyone who has ever signed in
 const PROFILE = new Map();  // uid -> {name, photo}; the live source of truth for display
 let unsubRuns = null, unsubUsers = null;
 const openComments = new Set();
+const openPickers  = new Set();
 const commentCache = new Map();   // runId -> [{...}]
 const commentUnsubs = new Map();
 const REACTS = [
@@ -1170,12 +1165,24 @@ function postHTML(r, compact=false){
   const dstr  = !r.day ? '' : r.day === todayKey() ? 'Today' : r.day === yk ? 'Yesterday'
               : new Date(r.day+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
   const pace  = r.seconds && r.miles ? paceStr(r.seconds / r.miles) : '—:—';
-  const reactBtns = REACTS.map(x => {
-    const list = (r.reactions && r.reactions[x.k]) || [];
-    const on = ME && list.includes(ME.uid);
-    return `<button class="react ${on?'on':''}" data-react="${x.k}" data-run="${r.id}">
-              ${x.e}${list.length ? `<span class="n">${list.length}</span>` : ''}</button>`;
+  // Only reactions people actually left are shown; the rest live behind the + picker,
+  // so an untouched post looks untouched instead of showing a full row of emoji.
+  const counts = REACTS.map(x => ({ ...x, list: (r.reactions && r.reactions[x.k]) || [] }));
+  const used   = counts.filter(x => x.list.length);
+  const total  = used.reduce((n, x) => n + x.list.length, 0);
+  const chips  = used.map(x => {
+    const on = ME && x.list.includes(ME.uid);
+    const who = x.list.map(uid => nameOf(uid, '')).filter(Boolean).join(', ');
+    return `<button class="react ${on?'on':''}" data-react="${x.k}" data-run="${r.id}"
+              title="${esc(who)}">${x.e}<span class="n">${x.list.length}</span></button>`;
   }).join('');
+  const picking = openPickers.has(r.id);
+  const picker = picking
+    ? `<span class="picker">${REACTS.map(x =>
+        `<button class="react pick" data-react="${x.k}" data-run="${r.id}">${x.e}</button>`).join('')}</span>`
+    : '';
+  const reactBtns = `${chips}<button class="addreact ${picking?'on':''}" data-pick="${r.id}"
+      aria-label="Add a reaction">${picking ? '×' : '☺+'}</button>${picker}`;
   const cmts = commentCache.get(r.id) || [];
   const open = openComments.has(r.id);
   return `<article class="post glass" data-post="${r.id}">
@@ -1196,7 +1203,7 @@ function postHTML(r, compact=false){
              ${photoCache.get(r.id) ? `<img src="${photoCache.get(r.id)}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}
              ${path.length > 1 ? `<div class="inset"${mapAttr}>${routeSVG(path, 118, 76)}</div>` : ''}
            </div>`
-        : `<div class="route"${mapAttr}>${path.length > 1 ? '<span class="expand">⤢ Tap to explore</span>' : ''}${routeSVG(path)}</div>`;
+        : `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
     })()}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
@@ -1367,7 +1374,7 @@ function renderBoard(){
 function switchTab(name){
   $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   ['today','feed','badges','board'].forEach(t => show($('#tab-'+t), t === name));
-  window.scrollTo({top:0, behavior:'smooth'});
+  $('#scroll').scrollTo({top:0, behavior:'smooth'});
 }
 $$('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 
@@ -1379,11 +1386,17 @@ document.addEventListener('click', async e => {
   const cmt   = e.target.closest('[data-cmt]');
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
-  const opener = e.target.closest('[data-map]');
-  if (opener && !opener.dataset.noopen && !react && !cmt && !send && !del) openMapView(opener.dataset.map);
+  const pick  = e.target.closest('[data-pick]');
+
+  if (pick){
+    const id = pick.dataset.pick;
+    openPickers.has(id) ? openPickers.delete(id) : openPickers.add(id);
+    scheduleRender();
+  }
 
   if (react && ME){
     const runId = react.dataset.run, key = react.dataset.react;
+    openPickers.delete(runId);
     const run = RUNS.find(r => r.id === runId); if (!run) return;
     const has = ((run.reactions || {})[key] || []).includes(ME.uid);
     react.classList.toggle('on', !has);                       // optimistic
@@ -1580,75 +1593,6 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
-
-/* ============================================================
-   11a. FULLSCREEN INTERACTIVE MAP
-   The feed keeps fast static thumbnails — sixty live maps in a
-   scrolling list would be miserable, and a pinch-zoomable map inline
-   traps your finger while you're trying to scroll past it. Tapping a
-   route opens the real thing, with Leaflet loaded only at that moment.
-   ============================================================ */
-let leafletP = null;
-function loadLeaflet(){
-  if (leafletP) return leafletP;
-  leafletP = new Promise((resolve, reject) => {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-    document.head.appendChild(css);
-    const js = document.createElement('script');
-    js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    js.onload = () => resolve(window.L);
-    js.onerror = () => reject(new Error('Leaflet failed to load'));
-    document.head.appendChild(js);
-  });
-  return leafletP;
-}
-
-let LMAP = null, LROUTE = null, LPINS = [];
-async function openMapView(runId){
-  const r = RUNS.find(x => x.id === runId);
-  const path = mapPaths.get(runId);
-  if (!r || !path || path.length < 2) return;
-
-  $('#mvName').textContent  = nameOf(r.uid, r.name);
-  $('#mvWhen').textContent  = r.day ? new Date(r.day+'T12:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'}) : '';
-  $('#mvMiles').textContent = (r.miles||0).toFixed(2);
-  $('#mvTime').textContent  = clock(r.seconds||0);
-  $('#mvPace').textContent  = r.seconds && r.miles ? paceStr(r.seconds/r.miles) : '—:—';
-  show($('#mapView'), true);
-
-  let L;
-  try { L = await loadLeaflet(); }
-  catch { show($('#mapView'), false); return toast('Could not load the map library'); }
-
-  if (!LMAP){
-    LMAP = L.map('mapCanvas', { zoomControl:true, attributionControl:true, preferCanvas:true });
-    L.tileLayer(TILE_URL(0,0,0).replace('/0/0/0','/{z}/{y}/{x}'), {
-      maxZoom: 19, attribution: MAP_CREDIT
-    }).addTo(LMAP);
-  }
-  LROUTE?.remove();
-  LPINS.forEach(p => p.remove()); LPINS = [];
-
-  const latlngs = path.map(p => [p.lat, p.lng]);
-  L.polyline(latlngs, { color:'rgba(0,0,0,.55)', weight:8, lineJoin:'round' }).addTo(LMAP);
-  LROUTE = L.polyline(latlngs, { color:'#5ef2c0', weight:4, lineJoin:'round' }).addTo(LMAP);
-  const pin = (ll, color) => L.circleMarker(ll, {
-    radius:7, color:'rgba(7,7,20,.9)', weight:2, fillColor:color, fillOpacity:1 }).addTo(LMAP);
-  LPINS = [ pin(latlngs[0], '#5ef2c0'), pin(latlngs[latlngs.length-1], '#ff8fa3') ];
-
-  requestAnimationFrame(() => {           // the overlay must be laid out before Leaflet measures it
-    LMAP.invalidateSize();
-    LMAP.fitBounds(LROUTE.getBounds(), { padding:[40,40] });
-  });
-}
-function closeMapView(){ show($('#mapView'), false); }
-$('#mvClose').onclick = closeMapView;
-$('#mvFit').onclick = () => LROUTE && LMAP.fitBounds(LROUTE.getBounds(), { padding:[40,40] });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !$('#mapView').classList.contains('hide')) closeMapView();
-});
 
 /* ============================================================
    11b. PROFILE
@@ -1856,7 +1800,7 @@ const photoSeen  = new IntersectionObserver(async entries => {
       paintPhoto(el, url);
     } catch (err){ console.error('photo load', err); paintPhoto(el, null); }
   }
-}, { rootMargin: '400px 0px' });
+}, { root: document.getElementById('scroll'), rootMargin: '500px 0px' });
 
 function paintPhoto(el, url){
   const ph = el.querySelector('.ph');
@@ -1902,7 +1846,6 @@ function openSaveSheet(miles, seconds, path, blackout = 0, meta = null){
     const key = 'preview-' + Date.now();
     mapPaths.set(key, path);
     $('#savePreview').dataset.map = key;
-    $('#savePreview').dataset.noopen = '1';
     delete $('#savePreview').dataset.done;
     upgradeToMap($('#savePreview'));
   } else { delete $('#savePreview').dataset.map; }
