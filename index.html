@@ -149,6 +149,22 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .route{height:200px}
 .route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
+/* ---- weather ---- */
+.wxslot{margin:2px 0 4px}
+.wxslot .btn{width:100%;padding:12px;font-size:13.5px;border-style:dashed}
+.wxpill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:12.5px;
+  font-weight:600;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);color:var(--ink-dim);
+  white-space:nowrap}
+.wxpill .e{font-size:14px;line-height:1}
+.wxpill b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.wxslot .row-wx{display:flex;align-items:center;gap:10px;justify-content:center}
+.wxslot .drop{appearance:none;border:0;background:none;color:var(--ink-faint);font:600 12px 'Outfit',sans-serif;
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+/* In the feed the pill stays compact so the action row never wraps —
+   the condition is in the tooltip, and the sheet preview shows it in full. */
+.reacts .wxpill{padding:6px 11px;font-size:12.5px;gap:5px}
+.reacts .wxpill .cond{display:none}
+
 /* ---- profile ---- */
 .prof{display:flex;gap:14px;align-items:center}
 .prof-av{position:relative;width:76px;height:76px;flex:none;border-radius:50%;overflow:hidden;padding:0;cursor:pointer;
@@ -204,7 +220,9 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .pstat b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}
 .pstat span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
 .note{margin:12px 2px 0;font-size:14.5px;color:rgba(242,244,255,.86);line-height:1.45}
-.reacts{display:flex;gap:7px;margin-top:13px;flex-wrap:wrap;align-items:center}
+.reacts{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.ract-l,.ract-r{display:flex;gap:7px;align-items:center;flex-wrap:wrap;min-width:0}
+.ract-r{justify-content:flex-end}
 .react{padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);
   font-size:14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.15s;font-weight:600}
 .react:active{transform:scale(.93)}
@@ -221,9 +239,8 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .picker .react.pick{padding:6px 10px;font-size:16px;background:transparent;border:0}
 .picker .react.pick:hover{background:rgba(255,255,255,.1)}
 .addphoto{appearance:none;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.18);
-  border-radius:999px;margin-left:auto;color:var(--ink-dim)}
-.addphoto + .cbtn{margin-left:10px}
-.cbtn{margin-left:auto;font-size:12.5px;color:var(--ink-dim);cursor:pointer;padding:7px 10px;font-weight:600}
+  border-radius:999px;color:var(--ink-dim)}
+.cbtn{font-size:12.5px;color:var(--ink-dim);cursor:pointer;padding:7px 10px;font-weight:600}
 .del{flex:none;appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);
   width:30px;height:30px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
 .del:hover{color:var(--coral);border-color:rgba(255,143,163,.4)}
@@ -592,6 +609,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <input id="mnWhen" type="datetime-local" />
       <div id="mnWhenHint" class="pacehint" style="margin:8px 0 0"></div>
     </div>
+    <div id="mnWeather" class="wxslot"></div>
     <div class="sheet-btns">
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
@@ -976,10 +994,27 @@ function copyCanvas(src){
 }
 
 /* Returns true once this element is showing a map, false if it should be retried. */
+const pathFetches = new Map();
+async function loadPath(runId){
+  if (mapPaths.has(runId)) return mapPaths.get(runId);
+  if (pathFetches.has(runId)) return pathFetches.get(runId);
+  const job = getDoc(doc(db, 'runs', runId, 'media', 'path'))
+    .then(snap => {
+      const pts = snap.exists() ? (snap.data().pts || []) : [];
+      mapPaths.set(runId, pts);
+      return pts;
+    })
+    .catch(err => { console.warn('route load', err); mapPaths.set(runId, []); return []; });
+  pathFetches.set(runId, job);
+  return job;
+}
+
 async function upgradeToMap(el){
   const key  = el.dataset.map;
-  const path = mapPaths.get(key);
-  if (!path || el.dataset.done) return false;
+  let path = mapPaths.get(key);
+  if (!path) path = await loadPath(key);                  // route lives in its own doc now
+  if (!path || path.length < 2 || el.dataset.done) return false;
+  if (!el.isConnected) return false;
   const cached = mapCache.get(key);
   if (cached === 'failed') return false;              // keep the SVG line we already drew
 
@@ -991,6 +1026,7 @@ async function upgradeToMap(el){
   };
   if (cached instanceof HTMLCanvasElement){ paint(cached); return true; }
 
+  if (!el.querySelector('svg, canvas')) el.insertAdjacentHTML('afterbegin', routeSVG(path));
   const r = el.getBoundingClientRect();
   const w = Math.round(r.width), h = Math.round(r.height);
   if (w < 20 || h < 20) return false;                 // hidden tab or not laid out yet — retry later
@@ -1123,10 +1159,14 @@ function avatarFor(name){
    ============================================================ */
 function watchRuns(){
   if (unsubRuns) unsubRuns();
-  const q = query(runsCol, orderBy('startedAt','desc'), limit(400));
+  // 20 players over 30 days is ~600 runs — the old cap of 400 silently dropped the
+  // oldest, which would quietly corrupt streaks and badges. Run docs are small now
+  // (the route lives in a subcollection), so a generous ceiling is cheap.
+  const q = query(runsCol, orderBy('startedAt','desc'), limit(2000));
   unsubRuns = onSnapshot(q, snap => {
     RUNS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    renderAll();
+    _byPlayer = null;
+    scheduleFullRender();
   }, err => {
     console.error(err);
     toast('Could not load runs — check Firestore rules');
@@ -1139,7 +1179,8 @@ function watchRuns(){
     PLAYERS = snap.docs.map(d => d.data());
     PROFILE.clear();
     for (const u of PLAYERS) if (u.uid) PROFILE.set(u.uid, { name: u.name, photo: u.photo });
-    renderAll();                       // a rename must reach every rendered surface
+    _byPlayer = null;
+    scheduleFullRender();              // a rename must reach every rendered surface
   }, err => console.warn('users listener:', err.code));
 }
 
@@ -1148,7 +1189,16 @@ function watchRuns(){
    ============================================================ */
 const inChallenge = k => k >= CHALLENGE.startISO && k <= CHALLENGE.endISO;
 
+/* Recomputed on every render by five different functions; with 550 runs that was
+   five full passes per repaint. Cached until RUNS or PROFILE actually change. */
+let _byPlayer = null, _byPlayerKey = '';
 function byPlayer(){
+  const key = RUNS.length + ':' + (RUNS[0]?.id || '') + ':' + PROFILE.size + ':' + todayKey();
+  if (_byPlayer && _byPlayerKey === key) return _byPlayer;
+  _byPlayerKey = key;
+  return (_byPlayer = computeByPlayer());
+}
+function computeByPlayer(){
   const map = new Map();
   const blank = (uid,name,photo) => ({ uid, name:name||'Runner', photo:photo||'', days:new Map(),
                                        total:0, seconds:0, runs:0, runList:[], timedMiles:0, timedSeconds:0 });
@@ -1220,7 +1270,32 @@ function challengeDay(){
 /* ============================================================
    9. RENDER
    ============================================================ */
-function renderAll(){ renderToday(); renderCalendar(); renderMyRuns(); renderFeed(); renderBadges(); renderBoard(); renderFinale(); updateFinaleTab(); }
+/* Rendering every tab on every snapshot meant rebuilding hundreds of posts nobody
+   was looking at. Only the visible tab is drawn; the rest are marked stale and
+   drawn when you switch to them. */
+let activeTab = 'today';
+const staleTabs = new Set();
+const TAB_RENDER = {
+  today:  () => { renderToday(); renderCalendar(); renderMyRuns(); },
+  feed:   renderFeed,
+  badges: renderBadges,
+  board:  renderBoard,
+  finale: renderFinale
+};
+function renderTab(name){ try { TAB_RENDER[name]?.(); } catch (err){ console.error('render ' + name, err); } staleTabs.delete(name); }
+
+function renderAll(){
+  renderTab(activeTab);
+  for (const t of Object.keys(TAB_RENDER)) if (t !== activeTab) staleTabs.add(t);
+  renderToday();                      // the header and today's ring are always on screen
+  updateFinaleTab();
+}
+let fullRenderQueued = false;
+function scheduleFullRender(){
+  if (fullRenderQueued) return;
+  fullRenderQueued = true;
+  requestAnimationFrame(() => { fullRenderQueued = false; renderAll(); });
+}
 
 /* The app sits open on a home screen for days. Every "is it done today?" answer is
    computed at render time, so without this the ring, the ✓/✕ and Undo all keep
@@ -1320,7 +1395,7 @@ function renderMyRuns(){
 function renderFeed(){
   const el = $('#feed');
   $('#feedCount').textContent = RUNS.length ? `${RUNS.length} posts` : '';
-  RUNS.slice(0,25).forEach(r => watchComments(r.id));   // so counts show without opening
+  RUNS.slice(0,12).forEach(r => watchComments(r.id));   // live counts for the top of the feed only
   el.innerHTML = RUNS.length
     ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
     : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
@@ -1365,8 +1440,10 @@ function postHTML(r, compact=false){
       </button>` : ''}
     </div>
     ${(() => {
-      if (path.length > 1) mapPaths.set(r.id, path);
-      const mapAttr = path.length > 1 ? ` data-map="${r.id}"` : '';
+      if (path.length > 1) mapPaths.set(r.id, path);          // legacy inline route
+      const known = mapPaths.get(r.id);
+      const hasMapData = (known && known.length > 1) || r.hasPath;
+      const mapAttr = hasMapData ? ` data-map="${r.id}"` : '';
       const img = (kind, cls, alt) => {
         const key = `${r.id}|${kind}`, hit = photoCache.get(key);
         return `<div class="${cls}" data-photo="${key}">${
@@ -1375,9 +1452,9 @@ function postHTML(r, compact=false){
       // Lead with whatever best represents the run: the map if it was tracked,
       // otherwise the screenshot, otherwise the selfie. Whatever's left over
       // tucks into the corner.
-      const hasMap = path.length > 1;
+      const hasMap = hasMapData;
       if (hasMap)
-        return `<div class="route"${mapAttr}>${routeSVG(path)}${
+        return `<div class="route"${mapAttr}>${routeSVG(known || [])}${
           r.hasPhoto ? img('photo','selfie','Run selfie')
           : r.hasShot ? img('shot','selfie','Run screenshot') : ''}</div>`;
       if (r.hasShot)
@@ -1399,9 +1476,13 @@ function postHTML(r, compact=false){
       <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
     </div>
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
-    <div class="reacts">${reactBtns}
-      ${mine && !r.hasPhoto && !r.hasShot ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
-      <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
+    <div class="reacts">
+      <div class="ract-l">${reactBtns}</div>
+      <div class="ract-r">
+        ${weatherPill(r.weather)}
+        ${mine && !r.hasPhoto && !r.hasShot ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
+        <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
+      </div>
     </div>
     ${open ? `<div class="comments">
       ${cmts.map(c=>`<div class="cmt"><img src="${esc(photoOf(c.uid, c.photo) || avatarFor(nameOf(c.uid, c.name)))}"/><div><b>${esc(nameOf(c.uid, c.name))}</b> ${esc(c.text)}</div></div>`).join('') || '<div style="color:var(--ink-faint);font-size:13px;margin-bottom:8px">No comments yet.</div>'}
@@ -1628,6 +1709,8 @@ function renderBoard(){
    10. TABS
    ============================================================ */
 function switchTab(name){
+  activeTab = name;
+  if (staleTabs.has(name)) renderTab(name);
   $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   ['today','feed','badges','board','finale'].forEach(t => show($('#tab-'+t), t === name));
   $('#scroll').scrollTo({top:0, behavior:'smooth'});
@@ -1702,8 +1785,10 @@ document.addEventListener('click', async e => {
         : `It stops counting toward that day and disappears from the feed.`);
     if (!ok) return;
     try {
-      if (r?.hasPhoto) await deleteDoc(doc(db,'runs',id,'media','photo')).catch(()=>{});
+      for (const k of ['photo','shot','path'])
+        await deleteDoc(doc(db,'runs',id,'media',k)).catch(()=>{});
       await deleteDoc(doc(db,'runs',id));
+      mapPaths.delete(id); pathFetches.delete(id);
       photoCache.delete(id);
       toast('Run deleted');
     } catch (err) { console.error(err); toast('Delete failed'); }
@@ -1726,7 +1811,11 @@ let renderQueued = false;
 function scheduleRender(){
   if (renderQueued) return;
   renderQueued = true;
-  requestAnimationFrame(() => { renderQueued = false; renderFeed(); renderMyRuns(); });
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    if (activeTab === 'feed') renderFeed(); else staleTabs.add('feed');
+    if (activeTab === 'today') renderMyRuns();
+  });
 }
 
 /* ============================================================
@@ -1747,8 +1836,10 @@ $('#btnUndo').onclick = async () => {
     'Undo it');
   if (!ok) return;
   try {
-    if (r.hasPhoto) await deleteDoc(doc(db,'runs',id,'media','photo')).catch(()=>{});
+    for (const k of ['photo','shot','path'])
+      await deleteDoc(doc(db,'runs',id,'media',k)).catch(()=>{});
     await deleteDoc(doc(db,'runs',id));
+    mapPaths.delete(id); pathFetches.delete(id);
     photoCache.delete(id);
     toast('Log undone');
   }
@@ -1863,6 +1954,131 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ============================================================
+   11a. WEATHER
+   Open-Meteo: no API key, and `past_days` lets us ask for the weather at the
+   hour the run actually happened rather than the hour it got logged.
+   Coordinates are rounded to 3 decimals (~110 m) before they leave the device
+   and are never stored — only the resulting temperature and condition are.
+   ============================================================ */
+const WMO = {
+  0:['Clear','☀️'], 1:['Mainly clear','🌤️'], 2:['Partly cloudy','⛅'], 3:['Overcast','☁️'],
+  45:['Fog','🌫️'], 48:['Freezing fog','🌫️'],
+  51:['Light drizzle','🌦️'], 53:['Drizzle','🌦️'], 55:['Heavy drizzle','🌦️'],
+  56:['Freezing drizzle','🌧️'], 57:['Freezing drizzle','🌧️'],
+  61:['Light rain','🌦️'], 63:['Rain','🌧️'], 65:['Heavy rain','🌧️'],
+  66:['Freezing rain','🌧️'], 67:['Freezing rain','🌧️'],
+  71:['Light snow','🌨️'], 73:['Snow','🌨️'], 75:['Heavy snow','❄️'], 77:['Snow grains','🌨️'],
+  80:['Showers','🌦️'], 81:['Showers','🌦️'], 82:['Heavy showers','⛈️'],
+  85:['Snow showers','🌨️'], 86:['Snow showers','🌨️'],
+  95:['Thunderstorm','⛈️'], 96:['Thunderstorm','⛈️'], 99:['Thunderstorm','⛈️']
+};
+const wxLabel = c => (WMO[c] || ['—','🌡️'])[0];
+const wxEmoji = c => (WMO[c] || ['—','🌡️'])[1];
+
+function whereAmI(){
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('no geolocation'));
+    navigator.geolocation.getCurrentPosition(
+      p => resolve(p.coords),
+      err => reject(err),
+      { timeout: 10000, maximumAge: 600000, enableHighAccuracy: false });
+  });
+}
+
+/* Weather at a specific moment — `when` is a Date. */
+async function fetchWeather(when){
+  const c = await whereAmI();
+  const lat = c.latitude.toFixed(3), lon = c.longitude.toFixed(3);   // ~110 m, plenty for weather
+  const daysBack = Math.min(7, Math.max(0, Math.ceil((Date.now() - when.getTime()) / 864e5)) + 1);
+  const url = 'https://api.open-meteo.com/v1/forecast'
+    + `?latitude=${lat}&longitude=${lon}`
+    + '&hourly=temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m'
+    + '&temperature_unit=fahrenheit&wind_speed_unit=mph'
+    + `&past_days=${daysBack}&forecast_days=1&timezone=auto`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('weather service returned ' + res.status);
+  const j = await res.json();
+  const times = j?.hourly?.time;
+  if (!Array.isArray(times) || !times.length) throw new Error('no hourly data');
+
+  // times come back as local ISO strings with no offset — match on the run's hour
+  const p = n => String(n).padStart(2,'0');
+  const stamp = `${when.getFullYear()}-${p(when.getMonth()+1)}-${p(when.getDate())}T${p(when.getHours())}:00`;
+  let i = times.indexOf(stamp);
+  if (i < 0){                                   // fall back to the nearest hour we did get
+    let best = Infinity;
+    times.forEach((t, k) => {
+      const d = Math.abs(new Date(t).getTime() - when.getTime());
+      if (d < best){ best = d; i = k; }
+    });
+  }
+  if (i < 0) throw new Error('no matching hour');
+  const num = (arr, k) => Array.isArray(arr) && isFinite(arr[k]) ? Math.round(arr[k]) : null;
+  const w = {
+    t: num(j.hourly.temperature_2m, i),
+    f: num(j.hourly.apparent_temperature, i),
+    c: Array.isArray(j.hourly.weather_code) ? j.hourly.weather_code[i] : null,
+    h: num(j.hourly.relative_humidity_2m, i),
+    w: num(j.hourly.wind_speed_10m, i)
+  };
+  if (w.t === null) throw new Error('no temperature');
+  return w;
+}
+
+/* the pill shown on a feed post */
+function weatherPill(w){
+  if (!w || w.t === null || w.t === undefined) return '';
+  const feels = (w.f !== null && w.f !== undefined && Math.abs(w.f - w.t) >= 4)
+    ? ` · feels ${w.f}°` : '';
+  return `<span class="wxpill" title="${esc(wxLabel(w.c))}${feels}${w.w != null ? ` · wind ${w.w} mph` : ''}">
+    <span class="e">${wxEmoji(w.c)}</span><b>${w.t}°</b><span class="cond">${esc(wxLabel(w.c))}</span></span>`;
+}
+
+/* ---- the control inside the log sheet ---- */
+const WX_PREF = 'streaktember.weather';
+let mnWx = null;                                   // the fetched reading, or null
+
+function paintWeatherSlot(state, detail){
+  const el = $('#mnWeather');
+  if (state === 'busy'){
+    el.innerHTML = `<button class="btn ghost" disabled>Checking the weather…</button>`;
+  } else if (state === 'got'){
+    el.innerHTML = `<div class="row-wx">${weatherPill(mnWx)}<button class="drop" id="wxDrop">remove</button></div>`;
+    $('#wxDrop').onclick = () => { mnWx = null; paintWeatherSlot('idle'); };
+  } else if (state === 'failed'){
+    el.innerHTML = `<button class="btn ghost" id="wxAdd">🌤 Add weather</button>
+      <div class="pacehint" style="margin-top:6px">${esc(detail || "Couldn't get the weather")}</div>`;
+    $('#wxAdd').onclick = addWeather;
+  } else {
+    el.innerHTML = `<button class="btn ghost" id="wxAdd">🌤 Add weather</button>`;
+    $('#wxAdd').onclick = addWeather;
+  }
+}
+
+async function addWeather(){
+  paintWeatherSlot('busy');
+  try {
+    mnWx = await fetchWeather(chosenWhen());
+    try { localStorage.setItem(WX_PREF, 'on'); } catch {}
+    paintWeatherSlot('got');
+  } catch (err){
+    console.warn('weather:', err);
+    mnWx = null;
+    paintWeatherSlot('failed',
+      err && err.code === 1 ? 'Location permission denied'
+      : err && err.code === 3 ? 'Location timed out'
+      : 'Weather unavailable right now');
+  }
+}
+/* If they've used it before, don't make them tap again. */
+function maybeAutoWeather(){
+  let pref = null;
+  try { pref = localStorage.getItem(WX_PREF); } catch {}
+  if (pref === 'on') addWeather(); else paintWeatherSlot('idle');
+}
 
 /* ============================================================
    11b. PROFILE
@@ -2199,6 +2415,7 @@ $('#btnManual').onclick = () => {
   $('#mnWhenToggle').textContent = '🕗 Log for a different time';
   updateWhenHint();
   mnPhoto.reset(); mnShot.reset(); updatePaceHint();
+  mnWx = null; maybeAutoWeather();
   show($('#manualSheet'), true);
 };
 /* datetime-local wants a local ISO string with no timezone suffix */
@@ -2247,7 +2464,10 @@ $('#mnWhenToggle').onclick = () => {
   }
   updateWhenHint();
 };
-$('#mnWhen').oninput = updateWhenHint;
+$('#mnWhen').oninput = () => {
+  updateWhenHint();
+  if (mnWx) addWeather();          // the reading was for a different hour — refresh it
+};
 
 const closePhotoView = () => { show($('#photoView'), false); $('#pvImg').src = ''; };
 $('#pvClose').onclick = closePhotoView;
@@ -2286,12 +2506,12 @@ $('#mnSave').onclick = async () => {
   const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
   const ok = await saveRun({ miles, seconds: secs, path: [], manual:true,
                              note: $('#mnNote').value.trim(), photo: mnPhoto.url, shot: mnShot.url,
-                             day: dayKey(when), startedAt: when.getTime() });
+                             day: dayKey(when), startedAt: when.getTime(), weather: mnWx });
   btn.disabled = false; btn.textContent = 'Log it';
   if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); mnShot.reset(); switchTab('feed'); }
 };
 
-async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt}){
+async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather}){
   if (!ME) { toast('Not signed in'); return false; }
 
   // With the offline cache on, a write promise settles only when the SERVER acks —
@@ -2300,6 +2520,10 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
   // So: generate the id ourselves, fire both writes together, and report failures
   // asynchronously rather than blocking on them.
   const ref = doc(runsCol);
+  // The route was 94% of a run document's bytes, downloaded by everyone on every
+  // app open even though only the visible posts draw a map. It lives in its own
+  // document now and is fetched when a post scrolls into view.
+  const pts = (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) }));
   const runWrite = setDoc(ref, {
     uid: ME.uid,
     name: ME.displayName || (ME.email||'Runner').split('@')[0],
@@ -2310,15 +2534,23 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
     manual: !!manual,
     imported: !!imported,
     note: note || '',
-    path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
     reactions: {},
     hasPhoto: !!photo,
     hasShot: !!shot,
+    hasPath: pts.length > 1,
+    pathN: pts.length,
+    ...(weather ? { weather } : {}),
     startedAt: startedAt || Date.now(),
     createdAt: serverTimestamp()
   }).then(() => null, e => ({ what:'run', e }));
 
   const media = [];
+  if (pts.length > 1){
+    mapPaths.set(ref.id, pts);                           // draw it immediately, no round trip
+    media.push(setDoc(doc(db, 'runs', ref.id, 'media', 'path'),
+      { uid: ME.uid, pts, ts: Date.now() }
+    ).then(() => null, e => ({ what:'path', e })));
+  }
   for (const [kind, data] of [['photo', photo], ['shot', shot]]){
     if (!data) continue;
     photoCache.set(`${ref.id}|${kind}`, data);            // show it instantly from memory
@@ -2330,6 +2562,13 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
   const jobs = [runWrite, ...media];
   const report = fails => {
     const runFail   = fails.find(f => f?.what === 'run');
+    const pathFail  = fails.find(f => f?.what === 'path');
+    if (pathFail){
+      console.error(pathFail.e);
+      setDoc(ref, { hasPath:false }, { merge:true }).catch(()=>{});
+      toast('Route map not saved: ' + (pathFail.e.code || pathFail.e.message)
+            + '. The run still counts.', 7000);
+    }
     const photoFail = fails.find(f => f?.what === 'photo');
     if (runFail){
       console.error(runFail.e);
