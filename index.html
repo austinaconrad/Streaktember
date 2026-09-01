@@ -140,8 +140,14 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .post-top{display:flex;align-items:center;gap:11px}
 .post-top img{width:40px;height:40px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.1)}
 .post-top .who{flex:1;min-width:0}
-.post-top .who b{display:block;font-size:15px;font-weight:700}
-.post-top .who span{font-size:12px;color:var(--ink-faint)}
+/* the name gives way before the pill does — a truncated name still reads */
+.post-top .who b{display:block;font-size:15px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the meta line takes the ownership tag, the time and the city, and gives way
+   before the name does — it's the least important text in the header */
+.post-top .who > span{display:block;font-size:12px;color:var(--ink-faint);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-top .who > span i{font-style:normal;font-weight:700;color:var(--ink-dim)}
 .badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
   background:rgba(255,209,102,.16);color:var(--amber);border:1px solid rgba(255,209,102,.3)}
 .route{margin:13px 0 0;border-radius:var(--r-md);overflow:hidden;background:
@@ -150,6 +156,14 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .route svg,.route canvas{display:block;width:100%;height:100%}
 .route .noroute{height:110px;display:grid;place-items:center;color:var(--ink-faint);font-size:13px}
 /* ---- mile splits ---- */
+/* a proper chip rather than a faint underlined link, so it reads as an offer */
+.optbtn{appearance:none;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 14px;border-radius:12px;cursor:pointer;font:600 13.5px 'Outfit',sans-serif;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--ink-dim);
+  transition:background .15s,border-color .15s,color .15s}
+.optbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.optbtn.on{background:rgba(94,242,192,.13);border-color:rgba(94,242,192,.34);color:var(--mint)}
+.optbtn .k{font-size:15px;line-height:1}
 .splitrow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .splitrow .n{flex:none;width:52px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-faint)}
@@ -174,13 +188,15 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   white-space:nowrap}
 .wxpill .e{font-size:14px;line-height:1}
 .wxpill b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.wxpill .loc{color:var(--ink-dim);max-width:15ch;overflow:hidden;text-overflow:ellipsis}
+.wxpill .cond+.loc::before,.wxpill b+.loc::before{content:'·';margin-right:6px;color:var(--ink-faint)}
 .wxslot .row-wx{display:flex;align-items:center;gap:10px;justify-content:center}
 .wxslot .drop{appearance:none;border:0;background:none;color:var(--ink-faint);font:600 12px 'Outfit',sans-serif;
   cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-/* In the feed the pill stays compact so the action row never wraps —
-   the condition is in the tooltip, and the sheet preview shows it in full. */
-.reacts .wxpill{padding:6px 11px;font-size:12.5px;gap:5px}
-.reacts .wxpill .cond{display:none}
+/* In a post the pill rides in the header, top right, where there was dead space
+   next to the name — the condition word is in the tooltip, and the sheet preview
+   shows it in full. */
+.post-top .wxpill{flex:none;margin-left:auto;padding:5px 10px;font-size:12px;gap:5px}
 
 /* ---- profile ---- */
 .prof{display:flex;gap:14px;align-items:center}
@@ -619,8 +635,10 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       </div>
     </div>
     <div id="mnPace" class="pacehint">—</div>
-    <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Legs felt great, hills did not…" /></div>
-    <button class="linkbtn" id="mnSplitToggle" style="width:100%;margin:-4px 0 8px">＋ Add mile splits</button>
+    <div class="two" style="margin:2px 0 12px">
+      <button class="optbtn" id="mnSplitToggle"><span class="k">＋</span>Mile splits</button>
+      <button class="optbtn" id="mnWhenToggle"><span class="k">🕗</span>Different time</button>
+    </div>
     <div id="mnSplitWrap" class="field hide">
       <label>Mile splits</label>
       <div id="mnSplits"></div>
@@ -629,12 +647,12 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
         <span id="mnSplitSum" class="pacehint" style="margin:0"></span>
       </div>
     </div>
-    <button class="linkbtn" id="mnWhenToggle" style="width:100%;margin:-4px 0 8px">🕗 Log for a different time</button>
     <div id="mnWhenWrap" class="field hide">
       <label>When did you run?</label>
       <input id="mnWhen" type="datetime-local" />
       <div id="mnWhenHint" class="pacehint" style="margin:8px 0 0"></div>
     </div>
+    <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Legs felt great, hills did not…" /></div>
     <div id="mnWeather" class="wxslot"></div>
     <div class="sheet-btns">
       <button class="btn ghost" id="mnCancel">Cancel</button>
@@ -1459,8 +1477,11 @@ function postHTML(r, compact=false){
   return `<article class="post glass" data-post="${r.id}">
     <div class="post-top">
       <img src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
-      <div class="who"><b>${esc(nameOf(r.uid, r.name))}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
-        <span>${dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}</span></div>
+      <div class="who"><b>${esc(nameOf(r.uid, r.name))}</b>
+        <span title="${esc([mine ? 'You' : '', dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : ''), (r.weather && r.weather.p) || ''].filter(Boolean).join(' · '))}">${mine ? '<i>You</i> · ' : ''}${
+          dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}${
+          r.weather && r.weather.p ? ' · ' + esc(r.weather.p) : ''}</span></div>
+      ${weatherPill(r.weather, true)}
       ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
@@ -1506,7 +1527,6 @@ function postHTML(r, compact=false){
     <div class="reacts">
       <div class="ract-l">${reactBtns}</div>
       <div class="ract-r">
-        ${weatherPill(r.weather)}
         ${mine && !r.hasPhoto && !r.hasShot ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
         <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
       </div>
@@ -2044,10 +2064,19 @@ function updateSplitSum(){
   updatePaceHint();
 }
 
+/* the option chips carry an icon span, so label them as markup and mark the
+   open state — plain textContent would eat the span */
+function setOpt(sel, on, onIcon, onLabel, offIcon, offLabel){
+  const b = $(sel);
+  if (!b) return;
+  b.innerHTML = `<span class="k">${on ? onIcon : offIcon}</span>${on ? onLabel : offLabel}`;
+  b.classList.toggle('on', !!on);
+}
+
 $('#mnSplitToggle').onclick = () => {
   const wrap = $('#mnSplitWrap'), opening = wrap.classList.contains('hide');
   show(wrap, opening);
-  $('#mnSplitToggle').textContent = opening ? '✕ Drop the splits' : '＋ Add mile splits';
+  setOpt('#mnSplitToggle', opening, '✕', 'Drop splits', '＋', 'Mile splits');
   if (opening){
     // start with as many rows as their mileage suggests, but never fewer than one
     const mi = parseFloat($('#mnMiles').value);
@@ -2117,10 +2146,75 @@ function whereAmI(){
   });
 }
 
+/* ---- what to call the place you ran ----
+   BigDataCloud's client-side reverse geocoder needs no key and no account.
+   It only ever sees a rounded coordinate, and only the city label it hands
+   back is kept — the coordinate itself is never stored or posted. */
+const GEO_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
+
+/* Rural coordinates come back as the civil township rather than a town —
+   "Township of Porter" is how the data reads, "Porter Township" is how people do. */
+const TOWNSHIP = /^(?:Charter )?Township of /i;
+const TIDY = [
+  [/^Charter Township of (.+)$/i, '$1 Township'],
+  [/^Township of (.+)$/i,         '$1 Township'],
+  [/^(?:City|Town|Village|Borough|Municipality|County) of (.+)$/i, '$1']
+];
+
+/* "Columbus, OH" — never the street you were on. */
+function placeLabel(j){
+  if (!j || typeof j !== 'object') return '';
+  // Out at sea the geocoder still answers, with no country, no state, and a
+  // locality like "Exclusive economic zone of the United States". Nothing
+  // administrative means nothing worth printing.
+  if (!j.countryCode && !j.principalSubdivision) return '';
+
+  const pick = (...v) => v.find(s => typeof s === 'string' && s.trim().length) || '';
+  const state = pick(j.principalSubdivision);
+  let city = pick(j.city, j.locality);
+  // Sunbury comes back as city "Township of Trenton", locality "Sunbury" — when
+  // `city` is the civil township and `locality` is an actual named place, the
+  // name on the sign is the one to use
+  if (TOWNSHIP.test(city)){
+    const alt = pick(j.locality);
+    if (alt && !TOWNSHIP.test(alt)) city = alt;
+  }
+  for (const [re, to] of TIDY) if (re.test(city)){ city = city.replace(re, to); break; }
+  // a "city" longer than this is a description, not a name people say
+  if (city.length > 28) city = '';
+  if (!city) city = state;
+  if (!city) return '';
+
+  const cc  = j.countryCode || '';
+  const sub = String(j.principalSubdivisionCode || '').split('-')[1] || '';
+  // states and provinces abbreviate the way people write them; elsewhere the
+  // country reads better than a subdivision code nobody uses
+  let region = ((cc === 'US' || cc === 'CA') && sub) ? sub
+             : (j.countryName && j.countryName.length <= 18 ? j.countryName : cc);
+  // "Ohio, OH" and "Singapore, Singapore" both read as a stutter
+  if (region && (region.toLowerCase() === city.toLowerCase() || city === state)) region = '';
+  return (region ? `${city}, ${region}` : city).slice(0, 40);
+}
+
+async function fetchPlace(lat, lon){
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const bail = setTimeout(() => ctl && ctl.abort(), 6000);
+  try {
+    const res = await fetch(`${GEO_URL}?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+                            ctl ? { signal: ctl.signal } : undefined);
+    if (!res.ok) throw new Error('geocoder returned ' + res.status);
+    return placeLabel(await res.json());
+  } finally { clearTimeout(bail); }
+}
+
 /* Weather at a specific moment — `when` is a Date. */
 async function fetchWeather(when){
   const c = await whereAmI();
   const lat = c.latitude.toFixed(3), lon = c.longitude.toFixed(3);   // ~110 m, plenty for weather
+  // the city label rides along; a slower or unhappy geocoder must never cost
+  // anyone their weather, so it can only ever resolve to ''
+  const placeJob = fetchPlace(c.latitude.toFixed(2), c.longitude.toFixed(2))
+                     .catch(err => { console.warn('place:', err); return ''; });
   const daysBack = Math.min(7, Math.max(0, Math.ceil((Date.now() - when.getTime()) / 864e5)) + 1);
   const url = 'https://api.open-meteo.com/v1/forecast'
     + `?latitude=${lat}&longitude=${lon}`
@@ -2155,16 +2249,26 @@ async function fetchWeather(when){
     w: num(j.hourly.wind_speed_10m, i)
   };
   if (w.t === null) throw new Error('no temperature');
+  const place = await placeJob;
+  if (place) w.p = place;
   return w;
 }
 
-/* the pill shown on a feed post */
-function weatherPill(w){
+/* The pill. `mini` is the feed-header version: just the sky and the number,
+   because a full pill up there squeezes the name down to "Chase Fe…". The
+   city rides on the timestamp line instead, and everything else is the tooltip. */
+function weatherPill(w, mini){
   if (!w || w.t === null || w.t === undefined) return '';
   const feels = (w.f !== null && w.f !== undefined && Math.abs(w.f - w.t) >= 4)
     ? ` · feels ${w.f}°` : '';
-  return `<span class="wxpill" title="${esc(wxLabel(w.c))}${feels}${w.w != null ? ` · wind ${w.w} mph` : ''}">
-    <span class="e">${wxEmoji(w.c)}</span><b>${w.t}°</b><span class="cond">${esc(wxLabel(w.c))}</span></span>`;
+  const where = typeof w.p === 'string' && w.p ? w.p : '';
+  const tip = `${wxLabel(w.c)}${feels}${w.w != null ? ` · wind ${w.w} mph` : ''}${where ? ` · ${where}` : ''}`;
+  if (mini)
+    return `<span class="wxpill mini" title="${esc(tip)}">
+      <span class="e">${wxEmoji(w.c)}</span><b>${w.t}°</b></span>`;
+  return `<span class="wxpill${where ? '' : ' noloc'}" title="${esc(tip)}">
+    <span class="e">${wxEmoji(w.c)}</span><b>${w.t}°</b><span class="cond">${esc(wxLabel(w.c))}</span>${
+      where ? `<span class="loc">${esc(where)}</span>` : ''}</span>`;
 }
 
 /* ---- the control inside the log sheet ---- */
@@ -2542,12 +2646,12 @@ $('#svPost').onclick = async () => {
 $('#btnManual').onclick = () => {
   $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnSecs').value = ''; $('#mnNote').value = '';
   show($('#mnWhenWrap'), false);
-  $('#mnWhenToggle').textContent = '🕗 Log for a different time';
+  setOpt('#mnWhenToggle', false, '✕', 'Use now', '🕗', 'Different time');
   updateWhenHint();
   mnPhoto.reset(); mnShot.reset(); updatePaceHint();
   mnWx = null; maybeAutoWeather();
   show($('#mnSplitWrap'), false);
-  $('#mnSplitToggle').textContent = '＋ Add mile splits';
+  setOpt('#mnSplitToggle', false, '✕', 'Drop splits', '＋', 'Mile splits');
   $('#mnSplits').innerHTML = ''; $('#mnSplitSum').textContent = '';
   show($('#manualSheet'), true);
 };
@@ -2589,7 +2693,7 @@ function updateWhenHint(){
 $('#mnWhenToggle').onclick = () => {
   const wrap = $('#mnWhenWrap'), opening = wrap.classList.contains('hide');
   show(wrap, opening);
-  $('#mnWhenToggle').textContent = opening ? '✕ Use the current time' : '🕗 Log for a different time';
+  setOpt('#mnWhenToggle', opening, '✕', 'Use now', '🕗', 'Different time');
   if (opening){
     $('#mnWhen').value = toLocalInput(new Date());
     $('#mnWhen').min   = toLocalInput(backdateFloor());
