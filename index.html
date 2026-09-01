@@ -159,6 +159,18 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 
 /* ---- selfie ---- */
 .photoslot{margin-top:12px}
+.shots{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;align-items:start}
+.shots .photoslot{margin-top:10px}
+.shots .addbtn{padding:22px 8px;font-size:13px;line-height:1.35;height:100%}
+.timepair{display:flex;align-items:center;gap:6px}
+.timepair input{text-align:center;padding-left:6px;padding-right:6px}
+.timepair span{color:var(--ink-faint);font-weight:700;font-size:17px}
+#mnWhen{color-scheme:dark}
+.pacehint{text-align:center;font-size:12.5px;font-weight:600;color:var(--ink-faint);
+  margin:-2px 0 12px;font-variant-numeric:tabular-nums;min-height:16px;letter-spacing:.02em}
+.pacehint.on{color:var(--mint)}
+.sheet-links{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
+.sheet-links .dot{color:var(--ink-faint);font-size:12px}
 .photoslot .addbtn{width:100%;padding:14px;font-size:14.5px;border-style:dashed}
 .photoslot figure{margin:0;position:relative;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.14)}
 .photoslot figure img{display:block;width:100%;max-height:280px;object-fit:cover}
@@ -168,6 +180,7 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .shot{position:relative;margin-top:13px;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.1);
   background:rgba(255,255,255,.04);min-height:200px}
 .shot img{display:block;width:100%;max-height:440px;object-fit:cover}
+.shot{position:relative}
 .shot .inset{position:absolute;right:10px;bottom:10px;width:118px;height:76px;border-radius:12px;overflow:hidden;
   background:rgba(8,8,22,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);
   box-shadow:0 10px 24px -10px rgba(0,0,0,.9)}
@@ -430,9 +443,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       </div>
       <div class="cta">
         <button class="btn ghost hide" id="btnUndo" style="font-size:14px;padding:13px;color:var(--coral)">↺ Undo last log</button>
-        <button class="btn primary" id="btnImport">📝 Import Run</button>
-        <button class="btn ghost" id="btnManual">Log manually</button>
-        <button class="linkbtn" id="btnStart">or track it live in the browser →</button>
+        <button class="btn primary" id="btnManual">📝 Log Run</button>
         <input type="file" id="gpxInput" class="vh" />
         <input type="file" accept="image/*" id="addPhotoInput" class="vh" />
       </div>
@@ -545,18 +556,40 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
 <!-- ======================= MANUAL SHEET ======================= -->
 <div id="manualSheet" class="sheet hide">
   <div class="card glass">
-    <h3>Log without GPS</h3>
-    <p class="sub">Treadmill, dead battery, forgot your phone — it still counts.</p>
-    <div class="two">
-      <div class="field"><label>Miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
-      <div class="field"><label>Minutes</label><input id="mnMins" type="number" inputmode="decimal" step="0.1" min="0" placeholder="12" /></div>
+    <h3>Log your run</h3>
+    <p class="sub">Screenshot your watch or Strava — that's your receipt.</p>
+    <div class="shots">
+      <div id="mnShot" class="photoslot"></div>
+      <div id="mnPhoto" class="photoslot"></div>
     </div>
-    <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Treadmill at the gym" /></div>
-    <div id="mnPhoto" class="photoslot"></div>
+    <input type="file" accept="image/*" id="mnShotInput" class="vh" />
     <input type="file" accept="image/*" id="mnPhotoInput" class="vh" />
+    <div class="two" style="margin-top:14px">
+      <div class="field"><label>Miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
+      <div class="field"><label>Time</label>
+        <div class="timepair">
+          <input id="mnMins" type="number" inputmode="numeric" step="1" min="0" max="600" placeholder="12" aria-label="Minutes" />
+          <span>:</span>
+          <input id="mnSecs" type="number" inputmode="numeric" step="1" min="0" max="59" placeholder="00" aria-label="Seconds" />
+        </div>
+      </div>
+    </div>
+    <div id="mnPace" class="pacehint">—</div>
+    <div class="field"><label>Note (optional)</label><input id="mnNote" maxlength="140" placeholder="Legs felt great, hills did not…" /></div>
+    <button class="linkbtn" id="mnWhenToggle" style="width:100%;margin:-4px 0 8px">🕗 Log for a different time</button>
+    <div id="mnWhenWrap" class="field hide">
+      <label>When did you run?</label>
+      <input id="mnWhen" type="datetime-local" />
+      <div id="mnWhenHint" class="pacehint" style="margin:8px 0 0"></div>
+    </div>
     <div class="sheet-btns">
       <button class="btn ghost" id="mnCancel">Cancel</button>
       <button class="btn primary" id="mnSave">Log it</button>
+    </div>
+    <div class="sheet-links">
+      <button class="linkbtn" id="lnkLive">Track live in the browser</button>
+      <span class="dot">·</span>
+      <button class="linkbtn" id="lnkGpx">Import a GPX file</button>
     </div>
   </div>
 </div>
@@ -1316,7 +1349,6 @@ function postHTML(r, compact=false){
       <img src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
       <div class="who"><b>${esc(nameOf(r.uid, r.name))}${mine ? ' <span style="color:var(--ink-faint);font-weight:500;font-size:12px">· you</span>' : ''}</b>
         <span>${dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}</span></div>
-      ${r.manual ? '<span class="badge">Manual</span>' : ''}
       ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
@@ -1324,17 +1356,31 @@ function postHTML(r, compact=false){
     ${(() => {
       if (path.length > 1) mapPaths.set(r.id, path);
       const mapAttr = path.length > 1 ? ` data-map="${r.id}"` : '';
-      const cached  = photoCache.get(r.id);
-      const selfie  = r.hasPhoto
-        ? `<div class="selfie" data-photo="${r.id}">${
-             cached ? `<img src="${cached}" alt="Run selfie"/>` : `<div class="ph"></div>`}</div>`
-        : '';
-      // The map is the record of the run, so it leads; the selfie tucks into the corner.
-      // With no GPS trace there's no map worth leading with, so the photo takes over.
-      return (path.length > 1 || !r.hasPhoto)
-        ? `<div class="route"${mapAttr}>${routeSVG(path)}${selfie}</div>`
-        : `<div class="shot" data-photo="${r.id}">${
-             cached ? `<img src="${cached}" alt="Run selfie"/>` : `<div class="ph">loading photo…</div>`}</div>`;
+      const img = (kind, cls, alt) => {
+        const key = `${r.id}|${kind}`, hit = photoCache.get(key);
+        return `<div class="${cls}" data-photo="${key}">${
+          hit ? `<img src="${hit}" alt="${alt}"/>` : `<div class="ph">${cls === 'shot' ? 'loading photo…' : ''}</div>`}</div>`;
+      };
+      // Lead with whatever best represents the run: the map if it was tracked,
+      // otherwise the screenshot, otherwise the selfie. Whatever's left over
+      // tucks into the corner.
+      const hasMap = path.length > 1;
+      if (hasMap)
+        return `<div class="route"${mapAttr}>${routeSVG(path)}${
+          r.hasPhoto ? img('photo','selfie','Run selfie')
+          : r.hasShot ? img('shot','selfie','Run screenshot') : ''}</div>`;
+      if (r.hasShot)
+        return `<div class="shot" data-photo="${r.id}|shot">${
+            photoCache.get(`${r.id}|shot`)
+              ? `<img src="${photoCache.get(`${r.id}|shot`)}" alt="Run screenshot"/>`
+              : `<div class="ph">loading photo…</div>`
+          }${r.hasPhoto ? img('photo','selfie','Run selfie') : ''}</div>`;
+      if (r.hasPhoto)
+        return `<div class="shot" data-photo="${r.id}|photo">${
+            photoCache.get(`${r.id}|photo`)
+              ? `<img src="${photoCache.get(`${r.id}|photo`)}" alt="Run selfie"/>`
+              : `<div class="ph">loading photo…</div>`}</div>`;
+      return `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
     })()}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
@@ -1343,7 +1389,7 @@ function postHTML(r, compact=false){
     </div>
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
     <div class="reacts">${reactBtns}
-      ${mine && !r.hasPhoto ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
+      ${mine && !r.hasPhoto && !r.hasShot ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
       <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
     </div>
     ${open ? `<div class="comments">
@@ -1691,7 +1737,7 @@ $('#btnUndo').onclick = async () => {
   catch (err) { console.error(err); toast('Could not undo: ' + (err.code || err.message)); }
 };
 
-$('#btnStart').onclick = startRun;
+$('#lnkLive').onclick = () => { show($('#manualSheet'), false); startRun(); };
 $('#btnPause').onclick = togglePause;
 $('#btnFinish').onclick = finishRun;
 
@@ -1912,7 +1958,7 @@ function parseTrackFile(text){
   return { miles: meters / MI, seconds, path: pts, started, name, points: pts.length };
 }
 
-$('#btnImport').onclick = () => { $('#gpxInput').value = ''; $('#gpxInput').click(); };
+$('#lnkGpx').onclick = () => { show($('#manualSheet'), false); $('#gpxInput').value = ''; $('#gpxInput').click(); };
 $('#gpxInput').onchange = async () => {
   const f = $('#gpxInput').files?.[0]; if (!f) return;
   const name = (f.name || '').toLowerCase();
@@ -1972,7 +2018,7 @@ async function shrinkImage(file, maxDim = 900, quality = 0.62){
 }
 
 /* wire one capture slot (save sheet / manual sheet) */
-function photoSlot(slotId, inputId){
+function photoSlot(slotId, inputId, label = '📸 Add a selfie'){
   const slot  = document.getElementById(slotId);
   const input = document.getElementById(inputId);
   const state = { url: null };
@@ -1981,7 +2027,7 @@ function photoSlot(slotId, inputId){
       ? `<figure><img src="${state.url}" alt="Your post-run selfie"/>
            <div class="swap"><button data-act="retake">Retake</button><button data-act="drop">Remove</button></div>
          </figure>`
-      : `<button class="btn ghost addbtn" data-act="add">📸 Add a selfie</button>`;
+      : `<button class="btn ghost addbtn" data-act="add">${label}</button>`;
   };
   slot.onclick = e => {
     const act = e.target.closest('[data-act]')?.dataset.act;
@@ -1999,8 +2045,9 @@ function photoSlot(slotId, inputId){
   paint();
   return state;
 }
-const svPhoto = photoSlot('svPhoto', 'svPhotoInput');
-const mnPhoto = photoSlot('mnPhoto', 'mnPhotoInput');
+const svPhoto  = photoSlot('svPhoto',  'svPhotoInput');
+const mnShot   = photoSlot('mnShot',   'mnShotInput',  '🖼️ Add screenshot');
+const mnPhoto  = photoSlot('mnPhoto',  'mnPhotoInput', '📸 Add selfie');
 
 /* Attach a photo to a run that was already posted — for the times the upload
    failed, or you only remembered to take the picture afterwards. */
@@ -2023,7 +2070,7 @@ $('#addPhotoInput').onchange = async () => {
   try {
     await setDoc(doc(db, 'runs', id, 'media', 'photo'), { uid: ME.uid, img: url, ts: Date.now() });
     await setDoc(doc(db, 'runs', id), { hasPhoto: true }, { merge:true });
-    photoCache.set(id, url);
+    photoCache.set(`${id}|photo`, url);
     scheduleRender();
     toast('Photo added');
   } catch (err){
@@ -2033,17 +2080,20 @@ $('#addPhotoInput').onchange = async () => {
 };
 
 /* ---- lazy-load photos into the feed only as posts scroll into view ---- */
-const photoCache = new Map();       // runId -> dataURL | null
+// keyed `${runId}|${kind}` — 'shot' is the screenshot that leads a post,
+// 'photo' is the selfie that tucks into the corner. Existing posts only have 'photo'.
+const photoCache = new Map();
 const photoSeen  = new IntersectionObserver(async entries => {
   for (const e of entries){
     if (!e.isIntersecting) continue;
-    const el = e.target, id = el.dataset.photo;
+    const el = e.target, key = el.dataset.photo;
+    const [id, kind] = key.split('|');
     photoSeen.unobserve(el);
-    if (photoCache.has(id)){ paintPhoto(el, photoCache.get(id)); continue; }
+    if (photoCache.has(key)){ paintPhoto(el, photoCache.get(key)); continue; }
     try {
-      const snap = await getDoc(doc(db, 'runs', id, 'media', 'photo'));
+      const snap = await getDoc(doc(db, 'runs', id, 'media', kind));
       const url  = snap.exists() ? snap.data().img : null;
-      photoCache.set(id, url);
+      photoCache.set(key, url);
       paintPhoto(el, url);
     } catch (err){ console.error('photo load', err); paintPhoto(el, null); }
   }
@@ -2126,24 +2176,97 @@ $('#svPost').onclick = async () => {
 
 /* ---- manual entry ---- */
 $('#btnManual').onclick = () => {
-  $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnNote').value = '';
-  mnPhoto.reset();
+  $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnSecs').value = ''; $('#mnNote').value = '';
+  show($('#mnWhenWrap'), false);
+  $('#mnWhenToggle').textContent = '🕗 Log for a different time';
+  updateWhenHint();
+  mnPhoto.reset(); mnShot.reset(); updatePaceHint();
   show($('#manualSheet'), true);
 };
+/* datetime-local wants a local ISO string with no timezone suffix */
+const toLocalInput = d => {
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+/* Back-dating is limited to yesterday. That covers the honest cases — ran this
+   morning, ran just before midnight — without letting anyone quietly backfill a
+   missed day halfway through the month. */
+function backdateFloor(){
+  const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d;
+}
+const mnSeconds = () =>
+  (parseFloat($('#mnMins').value) || 0) * 60 + (parseFloat($('#mnSecs').value) || 0);
+
+function chosenWhen(){
+  if ($('#mnWhenWrap').classList.contains('hide')) return new Date();
+  const v = $('#mnWhen').value;
+  if (!v) return new Date();
+  const d = new Date(v);
+  return isNaN(d) ? new Date() : d;
+}
+
+function updateWhenHint(){
+  const el = $('#mnWhenHint');
+  if ($('#mnWhenWrap').classList.contains('hide')){ el.textContent = ''; return; }
+  const d = chosenWhen(), now = new Date();
+  if (d > now){ el.textContent = "That's in the future"; el.classList.remove('on'); return; }
+  if (d < backdateFloor()){ el.textContent = 'You can only log back to yesterday'; el.classList.remove('on'); return; }
+  const k = dayKey(d);
+  const label = k === todayKey() ? 'today' : k === dayKey(Date.now() - 864e5) ? 'yesterday'
+              : new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'long'});
+  el.textContent = `Counts toward ${label}, ${d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
+  el.classList.add('on');
+}
+
+$('#mnWhenToggle').onclick = () => {
+  const wrap = $('#mnWhenWrap'), opening = wrap.classList.contains('hide');
+  show(wrap, opening);
+  $('#mnWhenToggle').textContent = opening ? '✕ Use the current time' : '🕗 Log for a different time';
+  if (opening){
+    $('#mnWhen').value = toLocalInput(new Date());
+    $('#mnWhen').min   = toLocalInput(backdateFloor());
+    $('#mnWhen').max   = toLocalInput(new Date());
+  }
+  updateWhenHint();
+};
+$('#mnWhen').oninput = updateWhenHint;
+
+function updatePaceHint(){
+  const mi = parseFloat($('#mnMiles').value), secs = mnSeconds();
+  const el = $('#mnPace');
+  if (mi > 0 && secs > 0){
+    el.textContent = `${paceStr(secs / mi)} / mile` + (mi >= CHALLENGE.goalMiles ? '  ·  clears the mile ✓' : '');
+    el.classList.toggle('on', mi >= CHALLENGE.goalMiles);
+  } else {
+    el.textContent = mi > 0 && mi < CHALLENGE.goalMiles
+      ? `${(CHALLENGE.goalMiles - mi).toFixed(2)} mi short of the daily mile` : '';
+    el.classList.remove('on');
+  }
+}
+$('#mnMiles').oninput = updatePaceHint;
+$('#mnMins').oninput  = updatePaceHint;
+$('#mnSecs').oninput  = updatePaceHint;
+
 $('#mnCancel').onclick = () => show($('#manualSheet'), false);
 $('#mnSave').onclick = async () => {
   const miles = parseFloat($('#mnMiles').value);
-  const mins  = parseFloat($('#mnMins').value);
+  const secs  = mnSeconds();
   if (!(miles > 0)) return toast('Enter your miles');
   if (miles > 100) return toast('That is a lot of miles');
+
+  const when = chosenWhen(), now = new Date();
+  if (when > now)               return toast("You can't log a run in the future");
+  if (when < backdateFloor())   return toast('You can only log back to yesterday', 4200);
+
   const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
-  const ok = await saveRun({ miles, seconds: (mins > 0 ? mins*60 : 0), path: [], manual:true,
-                             note: $('#mnNote').value.trim(), photo: mnPhoto.url });
+  const ok = await saveRun({ miles, seconds: secs, path: [], manual:true,
+                             note: $('#mnNote').value.trim(), photo: mnPhoto.url, shot: mnShot.url,
+                             day: dayKey(when), startedAt: when.getTime() });
   btn.disabled = false; btn.textContent = 'Log it';
-  if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); switchTab('feed'); }
+  if (ok){ show($('#manualSheet'), false); mnPhoto.reset(); mnShot.reset(); switchTab('feed'); }
 };
 
-async function saveRun({miles, seconds, path, manual, note, photo, imported, day, startedAt}){
+async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt}){
   if (!ME) { toast('Not signed in'); return false; }
 
   // With the offline cache on, a write promise settles only when the SERVER acks —
@@ -2165,19 +2288,21 @@ async function saveRun({miles, seconds, path, manual, note, photo, imported, day
     path: (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) })),
     reactions: {},
     hasPhoto: !!photo,
+    hasShot: !!shot,
     startedAt: startedAt || Date.now(),
     createdAt: serverTimestamp()
   }).then(() => null, e => ({ what:'run', e }));
 
-  let photoWrite = null;
-  if (photo){
-    photoCache.set(ref.id, photo);                        // show it instantly from memory
-    photoWrite = setDoc(doc(db, 'runs', ref.id, 'media', 'photo'),
-      { uid: ME.uid, img: photo, ts: Date.now() }
-    ).then(() => null, e => ({ what:'photo', e }));
+  const media = [];
+  for (const [kind, data] of [['photo', photo], ['shot', shot]]){
+    if (!data) continue;
+    photoCache.set(`${ref.id}|${kind}`, data);            // show it instantly from memory
+    media.push(setDoc(doc(db, 'runs', ref.id, 'media', kind),
+      { uid: ME.uid, img: data, ts: Date.now() }
+    ).then(() => null, e => ({ what:'photo', kind, e })));
   }
 
-  const jobs = [runWrite, photoWrite].filter(Boolean);
+  const jobs = [runWrite, ...media];
   const report = fails => {
     const runFail   = fails.find(f => f?.what === 'run');
     const photoFail = fails.find(f => f?.what === 'photo');
@@ -2188,8 +2313,9 @@ async function saveRun({miles, seconds, path, manual, note, photo, imported, day
     }
     if (photoFail){
       console.error(photoFail.e);
-      photoCache.delete(ref.id);
-      setDoc(ref, { hasPhoto: false }, { merge:true }).catch(()=>{});   // don't leave a broken photo slot
+      photoCache.delete(`${ref.id}|${photoFail.kind}`);
+      setDoc(ref, { [photoFail.kind === 'shot' ? 'hasShot' : 'hasPhoto']: false },
+             { merge:true }).catch(()=>{});                              // don't leave a broken slot
       toast('Photo did not save: ' + (photoFail.e.code || photoFail.e.message)
             + '. The run still counts.', 7000);
     }
