@@ -170,8 +170,26 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .splitrow .timepair{flex:1}
 .splitrow .x{flex:none;width:30px;height:30px;border-radius:50%;appearance:none;cursor:pointer;
   border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink-faint);font-size:14px}
-.splitfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
-.splitfoot .linkbtn{padding:6px 0}
+.splitrow .ghostx{border-color:transparent;background:none;cursor:default}
+/* adding a mile used to be a faint underlined link tucked bottom-left — it now
+   sits right under the last row, full width, looking like the row it creates */
+.addrow{appearance:none;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px;margin-top:3px;border-radius:12px;cursor:pointer;font:700 13px 'Outfit',sans-serif;
+  background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.22);color:var(--ink-dim);
+  transition:color .15s,border-color .15s,background .15s}
+.addrow:hover{color:var(--ink);border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.07)}
+.addrow:active{transform:scale(.99)}
+.addrow .k{font-size:15px;line-height:1}
+#mnSplitSum{margin:11px 0 0}
+/* a small note under a field, for the things a label can't say in two words */
+.fieldnote{margin:-1px 0 9px;font-size:11.5px;line-height:1.45;color:var(--ink-faint);
+  text-transform:none;letter-spacing:0;font-weight:500}
+#mnTimeTag{margin:6px 0 0}
+/* the total is computed once splits exist, so it stops looking like somewhere to type */
+#mnTimeField.derived .timepair input{background:rgba(94,242,192,.09);border-color:rgba(94,242,192,.28);
+  color:var(--mint);cursor:default}
+#mnTimeField.derived .timepair span{color:var(--mint)}
+#mnTimeField.derived .fieldnote{color:var(--mint)}
 .splits{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
 .splitchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;font-size:11.5px;
   font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
@@ -213,8 +231,17 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .shots .photoslot{margin-top:10px}
 .shots .addbtn{padding:22px 8px;font-size:13px;line-height:1.35;height:100%}
 .timepair{display:flex;align-items:center;gap:6px}
-.timepair input{text-align:center;padding-left:6px;padding-right:6px}
+.timepair input{text-align:center;padding-left:6px;padding-right:6px;min-width:0}
 .timepair span{color:var(--ink-faint);font-weight:700;font-size:17px}
+/* h : m : s — miles needs far less room than three time boxes, so the row is
+   split unevenly rather than in half. Hours are one digit and usually zero, so
+   that box is the narrowest of the three. */
+.mt-row{grid-template-columns:.78fr 1.22fr}
+.timepair.trio{gap:4px}
+.timepair.trio input{flex:1 1 0}
+.timepair.trio input#mnHrs{flex:.66 1 0}
+.timepair.trio span{font-size:15px}
+.hrhint{margin:5px 0 0;text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
 #mnWhen{color-scheme:dark}
 .pacehint{text-align:center;font-size:12.5px;font-weight:600;color:var(--ink-faint);
   margin:-2px 0 12px;font-variant-numeric:tabular-nums;min-height:16px;letter-spacing:.02em}
@@ -306,6 +333,127 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .fin-badges{flex:none;font-size:15px;letter-spacing:1px;max-width:130px;text-align:right;line-height:1.5}
 .fin-badges .none{color:var(--ink-faint);font-size:12px}
 .fin-foot{text-align:center;color:var(--ink-faint);font-size:12.5px;margin:22px 0 6px;letter-spacing:.04em}
+
+/* ---- wrapped ---- */
+.wrap-row{display:flex;align-items:center;gap:11px;padding:11px 4px}
+.wrap-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.wrap-row .nm{flex:1;min-width:0}
+.wrap-row .nm b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrap-row .nm span{font-size:11.5px;color:var(--ink-faint)}
+.wrap-go{flex:none;appearance:none;cursor:pointer;font:700 12px 'Outfit',sans-serif;padding:8px 14px;border-radius:999px;
+  color:var(--ink);background:linear-gradient(120deg,rgba(94,242,192,.22),rgba(167,139,250,.22));
+  border:1px solid rgba(255,255,255,.16)}
+.wrap-go:active{transform:scale(.95)}
+
+.wrap-ov{position:fixed;inset:0;z-index:84;background:#080b14;display:flex;flex-direction:column;
+  overscroll-behavior:contain;touch-action:pan-y}
+.wrap-bars{display:flex;gap:4px;padding:calc(var(--safe-t) + 12px) 14px 0;flex:none;position:relative;z-index:2}
+.wrap-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
+.wrap-bars i.on{background:var(--mint)}
+.wrap-x{position:absolute;top:calc(var(--safe-t) + 24px);right:14px;z-index:3;width:34px;height:34px;border-radius:50%;appearance:none;
+  cursor:pointer;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);color:var(--ink);font-size:15px}
+.wrap-stage{flex:1;min-height:0;display:flex}
+/* the whole card is the button: left edge goes back, the rest goes forward */
+.wrap-tap{position:absolute;inset:0;display:flex}
+.wrap-tap button{appearance:none;background:none;border:0;cursor:pointer;padding:0}
+.wrap-tap .b{flex:0 0 28%} .wrap-tap .f{flex:1}
+
+/* the wash goes on the card itself — as a ::before with z-index:-1 it would sit
+   behind the overlay's own background and never be seen */
+.wcard{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:34px 26px 60px;gap:2px;position:relative;overflow:hidden;
+  background:radial-gradient(125% 62% at 50% 0%,var(--w1,rgba(94,242,192,.28)),transparent 72%),
+             radial-gradient(125% 62% at 50% 100%,var(--w2,rgba(167,139,250,.26)),transparent 72%)}
+.wcard .wk{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);font-weight:700;
+  margin-bottom:14px}
+.wcard h3{margin:6px 0 2px;font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.wbig{font-size:76px;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;
+  background:linear-gradient(120deg,#fff,rgba(255,255,255,.72));-webkit-background-clip:text;background-clip:text;
+  color:transparent;display:flex;flex-direction:column;align-items:center;gap:6px}
+.wbig span{font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  -webkit-text-fill-color:var(--ink-dim);color:var(--ink-dim)}
+.wline{margin:16px 0 0;font-size:16px;line-height:1.5;color:var(--ink-dim);max-width:19em}
+.wline b{color:var(--ink);font-weight:700}
+.wfoot{margin:14px 0 0;font-size:12.5px;color:var(--ink-faint);letter-spacing:.03em}
+.wav{width:92px;height:92px;border-radius:50%;object-fit:cover;margin-bottom:12px;
+  border:2px solid rgba(255,255,255,.3);box-shadow:0 16px 40px -14px rgba(0,0,0,.8)}
+/* a grid, not wrapping flex — a long label must not push the pair onto two rows */
+.wpair{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:330px}
+.wpair > div{min-width:0;padding:16px 10px;border-radius:18px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.wpair b{display:block;font-size:32px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.wpair span{display:block;margin-top:4px;font-size:11.5px;color:var(--ink-faint)}
+.wlist{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:19em}
+.wlist span{padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:600;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13)}
+.wlist span.on{background:rgba(94,242,192,.16);border-color:rgba(94,242,192,.4);color:var(--ink)}
+
+/* ---- the picture cards ---- */
+.wshots{display:grid;gap:7px;width:100%;max-width:330px}
+.wshots.n1{grid-template-columns:1fr}
+.wshots.n2,.wshots.n3,.wshots.n4{grid-template-columns:1fr 1fr}
+.wshots.n5,.wshots.n6,.wshots.n7,.wshots.n8,.wshots.n9{grid-template-columns:1fr 1fr 1fr}
+.wshots figure{margin:0;position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.wshots.n1 figure{aspect-ratio:4/5}
+.wshots img{width:100%;height:100%;object-fit:cover;display:block}
+.wshots figcaption{position:absolute;left:0;right:0;bottom:0;padding:12px 6px 4px;font-size:9.5px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.72))}
+
+.wroutes{display:grid;gap:8px;width:100%;max-width:330px}
+.wroutes.n1{grid-template-columns:1fr}
+.wroutes.n2,.wroutes.n4{grid-template-columns:1fr 1fr}
+.wroutes.n3,.wroutes.n5,.wroutes.n6{grid-template-columns:1fr 1fr 1fr}
+.wroute{position:relative;border-radius:13px;overflow:hidden;aspect-ratio:4/3;
+  background:linear-gradient(150deg,rgba(124,92,255,.15),rgba(46,230,176,.10));
+  border:1px solid rgba(255,255,255,.12)}
+.wroute svg{display:block;width:100%;height:100%}
+.wroute i{position:absolute;left:0;right:0;bottom:0;padding:10px 5px 3px;font-style:normal;font-size:9.5px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.66))}
+.wroutes.n1 .wroute{aspect-ratio:3/2}
+
+.wquote{margin:0;font-size:22px;line-height:1.4;font-weight:600;color:var(--ink);max-width:15em;
+  position:relative;padding:0 4px}
+.wquote::before{content:'“';position:absolute;left:-16px;top:-14px;font-size:52px;color:rgba(255,255,255,.18);
+  line-height:1}
+.wbadges{font-size:38px;letter-spacing:6px;line-height:1.35;max-width:8em}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:20px;width:100%;max-width:330px}
+.wgrid > div{padding:15px 10px;border-radius:16px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12)}
+.wgrid b{display:block;font-size:25px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.wgrid span{display:block;margin-top:3px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
+/* their own face behind the opening card, blurred past recognition of anything
+   but the colours — it just has to feel like theirs */
+/* strictly inside the card — an inset-negative or scaled layer would inflate the
+   card's scrollHeight even though overflow:hidden clips it. The blur softening the
+   edges just reads as a vignette against a dark card. */
+.t-open.haspic::before{content:'';position:absolute;inset:0;background-image:var(--pic);
+  background-size:130% auto;background-position:center;filter:blur(34px) saturate(1.25);opacity:.42}
+.t-open.haspic > *{position:relative}
+/* one mood per card, so swiping through feels like moving somewhere */
+.t-open  {--w1:rgba(94,242,192,.30);--w2:rgba(167,139,250,.28)}
+.t-miles {--w1:rgba(94,242,192,.34);--w2:rgba(46,150,230,.26)}
+.t-days  {--w1:rgba(255,209,102,.30);--w2:rgba(167,139,250,.24)}
+.t-time  {--w1:rgba(126,224,255,.28);--w2:rgba(94,242,192,.22)}
+.t-pace  {--w1:rgba(255,120,180,.26);--w2:rgba(167,139,250,.28)}
+.t-splits{--w1:rgba(126,224,255,.26);--w2:rgba(255,120,180,.22)}
+.t-trend {--w1:rgba(94,242,192,.32);--w2:rgba(126,224,255,.24)}
+.t-clock {--w1:rgba(167,139,250,.32);--w2:rgba(46,90,200,.28)}
+.t-wx    {--w1:rgba(126,224,255,.30);--w2:rgba(255,209,102,.20)}
+.t-places{--w1:rgba(94,242,192,.26);--w2:rgba(255,150,120,.22)}
+.t-routes{--w1:rgba(124,92,255,.30);--w2:rgba(46,230,176,.24)}
+.t-photos{--w1:rgba(255,150,120,.26);--w2:rgba(126,224,255,.24)}
+.t-long  {--w1:rgba(255,150,120,.28);--w2:rgba(167,139,250,.26)}
+.t-note  {--w1:rgba(167,139,250,.26);--w2:rgba(94,242,192,.22)}
+.t-love  {--w1:rgba(255,120,180,.30);--w2:rgba(255,209,102,.22)}
+.t-badge {--w1:rgba(255,209,102,.32);--w2:rgba(94,242,192,.22)}
+.t-end   {--w1:rgba(167,139,250,.32);--w2:rgba(94,242,192,.30)}
+body.noscroll{overflow:hidden}
+@media (max-height:680px){
+  .wbig{font-size:60px} .wcard h3{font-size:26px} .wav{width:74px;height:74px}
+}
 
 /* ---- badges ---- */
 .badge-card{display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:11px}
@@ -410,8 +558,14 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
 
 /* ---- sheets ---- */
 .sheet{position:fixed;inset:0;z-index:80;background:rgba(4,4,12,.6);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center}
+/* The log sheet grew: six split rows plus a back-dated time makes a card taller
+   than a phone. Anchored to the bottom, the overflow went off the TOP of the
+   screen — heading, photo buttons and the total-time field all unreachable, with
+   nothing to scroll. Cap it and let it scroll inside itself. */
 .sheet .card{width:100%;max-width:520px;padding:22px 20px calc(22px + var(--safe-b));border-radius:28px 28px 0 0;
-  animation:up .3s cubic-bezier(.2,.9,.3,1)}
+  animation:up .3s cubic-bezier(.2,.9,.3,1);
+  max-height:calc(100vh - 18px);max-height:calc(100dvh - 18px);
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 @media(min-width:560px){.sheet{align-items:center}.sheet .card{border-radius:28px;margin:0 16px}}
 @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 .sheet h3{margin:0 0 4px;font-size:20px;font-weight:800;letter-spacing:-.02em}
@@ -624,14 +778,18 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     </div>
     <input type="file" accept="image/*" id="mnShotInput" class="vh" />
     <input type="file" accept="image/*" id="mnPhotoInput" class="vh" />
-    <div class="two" style="margin-top:14px">
-      <div class="field"><label>Miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
-      <div class="field"><label>Time</label>
-        <div class="timepair">
-          <input id="mnMins" type="number" inputmode="numeric" step="1" min="0" max="600" placeholder="12" aria-label="Minutes" />
+    <div class="two mt-row" style="margin-top:14px">
+      <div class="field"><label>Total miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
+      <div class="field" id="mnTimeField"><label>Total time</label>
+        <div class="timepair trio">
+          <input id="mnHrs"  type="number" inputmode="numeric" step="1" min="0" max="23" placeholder="0" aria-label="Total hours" />
           <span>:</span>
-          <input id="mnSecs" type="number" inputmode="numeric" step="1" min="0" max="59" placeholder="00" aria-label="Seconds" />
+          <input id="mnMins" type="number" inputmode="numeric" step="1" min="0" max="59" placeholder="12" aria-label="Total minutes" />
+          <span>:</span>
+          <input id="mnSecs" type="number" inputmode="numeric" step="1" min="0" max="59" placeholder="00" aria-label="Total seconds" />
         </div>
+        <p class="fieldnote hrhint">h : m : s</p>
+        <p class="fieldnote" id="mnTimeTag"></p>
       </div>
     </div>
     <div id="mnPace" class="pacehint">—</div>
@@ -641,11 +799,10 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     </div>
     <div id="mnSplitWrap" class="field hide">
       <label>Mile splits</label>
+      <p class="fieldnote">One row per mile. These add up to your total time above.</p>
       <div id="mnSplits"></div>
-      <div class="splitfoot">
-        <button class="linkbtn" id="mnSplitAdd">＋ another mile</button>
-        <span id="mnSplitSum" class="pacehint" style="margin:0"></span>
-      </div>
+      <button class="addrow" id="mnSplitAdd"><span class="k">＋</span>Add another mile</button>
+      <div id="mnSplitSum" class="pacehint"></div>
     </div>
     <div id="mnWhenWrap" class="field hide">
       <label>When did you run?</label>
@@ -706,6 +863,17 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <button class="btn ghost" id="cfNo">Keep it</button>
       <button class="btn danger" id="cfYes">Delete</button>
     </div>
+  </div>
+</div>
+
+<!-- ---------- WRAPPED ---------- -->
+<div id="wrapped" class="wrap-ov hide">
+  <div class="wrap-bars" id="wrapBars"></div>
+  <button class="wrap-x" id="wrapX" aria-label="Close">✕</button>
+  <div class="wrap-stage" id="wrapStage"></div>
+  <div class="wrap-tap">
+    <button class="b" id="wrapPrev" aria-label="Previous"></button>
+    <button class="f" id="wrapNext" aria-label="Next"></button>
   </div>
 </div>
 
@@ -1707,6 +1875,10 @@ function renderFinale(){
         <div class="stat"><b class="mono">${groupRuns}</b><span>Runs</span></div>
         <div class="stat"><b class="mono">${players.length}</b><span>Players</span></div>
       </div>
+      ${players.some(p => p.uid === ME?.uid)
+        ? `<div class="cta" style="margin-top:18px">
+             <button class="btn primary" data-wrap="${esc(ME.uid)}">🎬 See your Wrapped</button>
+           </div>` : ''}
     </div>
 
     <div class="h2"><h2>Final standings</h2><span>days completed</span></div>
@@ -1722,6 +1894,17 @@ function renderFinale(){
     <div class="h2"><h2>Records</h2></div>
     <div class="glass" style="padding:6px 14px 10px">${recHTML}</div>
 
+    <div class="h2"><h2>Wrapped</h2><span>everyone's month</span></div>
+    <div class="glass" style="padding:6px 14px 10px">
+      ${players.map(p => `
+        <div class="wrap-row">
+          <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+          <div class="nm"><b>${esc(p.name)}${p.uid === ME?.uid ? ' · you' : ''}</b>
+            <span>${p.miles.toFixed(1)} mi · ${p.completed.length} of 30 days</span></div>
+          <button class="wrap-go" data-wrap="${esc(p.uid)}">${p.uid === ME?.uid ? 'Yours' : 'View'} →</button>
+        </div>`).join('')}
+    </div>
+
     <div class="h2"><h2>Badges earned</h2></div>
     ${players.map(p => {
       const got = ACHIEVEMENTS.filter(a => { try { return a.earned(p); } catch { return false; } });
@@ -1733,6 +1916,371 @@ function renderFinale(){
 
     <p class="fin-foot">Same time next year.</p>`;
 }
+
+/* ============================================================
+   11c. WRAPPED — one player's month, as a deck of story cards.
+   Everything here comes from data already on the run documents and
+   their media subcollections. A card whose data nobody collected is
+   dropped rather than shown empty.
+   ============================================================ */
+const RAINY  = c => (c >= 51 && c <= 67) || (c >= 80 && c <= 82) || (c >= 95 && c <= 99);
+const SNOWY  = c => (c >= 71 && c <= 77) || c === 85 || c === 86;
+const DOW    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const hourStr = h => h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`;
+/* "2026-09-04" -> a local Date, without the UTC shift new Date(str) would apply */
+function dayDate(k){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k || '');
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+}
+const shortDay = k => { const d = dayDate(k);
+  return d ? d.toLocaleDateString(undefined,{month:'short', day:'numeric'}) : ''; };
+const timedPace = rs => {
+  let mi = 0, sec = 0;
+  for (const r of rs) if (r.seconds > 30 && r.miles > 0){ mi += r.miles; sec += r.seconds; }
+  return mi >= 0.5 ? sec / mi : null;
+};
+/* most frequent value, with its count */
+function commonest(list){
+  const t = new Map();
+  for (const v of list) if (v || v === 0) t.set(v, (t.get(v) || 0) + 1);
+  let best = null, n = 0;
+  for (const [v,c] of t) if (c > n){ best = v; n = c; }
+  return { value: best, count: n, kinds: t.size };
+}
+/* evenly spaced picks, so a collage spans the month instead of clumping */
+function spread(arr, n){
+  if (n <= 1) return arr.slice(0, Math.max(0, n));      // (n-1) would divide by zero
+  if (arr.length <= n) return arr.slice();
+  const step = (arr.length - 1) / (n - 1), out = [];
+  for (let i = 0; i < n; i++) out.push(arr[Math.round(i * step)]);
+  return [...new Set(out)];
+}
+/* run `fn` over `items` a few at a time — 30 parallel photo reads would stall the tab */
+async function pool(items, width, fn){
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(width, items.length) }, async () => {
+    while (next < items.length){
+      const i = next++;
+      try { out[i] = await fn(items[i]); } catch { out[i] = null; }
+    }
+  }));
+  return out;
+}
+
+const MAX_WRAP_PHOTOS = 9, MAX_WRAP_ROUTES = 6;
+
+function wrappedStats(p, ranked){
+  const runs  = p.runList;
+  const timed = runs.filter(r => r.seconds > 30 && r.miles > 0);
+  const withWx = runs.filter(r => r.weather && isFinite(r.weather.t));
+  const withAt = runs.filter(r => r.startedAt);
+  const best = (arr, f) => arr.length ? arr.reduce((a,b) => f(b) > f(a) ? b : a) : null;
+  const least = (arr, f) => arr.length ? arr.reduce((a,b) => f(b) < f(a) ? b : a) : null;
+
+  // ---- mile splits ----
+  const splitRuns = runs.filter(r => Array.isArray(r.splits) && r.splits.length);
+  const allSplits = splitRuns.flatMap(r => r.splits.filter(s => s > 60));
+  // a negative split is a run whose last mile beat its first
+  const negatives = splitRuns.filter(r => r.splits.length > 1 && r.splits[r.splits.length-1] < r.splits[0]).length;
+
+  // fastest single mile: a real split beats an average, same rule as the record board
+  const fastest = Math.min(
+    ...allSplits,
+    ...timed.filter(r => r.miles >= 1 && !(r.splits || []).length).map(r => r.seconds / r.miles),
+    Infinity);
+
+  // opening ten days against closing ten — did the month make them faster?
+  const early = timedPace(timed.filter(r => r.day <= '2026-09-10'));
+  const late  = timedPace(timed.filter(r => r.day >= '2026-09-21'));
+
+  const byDow = new Array(7).fill(0);
+  for (const r of runs){ const d = dayDate(r.day); if (d) byDow[d.getDay()]++; }
+  const topDow = byDow.some(n => n) ? byDow.indexOf(Math.max(...byDow)) : -1;
+
+  const reactCount = r => Object.values(r.reactions || {}).reduce((n,l) => n + (Array.isArray(l) ? l.length : 0), 0);
+  const reactions  = runs.reduce((n,r) => n + reactCount(r), 0);
+  const emojiTally = [];
+  for (const r of runs)
+    for (const [e,l] of Object.entries(r.reactions || {}))
+      if (Array.isArray(l)) for (let i = 0; i < l.length; i++) emojiTally.push(e);
+  const topPost = reactions ? best(runs, reactCount) : null;
+
+  // ---- weather ----
+  const cityRun = commonest(runs.map(r => r.weather && r.weather.p).filter(Boolean));
+  const cities  = [...new Set(runs.map(r => r.weather && r.weather.p).filter(Boolean))];
+  const condition = commonest(withWx.map(r => wxLabel(r.weather.c)));
+  const avgTemp = withWx.length
+    ? Math.round(withWx.reduce((n,r) => n + r.weather.t, 0) / withWx.length) : null;
+
+  // ---- something they wrote ----
+  const noted = runs.filter(r => typeof r.note === 'string' && r.note.trim().length > 2);
+  const note = (topPost && topPost.note && topPost.note.trim().length > 2)
+    ? topPost : best(noted, r => r.note.length);
+
+  return {
+    player: p,
+    rank: ranked.indexOf(p) + 1, of: ranked.length,
+    groupMiles: ranked.reduce((n,x) => n + x.miles, 0),
+    miles: p.miles, runs: runs.length, seconds: runs.reduce((n,r) => n + (r.seconds||0), 0),
+    days: p.completed.length, streak: p.best,
+    avgPace: p.timedMiles >= 1 && p.timedSeconds > 0 ? p.timedSeconds / p.timedMiles : null,
+    fastest: isFinite(fastest) ? fastest : null,
+    splitRuns: splitRuns.length, splitMiles: allSplits.length, negatives,
+    early, late,
+    earliest: least(withAt, r => new Date(r.startedAt).getHours() * 60 + new Date(r.startedAt).getMinutes()),
+    latest:   best(withAt,  r => new Date(r.startedAt).getHours() * 60 + new Date(r.startedAt).getMinutes()),
+    hottest: best(withWx, r => r.weather.t),
+    coldest: least(withWx, r => r.weather.t),
+    avgTemp, condition,
+    wet: withWx.filter(r => RAINY(r.weather.c) || SNOWY(r.weather.c)).length,
+    hasWx: withWx.length > 0,
+    cities, topCity: cityRun,
+    longest: best(runs, r => r.miles || 0),
+    topDow, dowCount: topDow >= 0 ? byDow[topDow] : 0,
+    reactions, topPost, topPostReacts: topPost ? reactCount(topPost) : 0,
+    topEmoji: commonest(emojiTally),
+    note,
+    badges: ACHIEVEMENTS.filter(a => { try { return a.earned(p); } catch { return false; } }),
+    photos: [], routes: []          // filled in by wrappedMedia
+  };
+}
+
+/* Pull the month's pictures and GPS traces. Bounded, spread across the month,
+   and entirely optional — a failed read just means one fewer card. */
+async function wrappedMedia(s){
+  const runs = [...s.player.runList].sort((a,b) => (a.day || '').localeCompare(b.day || ''));
+
+  const wanted = [];
+  for (const r of runs){
+    if (r.hasShot)  wanted.push({ run:r, kind:'shot' });
+    if (r.hasPhoto) wanted.push({ run:r, kind:'photo' });
+  }
+  const picks = spread(wanted, MAX_WRAP_PHOTOS);
+  const imgs = await pool(picks, 4, x => loadPhoto(x.run.id, x.kind));
+  s.photos = picks.map((x,i) => imgs[i] ? { url:imgs[i], kind:x.kind, day:x.run.day } : null).filter(Boolean);
+
+  const traceable = runs.filter(r => r.hasPath || (mapPaths.get(r.id) || []).length > 1);
+  const rPicks = spread(traceable, MAX_WRAP_ROUTES);
+  const paths = await pool(rPicks, 4, r => loadPath(r.id));
+  s.routes = rPicks.map((r,i) => (paths[i] && paths[i].length > 1)
+    ? { pts:paths[i], run:r } : null).filter(Boolean);
+  return s;
+}
+
+/* Each card returns HTML, or '' to be skipped entirely. */
+function wrappedCards(s){
+  const p = s.player;
+  const card = (tone, kicker, body, style='') =>
+    `<div class="wcard ${tone}"${style ? ` style="${style}"` : ''}><div class="wk">${kicker}</div>${body}</div>`;
+  const big  = (v, unit) => `<div class="wbig">${v}${unit ? `<span>${unit}</span>` : ''}</div>`;
+  const line = t => `<p class="wline">${t}</p>`;
+  const foot = t => `<p class="wfoot">${t}</p>`;
+  const hrs  = Math.floor(s.seconds / 3600), mins = Math.round(s.seconds % 3600 / 60);
+  const laps = Math.round(s.miles * MI / 400);
+  const cssUrl = u => `url("${String(u).replace(/["\\]/g, encodeURIComponent)}")`;
+  const cards = [];
+
+  // the opening card wears their own face, blurred right down, when there is one
+  const face = s.photos.find(x => x.kind === 'photo') || s.photos[0];
+  cards.push(card('t-open' + (face ? ' haspic' : ''), 'September 1–30',
+    `<img class="wav" src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+     <h3>${esc(p.name)}</h3>
+     <p class="wline">Here's your Streaktember.</p>
+     ${foot('Tap to keep going')}`,
+    face ? `--pic:${cssUrl(face.url)}` : ''));
+
+  if (s.miles > 0){
+    const share = s.groupMiles > 0 ? Math.round(s.miles / s.groupMiles * 100) : 0;
+    cards.push(card('t-miles', 'You covered',
+      big(s.miles.toFixed(1), 'miles') +
+      line(`across ${s.runs} ${s.runs === 1 ? 'run' : 'runs'}`) +
+      (laps >= 12 ? foot(`That's ${laps.toLocaleString()} laps of a track.`) : '') +
+      (share >= 3 && s.of > 1 ? foot(`${share}% of everything the group ran.`) : '')));
+  }
+
+  cards.push(card('t-days', 'You showed up',
+    big(s.days, `of 30 days`) +
+    line(s.days >= 30 ? 'Every single day. Iron legs.'
+       : `Longest streak: ${s.streak} ${s.streak === 1 ? 'day' : 'days'} in a row`) +
+    (s.topDow >= 0 && s.dowCount > 1 ? foot(`${DOW[s.topDow]} was your day — ${s.dowCount} of them.`) : '')));
+
+  if (s.seconds > 0) cards.push(card('t-time', 'Time on your feet',
+    big(hrs > 0 ? (mins ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`) +
+    line('of moving, all month') +
+    (s.runs > 1 ? foot(`About ${clock(s.seconds / s.runs)} a run.`) : '')));
+
+  if (s.avgPace) cards.push(card('t-pace', 'Your average pace',
+    big(paceStr(s.avgPace), '/ mile') +
+    (s.fastest ? line(`Fastest single mile: <b>${paceStr(s.fastest)}</b>`) : '')));
+
+  if (s.splitMiles > 1) cards.push(card('t-splits', 'Mile by mile',
+    big(s.splitMiles, s.splitMiles === 1 ? 'timed mile' : 'timed miles') +
+    line(`logged individually across ${s.splitRuns} ${s.splitRuns === 1 ? 'run' : 'runs'}`) +
+    (s.negatives ? foot(`${s.negatives} of them finished faster than they started.`) : '')));
+
+  if (s.early && s.late && Math.abs(s.early - s.late) >= 3){
+    const faster = s.late < s.early, diff = Math.round(Math.abs(s.early - s.late));
+    cards.push(card('t-trend', faster ? 'You got faster' : 'You eased off',
+      big(`${faster ? '−' : '+'}${diff}s`, '/ mile') +
+      line(`${paceStr(s.early)} in the first ten days → <b>${paceStr(s.late)}</b> in the last ten`)));
+  }
+
+  if (s.earliest && s.latest && s.earliest !== s.latest){
+    const e = new Date(s.earliest.startedAt), l = new Date(s.latest.startedAt);
+    cards.push(card('t-clock', 'Your hours',
+      `<div class="wpair">
+         <div><b>${hourStr(e.getHours())}</b><span>earliest start</span></div>
+         <div><b>${hourStr(l.getHours())}</b><span>latest start</span></div>
+       </div>` +
+      line(e.getHours() < 7 ? 'Some of these were before sunrise.'
+         : l.getHours() >= 21 ? 'And some of them well after dark.'
+         : 'A respectable spread.')));
+  }
+
+  if (s.hasWx){
+    const h = s.hottest.weather, c = s.coldest.weather;
+    cards.push(card('t-wx', 'The weather you ran in',
+      `<div class="wpair">
+         <div><b>${h.t}°</b><span>hottest · ${esc(wxLabel(h.c))}</span></div>
+         <div><b>${c.t}°</b><span>coldest · ${esc(wxLabel(c.c))}</span></div>
+       </div>` +
+      (s.avgTemp !== null ? line(`You averaged <b>${s.avgTemp}°</b>, mostly ${esc(String(s.condition.value).toLowerCase())}.`) : '') +
+      (s.wet ? foot(`It rained or snowed on you ${s.wet} ${s.wet === 1 ? 'time' : 'times'}. You went anyway.`)
+             : foot('Not one wet run all month.'))));
+  }
+
+  if (s.cities.length) cards.push(card('t-places', s.cities.length === 1 ? 'Your patch' : 'Where you ran',
+    `<div class="wlist">${s.cities.slice(0,6).map(c =>
+      `<span${c === s.topCity.value ? ' class="on"' : ''}>${esc(c)}</span>`).join('')}</div>` +
+    (s.cities.length === 1
+      ? line('Same roads, thirty days.')
+      : line(`${s.cities.length} different places — <b>${esc(s.topCity.value)}</b> most of all.`)) +
+    (s.cities.length > 6 ? foot(`…and ${s.cities.length - 6} more.`) : '')));
+
+  if (s.routes.length) cards.push(card('t-routes',
+    s.routes.length === 1 ? 'The line you drew' : 'The lines you drew',
+    `<div class="wroutes n${Math.min(s.routes.length,6)}">${s.routes.map(x =>
+      `<div class="wroute">${routeSVG(x.pts, 200, 150)}<i>${esc(shortDay(x.run.day))}</i></div>`).join('')}</div>` +
+    line(s.routes.length === 1 ? 'One tracked route.' : `${s.routes.length} of your tracked routes.`)));
+
+  if (s.photos.length) cards.push(card('t-photos', 'Your month in pictures',
+    `<div class="wshots n${Math.min(s.photos.length,9)}">${s.photos.map(x =>
+      `<figure><img src="${esc(x.url)}" alt=""/><figcaption>${esc(shortDay(x.day))}</figcaption></figure>`).join('')}</div>` +
+    line(`${s.photos.length} ${s.photos.length === 1 ? 'shot' : 'shots'} from the month`)));
+
+  // with a single run this just restates the miles card
+  if (s.longest && s.longest.miles > 0 && s.runs > 1) cards.push(card('t-long', 'Your longest run',
+    big(s.longest.miles.toFixed(2), 'miles') +
+    (s.longest.seconds > 30 ? line(`${clock(s.longest.seconds)} · ${paceStr(s.longest.seconds / s.longest.miles)} / mile`) : '') +
+    (dayDate(s.longest.day) ? foot(dayDate(s.longest.day).toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'})) : '') +
+    (s.longest.weather && isFinite(s.longest.weather.t)
+      ? foot(`${wxEmoji(s.longest.weather.c)} ${s.longest.weather.t}°${s.longest.weather.p ? ' · ' + esc(s.longest.weather.p) : ''}`) : '')));
+
+  if (s.note && s.note.note) cards.push(card('t-note', 'You said',
+    `<blockquote class="wquote">${esc(s.note.note)}</blockquote>` +
+    foot(`${esc(shortDay(s.note.day))}${s.note.miles ? ` · ${s.note.miles.toFixed(2)} mi` : ''}`)));
+
+  if (s.reactions > 0) cards.push(card('t-love', 'The group approved',
+    big(s.reactions, s.reactions === 1 ? 'reaction' : 'reactions') +
+    (s.topEmoji.value ? line(`Mostly <b>${s.topEmoji.value}</b> — ${s.topEmoji.count} of them`) : '') +
+    (s.topPost && s.topPostReacts > 1 && dayDate(s.topPost.day)
+      ? foot(`Your ${shortDay(s.topPost.day)} post drew ${s.topPostReacts} on its own.`)
+      : '')));
+
+  if (s.badges.length) cards.push(card('t-badge', 'Badges earned',
+    `<div class="wbadges">${s.badges.map(a => `<span>${a.emoji}</span>`).join('')}</div>` +
+    line(s.badges.map(a => a.title).join(' · ')) +
+    foot(`${s.badges.length} of ${ACHIEVEMENTS.length}`)));
+
+  cards.push(card('t-end', `#${s.rank} of ${s.of}`,
+    `<h3>That was Streaktember</h3>
+     <div class="wgrid">
+       <div><b>${s.miles.toFixed(1)}</b><span>Miles</span></div>
+       <div><b>${s.days}</b><span>Days</span></div>
+       <div><b>${s.streak}</b><span>Best streak</span></div>
+       <div><b>${s.avgPace ? paceStr(s.avgPace) : '—'}</b><span>Avg pace</span></div>
+     </div>
+     ${foot('Screenshot it. Send it to the group.')}`));
+
+  return cards;
+}
+
+/* ---- the deck ---- */
+let wrapIdx = 0, wrapDeck = [], wrapOpen = false, wrapToken = 0;
+
+async function openWrapped(uid){
+  const ranked = [...byPlayer().values()].filter(x => x.runs > 0)
+    .sort((a,b) => b.completed.length - a.completed.length || b.miles - a.miles);
+  const p = ranked.find(x => x.uid === uid);
+  if (!p){ toast('No runs to wrap up.'); return; }
+
+  const token = ++wrapToken;
+  wrapOpen = true;
+  wrapIdx  = 0;
+  $('#wrapBars').innerHTML = '';
+  $('#wrapStage').innerHTML =
+    `<div class="wcard t-open"><div class="wk">September 1–30</div>
+       <img class="wav" src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+       <h3>${esc(p.name)}</h3>
+       <p class="wline">Putting your month together…</p></div>`;
+  show($('#wrapped'), true);
+  document.body.classList.add('noscroll');
+
+  const s = wrappedStats(p, ranked);
+  try { await wrappedMedia(s); } catch (err){ console.warn('wrapped media', err); }
+  if (token !== wrapToken || !wrapOpen) return;      // they closed it, or opened someone else's
+
+  wrapDeck = wrappedCards(s);
+  $('#wrapBars').innerHTML = wrapDeck.map(() => '<i></i>').join('');
+  paintWrapped();
+}
+function closeWrapped(){
+  wrapOpen = false;
+  wrapToken++;
+  show($('#wrapped'), false);
+  document.body.classList.remove('noscroll');
+  $('#wrapStage').innerHTML = '';
+}
+function paintWrapped(){
+  $('#wrapStage').innerHTML = wrapDeck[wrapIdx] || '';
+  $$('#wrapBars i').forEach((b,i) => b.classList.toggle('on', i <= wrapIdx));
+}
+function stepWrapped(n){
+  if (!wrapDeck.length) return;                      // still loading — ignore taps
+  const next = wrapIdx + n;
+  if (next < 0) return;
+  if (next >= wrapDeck.length){ closeWrapped(); return; }
+  wrapIdx = next;
+  paintWrapped();
+}
+
+$('#wrapX').onclick    = closeWrapped;
+$('#wrapPrev').onclick = () => stepWrapped(-1);
+$('#wrapNext').onclick = () => stepWrapped(1);
+document.addEventListener('keydown', e => {
+  if (!wrapOpen) return;
+  if (e.key === 'Escape')     { closeWrapped(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' || e.key === ' ') { stepWrapped(1);  e.preventDefault(); }
+  if (e.key === 'ArrowLeft')  { stepWrapped(-1); e.preventDefault(); }
+});
+/* swipe, with a threshold high enough that a thumb resting on the card doesn't count */
+(() => {
+  let x0 = null, y0 = null;
+  const ov = $('#wrapped');
+  ov.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY;
+  }, { passive:true });
+  ov.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      stepWrapped(dx < 0 ? 1 : -1);
+      e.preventDefault();               // don't let the tap layer fire too
+    }
+  });
+})();
 
 function renderBoard(){
   const players = [...byPlayer().values()].sort((a,b) =>
@@ -1779,6 +2327,9 @@ document.addEventListener('click', async e => {
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
+
+  const wrap = e.target.closest('[data-wrap]');
+  if (wrap){ openWrapped(wrap.dataset.wrap); return; }
 
   const bigPhoto = e.target.closest('.shot > img, .selfie > img');
   if (bigPhoto){
@@ -2017,7 +2568,7 @@ window.addEventListener('beforeunload', e => { if (T.active) { e.preventDefault(
    ============================================================ */
 const MAX_SPLITS = 20;
 
-function splitRowHTML(i){
+function splitRowHTML(i, only){
   return `<div class="splitrow" data-split="${i}">
     <span class="n">Mile ${i + 1}</span>
     <div class="timepair">
@@ -2025,9 +2576,12 @@ function splitRowHTML(i){
       <span>:</span>
       <input type="number" inputmode="numeric" step="1" min="0" max="59"  placeholder="00" data-ss="${i}" aria-label="Mile ${i+1} seconds" />
     </div>
-    <button class="x" data-sx="${i}" aria-label="Remove mile ${i + 1}">✕</button>
+    ${only ? '<span class="x ghostx" aria-hidden="true"></span>'
+           : `<button class="x" data-sx="${i}" aria-label="Remove mile ${i + 1}">✕</button>`}
   </div>`;
 }
+/* one row means nothing to remove — keep the space so the inputs don't jump */
+const splitRows = n => [...Array(n)].map((_, i) => splitRowHTML(i, n === 1)).join('');
 
 function readSplits(){
   return [...$$('#mnSplits .splitrow')].map(row => {
@@ -2041,7 +2595,7 @@ const filledSplits = () => readSplits().filter(v => v > 0);
 
 function renderSplitRows(n){
   const current = readSplits();
-  $('#mnSplits').innerHTML = [...Array(n)].map((_, i) => splitRowHTML(i)).join('');
+  $('#mnSplits').innerHTML = splitRows(n);
   current.slice(0, n).forEach((secs, i) => {
     if (!secs) return;
     $(`[data-sm="${i}"]`).value = Math.floor(secs / 60);
@@ -2050,17 +2604,30 @@ function renderSplitRows(n){
   updateSplitSum();
 }
 
+/* The total time is theirs to type until a split has a number in it; from then on
+   it is the sum, so it goes read-only and says so rather than silently being
+   overwritten under their cursor. */
+function markTotalDerived(on){
+  $('#mnTimeField').classList.toggle('derived', !!on);
+  $('#mnTimeTag').textContent = on ? 'Added up from your splits below' : '';
+  $('#mnHrs').readOnly = $('#mnMins').readOnly = $('#mnSecs').readOnly = !!on;
+}
+
 function updateSplitSum(){
   const vals = filledSplits();
   const el = $('#mnSplitSum');
-  if (!vals.length){ el.textContent = ''; el.classList.remove('on'); return; }
+  if (!vals.length){
+    el.textContent = ''; el.classList.remove('on');
+    markTotalDerived(false);
+    return;
+  }
   const total = vals.reduce((a, b) => a + b, 0);
   const best  = Math.min(...vals);
   el.textContent = `${vals.length} mile${vals.length > 1 ? 's' : ''} · ${clock(total)} · best ${paceStr(best)}`;
   el.classList.add('on');
   // splits are the source of truth once they exist — fill the total in for them
-  $('#mnMins').value = Math.floor(total / 60);
-  $('#mnSecs').value = String(total % 60).padStart(2, '0');
+  markTotalDerived(true);
+  setMnTime(total);
   updatePaceHint();
 }
 
@@ -2097,7 +2664,7 @@ $('#mnSplits').onclick = e => {
   if (!x) return;
   const rows = readSplits();
   rows.splice(+x.dataset.sx, 1);
-  $('#mnSplits').innerHTML = rows.map((_, i) => splitRowHTML(i)).join('');
+  $('#mnSplits').innerHTML = splitRows(rows.length);
   rows.forEach((secs, i) => {
     if (!secs) return;
     $(`[data-sm="${i}"]`).value = Math.floor(secs / 60);
@@ -2551,19 +3118,31 @@ $('#addPhotoInput').onchange = async () => {
 // keyed `${runId}|${kind}` — 'shot' is the screenshot that leads a post,
 // 'photo' is the selfie that tucks into the corner. Existing posts only have 'photo'.
 const photoCache = new Map();
+const photoFetches = new Map();
+/* One read per photo, shared by the feed and by Wrapped, so opening a recap
+   doesn't re-download pictures the feed already has. */
+function loadPhoto(runId, kind){
+  const key = `${runId}|${kind}`;
+  if (photoCache.has(key)) return Promise.resolve(photoCache.get(key));
+  if (photoFetches.has(key)) return photoFetches.get(key);
+  const job = getDoc(doc(db, 'runs', runId, 'media', kind))
+    .then(snap => {
+      const url = snap.exists() ? (snap.data().img || null) : null;
+      photoCache.set(key, url);
+      return url;
+    })
+    .catch(err => { console.warn('photo load', err); return null; })
+    .finally(() => photoFetches.delete(key));
+  photoFetches.set(key, job);
+  return job;
+}
 const photoSeen  = new IntersectionObserver(async entries => {
   for (const e of entries){
     if (!e.isIntersecting) continue;
     const el = e.target, key = el.dataset.photo;
     const [id, kind] = key.split('|');
     photoSeen.unobserve(el);
-    if (photoCache.has(key)){ paintPhoto(el, photoCache.get(key)); continue; }
-    try {
-      const snap = await getDoc(doc(db, 'runs', id, 'media', kind));
-      const url  = snap.exists() ? snap.data().img : null;
-      photoCache.set(key, url);
-      paintPhoto(el, url);
-    } catch (err){ console.error('photo load', err); paintPhoto(el, null); }
+    paintPhoto(el, await loadPhoto(id, kind));
   }
 }, { root: document.getElementById('scroll'), rootMargin: '500px 0px' });
 
@@ -2644,7 +3223,8 @@ $('#svPost').onclick = async () => {
 
 /* ---- manual entry ---- */
 $('#btnManual').onclick = () => {
-  $('#mnMiles').value = ''; $('#mnMins').value = ''; $('#mnSecs').value = ''; $('#mnNote').value = '';
+  $('#mnMiles').value = ''; $('#mnHrs').value = '';
+  $('#mnMins').value = ''; $('#mnSecs').value = ''; $('#mnNote').value = '';
   show($('#mnWhenWrap'), false);
   setOpt('#mnWhenToggle', false, '✕', 'Use now', '🕗', 'Different time');
   updateWhenHint();
@@ -2653,6 +3233,7 @@ $('#btnManual').onclick = () => {
   show($('#mnSplitWrap'), false);
   setOpt('#mnSplitToggle', false, '✕', 'Drop splits', '＋', 'Mile splits');
   $('#mnSplits').innerHTML = ''; $('#mnSplitSum').textContent = '';
+  markTotalDerived(false);
   show($('#manualSheet'), true);
 };
 /* datetime-local wants a local ISO string with no timezone suffix */
@@ -2667,7 +3248,18 @@ function backdateFloor(){
   const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d;
 }
 const mnSeconds = () =>
-  (parseFloat($('#mnMins').value) || 0) * 60 + (parseFloat($('#mnSecs').value) || 0);
+  (parseFloat($('#mnHrs').value)  || 0) * 3600 +
+  (parseFloat($('#mnMins').value) || 0) * 60 +
+  (parseFloat($('#mnSecs').value) || 0);
+
+/* fill h:m:s from a total, so the splits sum and the reset agree on the format */
+function setMnTime(total){
+  const t = Math.max(0, Math.round(total || 0));
+  $('#mnHrs').value  = t >= 3600 ? Math.floor(t / 3600) : '';
+  $('#mnMins').value = t >= 3600 ? String(Math.floor(t % 3600 / 60)).padStart(2,'0')
+                                 : Math.floor(t / 60);
+  $('#mnSecs').value = String(t % 60).padStart(2, '0');
+}
 
 function chosenWhen(){
   if ($('#mnWhenWrap').classList.contains('hide')) return new Date();
@@ -2726,6 +3318,7 @@ function updatePaceHint(){
   }
 }
 $('#mnMiles').oninput = updatePaceHint;
+$('#mnHrs').oninput   = updatePaceHint;
 $('#mnMins').oninput  = updatePaceHint;
 $('#mnSecs').oninput  = updatePaceHint;
 
