@@ -117,6 +117,20 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .linkbtn{appearance:none;background:none;border:0;color:var(--ink-faint);font:500 13px 'Outfit',sans-serif;
   padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.2)}
 .linkbtn:hover{color:var(--ink-dim)}
+/* how many of the group are in today, at a glance on load */
+.intoday{appearance:none;display:inline-flex;align-items:baseline;gap:5px;margin-top:13px;
+  padding:8px 15px;border-radius:999px;cursor:pointer;font:700 15px 'Outfit',sans-serif;
+  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);color:var(--ink);
+  transition:background .15s,border-color .15s}
+.intoday:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
+.intoday:active{transform:scale(.96)}
+.intoday b{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+/* mint only once YOU are one of them */
+.intoday.mine{background:rgba(94,242,192,.13);border-color:rgba(94,242,192,.34)}
+.intoday.mine b{color:var(--mint)}
+.intoday .sl{color:var(--ink-faint);font-weight:600}
+.intoday em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--ink-faint);
+  letter-spacing:.09em;text-transform:uppercase;margin-left:3px}
 .done-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
   background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:12px}
 
@@ -294,9 +308,11 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   transition:.15s}
 .addreact:hover{color:var(--ink-dim);border-color:rgba(255,255,255,.3)}
 .addreact.on{border-style:solid;background:rgba(255,255,255,.09);color:var(--ink)}
-.picker{display:inline-flex;gap:6px;padding:4px;border-radius:999px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
-.picker .react.pick{padding:6px 10px;font-size:16px;background:transparent;border:0}
+/* eight options won't sit on one line at 390px — wrap into a rounded panel
+   rather than pushing the comment button off the row */
+.picker{display:inline-grid;grid-template-columns:repeat(4,auto);gap:3px;padding:5px;
+  border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.picker .react.pick{padding:6px 9px;font-size:18px;background:transparent;border:0;line-height:1}
 .picker .react.pick:hover{background:rgba(255,255,255,.1)}
 .addphoto{appearance:none;background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.18);
   border-radius:999px;color:var(--ink-dim)}
@@ -334,6 +350,16 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .fin-badges .none{color:var(--ink-faint);font-size:12px}
 .fin-foot{text-align:center;color:var(--ink-faint);font-size:12.5px;margin:22px 0 6px;letter-spacing:.04em}
 
+.loadmore{appearance:none;width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;
+  margin:6px 0 4px;padding:15px;border-radius:var(--r-md);cursor:pointer;
+  font:700 14px 'Outfit',sans-serif;color:var(--ink-dim);
+  background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.18);
+  transition:color .15s,border-color .15s,background .15s}
+.loadmore:hover{color:var(--ink);border-color:rgba(255,255,255,.34);background:rgba(255,255,255,.08)}
+.loadmore:active{transform:scale(.99)}
+.loadmore span{font-size:11.5px;font-weight:600;color:var(--ink-faint);
+  letter-spacing:.05em;text-transform:uppercase}
+
 /* ---- who reacted ---- */
 .reactwho{display:inline-flex;align-items:center;gap:0;padding:4px 10px 4px 5px;border-radius:999px;
   cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
@@ -352,6 +378,28 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rx-row .em{flex:none;font-size:17px;letter-spacing:2px}
 #rxList{max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+
+/* ---- the group tile ---- */
+.grp{appearance:none;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:0;
+  padding:0;cursor:pointer;text-align:center;color:inherit;font:inherit;
+  transition:border-color .15s}
+.grp:hover{border-color:rgba(255,255,255,.24)}
+.grp:active{transform:scale(.99)}
+.grp-cell{padding:17px 12px 15px;position:relative}
+.grp-cell + .grp-cell::before{content:'';position:absolute;left:0;top:16%;bottom:16%;
+  width:1px;background:rgba(255,255,255,.09)}
+.grp-cell .e{font-size:17px;line-height:1;display:block;margin-bottom:7px;opacity:.9}
+.grp-cell b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;line-height:1.05}
+.grp-cell b i{font-style:normal;font-size:15px;font-weight:600;color:var(--ink-faint)}
+.grp-cell .lbl{display:block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.grp-bar{margin-top:11px;height:4px;border-radius:3px;overflow:hidden;
+  background:rgba(255,255,255,.09)}
+.grp-bar i{display:block;height:100%;border-radius:3px;width:0;
+  background:linear-gradient(90deg,var(--mint),#7ee0ff);
+  transition:width .6s cubic-bezier(.3,.9,.3,1)}
+.grp-bar i.alive{background:linear-gradient(90deg,#ffd166,#ff8fa3)}
 
 /* ---- player profile ---- */
 .pv{position:fixed;inset:0;z-index:86;overflow-y:auto;overscroll-behavior:contain;
@@ -382,10 +430,10 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .pv-stat b em{font-style:normal;font-size:12px;font-weight:600;color:var(--ink-faint)}
 .pv-stat span{display:block;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.09em;
   text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* the month, with each day's mileage in the cell */
-.pv-cal .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
-.pv-cal .cal-day b{font-size:12px;font-weight:700;line-height:1}
-.pv-cal .cal-day i{font-style:normal;font-size:8.5px;font-weight:600;opacity:.82;line-height:1;
+/* the month, with each day's mileage in the cell — Today and profiles alike */
+.cal-mi .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.cal-mi .cal-day b{font-size:12px;font-weight:700;line-height:1}
+.cal-mi .cal-day i{font-style:normal;font-size:8.5px;font-weight:600;opacity:.82;line-height:1;
   font-variant-numeric:tabular-nums}
 .pv-runs{margin-top:2px}
 .pv-run{display:flex;align-items:center;gap:11px;padding:11px 4px;
@@ -703,6 +751,9 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   <section id="tab-today">
     <div class="hero glass">
       <div class="datestrip" id="todayLabel">—</div>
+      <button class="intoday hide" id="todayIn" title="See the standings">
+        <b id="tiDone">0</b><span class="sl">/</span><span id="tiTotal">0</span><em>in today</em>
+      </button>
       <div class="ring-wrap">
         <svg width="210" height="210" viewBox="0 0 210 210">
           <defs>
@@ -735,10 +786,24 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       </div>
     </div>
 
+    <div class="h2"><h2>The group</h2><span id="grpNote">—</span></div>
+    <button class="glass grp" id="grpTile" title="See the standings">
+      <div class="grp-cell">
+        <span class="e">🫀</span>
+        <b id="grpAlive">—</b><span class="lbl">Still alive</span>
+        <div class="grp-bar"><i id="grpAliveBar" class="alive"></i></div>
+      </div>
+      <div class="grp-cell">
+        <span class="e">✅</span>
+        <b id="grpIn">—</b><span class="lbl">In today</span>
+        <div class="grp-bar"><i id="grpInBar"></i></div>
+      </div>
+    </button>
+
     <div class="h2"><h2>Your September</h2><span id="calSummary">—</span></div>
     <div class="cal glass">
       <div class="cal-grid" id="calDow"></div>
-      <div class="cal-grid" id="calGrid" style="margin-top:6px"></div>
+      <div class="cal-grid cal-mi" id="calGrid" style="margin-top:6px"></div>
     </div>
 
     <div class="h2"><h2>Your runs</h2><span id="myRunCount"></span></div>
@@ -1001,7 +1066,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
          onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentSingleTabManager,
-         collection, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot,
+         collection, doc, getDoc, getDocs, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot,
          query, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -1060,7 +1125,9 @@ function ago(ts){
   if (s < 3600) return Math.floor(s/60) + 'm ago';
   if (s < 86400) return Math.floor(s/3600) + 'h ago';
   if (s < 604800) return Math.floor(s/86400) + 'd ago';
-  return new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  // past a week this used to return the date — which the label next to it already
+  // says, so old posts read "Sep 1 · Sep 1". The time of day is the useful half.
+  return new Date(ts).toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
 }
 /* great-circle distance in metres */
 function haversine(a, b){
@@ -1408,11 +1475,19 @@ const openComments = new Set();
 const openPickers  = new Set();
 const commentCache = new Map();   // runId -> [{...}]
 const commentUnsubs = new Map();
+/* Keys, not emoji, are what land in Firestore — so a key must never change once
+   it has been written. Adding to the end is always safe. */
 const REACTS = [
-  {k:'fire',  e:'🔥'},
-  {k:'muscle',e:'💪'},
-  {k:'goat',  e:'🐐'},
-  {k:'clap',  e:'👏'}
+  {k:'fire',   e:'🔥'},
+  {k:'muscle', e:'💪'},
+  {k:'goat',   e:'🐐'},
+  {k:'clap',   e:'👏'},
+  {k:'laugh',  e:'😂'},
+  {k:'heart',  e:'❤️'},
+  {k:'huff',   e:'😤'},
+  // Distorted Face is Unicode 17.0 (2025). iOS 26.4+ has it; most Android and
+  // Windows don't yet, and show a box until their font catches up.
+  {k:'warp',   e:'🫪'}
 ];
 const EMOJI_OF = Object.fromEntries(REACTS.map(x => [x.k, x.e]));
 
@@ -1663,6 +1738,28 @@ function renderToday(){
   const left = Math.max(0, CHALLENGE.goalMiles - today);
   $('#todayGoalTxt').textContent = left > 0 ? `${left.toFixed(2)} mi to go` : `+${(today - CHALLENGE.goalMiles).toFixed(2)} mi over`;
   show($('#todayDonePill'), left <= 0);
+  // the same numbers the standings header shows, so they can't drift apart
+  const roster = [...players.values()];
+  const inToday = roster.filter(p => p.doneToday).length;
+  const pill = $('#todayIn');
+  show(pill, roster.length > 0);
+  $('#tiDone').textContent  = inToday;
+  $('#tiTotal').textContent = roster.length;
+  pill.classList.toggle('mine', left <= 0);          // green once YOU'RE one of them
+  pill.setAttribute('aria-label',
+    `${inToday} of ${roster.length} logged today${left <= 0 ? ', including you' : ''}. See the standings.`);
+
+  // the group tile — same roster again, so all three places agree
+  const alive = roster.filter(p => p.alive).length;
+  const n = roster.length;
+  const frac = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
+  $('#grpAlive').innerHTML = n ? `${alive}<i>/${n}</i>` : '—';
+  $('#grpIn').innerHTML    = n ? `${inToday}<i>/${n}</i>` : '—';
+  $('#grpAliveBar').style.width = frac(alive, n) + '%';
+  $('#grpInBar').style.width    = frac(inToday, n) + '%';
+  $('#grpNote').textContent = !n ? ''
+    : alive === n ? 'nobody out yet'
+    : `${n - alive} ${n - alive === 1 ? 'streak' : 'streaks'} broken`;
   $('#sStreak').innerHTML = me.streak + (me.streak ? ' <span class="flame">🔥</span>' : '');
   $('#sDays').textContent  = me.completed.length;
   $('#sTotal').textContent = (me.miles ?? 0).toFixed(1);
@@ -1687,16 +1784,8 @@ function renderCalendar(){
   const me = players.get(ME?.uid);
   const done = new Set(me ? me.completed : []);
   const start = new Date(CHALLENGE.startISO + 'T12:00:00');
-  const cells = [];
-  for (let i = 0; i < start.getDay(); i++) cells.push('<div></div>');
-  const end = new Date(CHALLENGE.endISO + 'T12:00:00');
   const tk = todayKey();
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
-    const k = dayKey(d), n = d.getDate();
-    const cls = done.has(k) ? 'done' : (k < tk ? 'miss' : '');
-    cells.push(`<div class="cal-day ${cls} ${k===tk?'today':''}" title="${k}">${n}</div>`);
-  }
-  $('#calGrid').innerHTML = cells.join('');
+  $('#calGrid').innerHTML = calCells(me || { days:new Map(), completed:[] });
   const missed = me ? [...Array(30).keys()].map(i=>{
       const d = new Date(start); d.setDate(d.getDate()+i); return dayKey(d);
     }).filter(k => k < tk && !done.has(k)).length : 0;
@@ -1712,14 +1801,31 @@ function renderMyRuns(){
   observePhotos(); observeMaps();
 }
 
+/* The feed used to render RUNS.slice(0,60) with no way to reach anything past it —
+   at 20 players over a month that silently hid several hundred posts. Render a page
+   at a time and let people ask for more. */
+const FEED_STEP = 30;
+let feedShown = FEED_STEP;
+
 function renderFeed(){
   const el = $('#feed');
-  $('#feedCount').textContent = RUNS.length ? `${RUNS.length} posts` : '';
+  const total = RUNS.length;
+  const shown = Math.min(feedShown, total);
+  $('#feedCount').textContent = total
+    ? (shown < total ? `${shown} of ${total} posts` : `${total} post${total===1?'':'s'}`)
+    : '';
   syncCommentWatchers();      // live counts for the top of the feed, and nothing else
-  el.innerHTML = RUNS.length
-    ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
+  const rest = total - shown;
+  const sc = document.getElementById('scroll');
+  const keepScroll = sc ? sc.scrollTop : 0;
+  el.innerHTML = total
+    ? RUNS.slice(0, shown).map(r => postHTML(r)).join('')
+      + (rest > 0 ? `<button class="loadmore" id="feedMore">Load ${Math.min(FEED_STEP, rest)} more
+           <span>${rest} older post${rest === 1 ? '' : 's'} below</span></button>` : '')
     : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
-  observePhotos(); observeMaps();
+  // a comment arriving, or a reaction, used to bounce whoever was reading back to the top
+  if (sc && keepScroll && sc.scrollTop !== keepScroll) sc.scrollTop = keepScroll;
+  observePhotos(); observeMaps(); fetchCommentCounts();
 }
 
 function postHTML(r, compact=false){
@@ -1761,8 +1867,9 @@ function postHTML(r, compact=false){
     <div class="post-top">
       <img class="who-av" data-who="${esc(r.uid)}" src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="${esc(nameOf(r.uid, r.name))}" title="See ${esc(nameOf(r.uid, r.name))}'s profile" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
       <div class="who"><b>${esc(nameOf(r.uid, r.name))}</b>
-        <span title="${esc([mine ? 'You' : '', dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : ''), (r.weather && r.weather.p) || ''].filter(Boolean).join(' · '))}">${mine ? '<i>You</i> · ' : ''}${
-          dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}${
+        <span title="${esc([mine ? 'You' : '', dstr === 'Today' ? (when || 'Today') : dstr + (when && when !== dstr ? ' · ' + when : ''), (r.weather && r.weather.p) || ''].filter(Boolean).join(' · '))}">${mine ? '<i>You</i> · ' : ''}${
+          dstr === 'Today' ? (when || 'Today')
+            : dstr + (when && when !== dstr ? ' · ' + when : '')}${
           r.weather && r.weather.p ? ' · ' + esc(r.weather.p) : ''}</span></div>
       ${weatherPill(r.weather, true)}
       ${mine ? `<button class="del" data-del="${r.id}" title="Delete run" aria-label="Delete run">
@@ -1811,7 +1918,8 @@ function postHTML(r, compact=false){
       <div class="ract-l">${reactBtns}</div>
       <div class="ract-r">
         ${mine && !r.hasPhoto && !r.hasShot ? `<button class="cbtn addphoto" data-addphoto="${r.id}">📷 Add photo</button>` : ''}
-        <span class="cbtn" data-cmt="${r.id}">💬 ${open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
+        <span class="cbtn" data-cmt="${r.id}" data-cmtcount="${r.id}">💬 ${
+          open ? 'Hide' : (cmts.length ? cmts.length + (cmts.length===1?' comment':' comments') : 'Comment')}</span>
       </div>
     </div>
     ${open ? `<div class="comments">
@@ -1847,6 +1955,8 @@ const RECORDS = [
    `progress` drives the bar on the ones you can work toward.
    ============================================================ */
 const paceOf = r => (r.seconds > 30 && r.miles > 0) ? r.seconds / r.miles : null;
+/* distinct city labels the weather lookup attached to their runs */
+const citiesOf = p => new Set(p.runList.map(r => r.weather && r.weather.p).filter(Boolean));
 const ordinal = n => { const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); };
 
 const ACHIEVEMENTS = [
@@ -1855,18 +1965,18 @@ const ACHIEVEMENTS = [
       (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
       (r.miles >= 1 && paceOf(r) && paceOf(r) < 480)) },
 
-  { key:'cruise', emoji:'👟', title:'Steady Cruiser', req:'Hold the same pace (±5s) across 3 runs in a row',
-    earned: p => {
-      // keep the nulls: filtering untimed runs out would make runs 20 days apart
-      // look adjacent, and the badge says "in a row"
-      const paces = [...p.runList].sort((a,b) => (a.startedAt||0) - (b.startedAt||0)).map(paceOf);
-      for (let i = 0; i + 2 < paces.length; i++){
-        const w = paces.slice(i, i+3);
-        if (w.some(v => !v)) continue;
-        if (Math.max(...w) - Math.min(...w) <= 5) return true;
-      }
-      return false;
-    } },
+  { key:'tourist', emoji:'🗺️', title:'Tourist', req:'Log runs in 3 different places',
+    // only counts where someone tapped Add weather, which is optional — so this is
+    // flavour, never a fair race. The bar shows how close they are anyway.
+    earned: p => citiesOf(p).size >= 3,
+    progress: p => [Math.min(citiesOf(p).size, 3), 3] },
+
+  { key:'witching', emoji:'🧙‍♀️', title:'Witching Hour', req:'Log a run between midnight and 4 AM',
+    earned: p => p.runList.some(r => {
+      if (!r.startedAt) return false;
+      const h = new Date(r.startedAt).getHours();
+      return h >= 0 && h < 4;
+    }) },
 
   { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row',
     earned: p => p.best >= 15,
@@ -1879,8 +1989,14 @@ const ACHIEVEMENTS = [
   { key:'night', emoji:'🌙', title:'Night Owl', req:'Log a run after 9:00 PM',
     earned: p => p.runList.some(r => r.startedAt && new Date(r.startedAt).getHours() >= 21) },
 
-  { key:'early', emoji:'🌅', title:'Early Bird', req:'Log a run before 7:00 AM',
-    earned: p => p.runList.some(r => r.startedAt && new Date(r.startedAt).getHours() < 7) },
+  { key:'early', emoji:'🌅', title:'Early Bird', req:'Log a run between 4:00 and 7:00 AM',
+    // 4 AM is where Witching Hour stops, so the three time badges tile the night
+    // end to end with no run earning two of them
+    earned: p => p.runList.some(r => {
+      if (!r.startedAt) return false;
+      const h = new Date(r.startedAt).getHours();
+      return h >= 4 && h < 7;
+    }) },
 
   { key:'long', emoji:'🥾', title:'Long Hauler', req:'A single run of 3 miles or more',
     earned: p => p.runList.some(r => r.miles >= 3),
@@ -2368,23 +2484,30 @@ $('#reactSheet').onclick = e => { if (e.target === $('#reactSheet')) show($('#re
    standings. Read-only, and it reuses wrappedStats so a number here
    can never disagree with the same number in their Wrapped.
    ============================================================ */
-function playerCalendar(p){
-  const done = new Set(p.completed);
+/* The month's cells, with each day's mileage under the date. Shared by the Today
+   tab and every player profile, so the two can't drift apart. */
+function calCells(p){
+  const done = new Set(p.completed || []);
+  const days = p.days || new Map();
   const start = new Date(CHALLENGE.startISO + 'T12:00:00');
   const end   = new Date(CHALLENGE.endISO   + 'T12:00:00');
   const tk = todayKey();
   const cells = [];
   for (let i = 0; i < start.getDay(); i++) cells.push('<div></div>');
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
-    const k = dayKey(d), mi = p.days.get(k) || 0;
+    const k = dayKey(d), mi = days.get(k) || 0;
     const cls = done.has(k) ? 'done' : (k < tk ? 'miss' : '');
-    // a day under the goal still gets its mileage shown — it just isn't "done"
+    // a day under the goal still shows its mileage — it just isn't "done"
     cells.push(`<div class="cal-day ${cls} ${k === tk ? 'today' : ''}" title="${k}${mi ? ` · ${mi.toFixed(2)} mi` : ''}">
       <b>${d.getDate()}</b>${mi > 0 ? `<i>${mi.toFixed(mi >= 10 ? 0 : 1)}</i>` : ''}</div>`);
   }
+  return cells.join('');
+}
+
+function playerCalendar(p){
   return `<div class="cal-grid">${['S','M','T','W','T','F','S']
       .map(x => `<div class="cal-dow">${x}</div>`).join('')}</div>
-    <div class="cal-grid pv-cal" style="margin-top:6px">${cells.join('')}</div>`;
+    <div class="cal-grid cal-mi" style="margin-top:6px">${calCells(p)}</div>`;
 }
 
 function openPlayer(uid){
@@ -2630,6 +2753,12 @@ document.addEventListener('click', async e => {
   const who = e.target.closest('[data-who]');
   if (who){ openPlayer(who.dataset.who); return; }
 
+  if (e.target.closest('#feedMore')){
+    feedShown += FEED_STEP;
+    scheduleRender();
+    return;
+  }
+
   const rx = e.target.closest('[data-reacts]');
   if (rx){ openReactors(rx.dataset.reacts); return; }
 
@@ -2693,6 +2822,7 @@ document.addEventListener('click', async e => {
       });
     } catch (err) {
       console.error(err);
+      countedComments.delete(id);                                  // let the count re-read
       if (input.isConnected && !input.value) input.value = text;   // don't eat what they wrote
       toast('Comment failed — your text is still there');
     }
@@ -3488,6 +3618,43 @@ function paintPhoto(el, url){
   };
   img.src = url;
 }
+/* Only the top 12 posts carry a live comment listener, so every post below that
+   showed "Comment" even when it had two. Fetch the count once per post, for exactly
+   what is on screen — a read, not a subscription, so it costs nothing to keep, and
+   the feed only ever renders a page at a time. */
+const countedComments = new Set();
+let countingComments = false;
+
+async function fetchCommentCounts(){
+  if (countingComments) return;
+  const want = [...new Set($$('#feed [data-cmtcount]').map(el => el.dataset.cmtcount))]
+    .filter(id => id && !countedComments.has(id) && !commentCache.has(id));
+  if (!want.length) return;
+  countingComments = true;
+  want.forEach(id => countedComments.add(id));
+  try {
+    await pool(want, 4, async id => {
+      try {
+        const snap = await getDocs(query(collection(db,'runs',id,'comments'), orderBy('ts','asc'), limit(100)));
+        commentCache.set(id, snap.docs.map(d => d.data()));
+        paintCommentCount(id);        // patch the label; rebuilding the feed would
+      } catch (err){                  // throw whoever is reading back to the top
+        console.warn('comment count', err);
+        countedComments.delete(id);
+      }
+    });
+  } finally { countingComments = false; }
+}
+
+function paintCommentCount(id){
+  if (openComments.has(id)) return;                 // that button says "Hide" right now
+  const n = (commentCache.get(id) || []).length;
+  $$('#feed [data-cmtcount]').forEach(el => {
+    if (el.dataset.cmtcount !== id) return;
+    el.textContent = `💬 ${n ? n + (n === 1 ? ' comment' : ' comments') : 'Comment'}`;
+  });
+}
+
 /* Call after any feed repaint. Posts whose photo is already on screen are skipped —
    observing them again is how the same selfie ended up drawn twice. */
 function observePhotos(){
@@ -3659,6 +3826,9 @@ $('#mnMiles').oninput = updatePaceHint;
 $('#mnHrs').oninput   = updatePaceHint;
 $('#mnMins').oninput  = updatePaceHint;
 $('#mnSecs').oninput  = updatePaceHint;
+
+$('#todayIn').onclick = () => switchTab('board');
+$('#grpTile').onclick = () => switchTab('board');
 
 $('#mnCancel').onclick = () => show($('#manualSheet'), false);
 $('#mnSave').onclick = async () => {
