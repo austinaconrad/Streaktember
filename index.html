@@ -334,6 +334,55 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .fin-badges .none{color:var(--ink-faint);font-size:12px}
 .fin-foot{text-align:center;color:var(--ink-faint);font-size:12.5px;margin:22px 0 6px;letter-spacing:.04em}
 
+/* ---- player profile ---- */
+.pv{position:fixed;inset:0;z-index:86;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;background:
+    radial-gradient(120% 60% at 50% 0%,rgba(94,242,192,.16),transparent 60%),
+    radial-gradient(120% 60% at 50% 100%,rgba(167,139,250,.16),transparent 60%),
+    rgba(6,8,16,.94);backdrop-filter:blur(22px)}
+.pv-inner{max-width:520px;margin:0 auto;
+  padding:calc(var(--safe-t) + 68px) 16px calc(30px + var(--safe-b))}
+.pv-hero{text-align:center;padding:26px 20px 22px}
+.pv-av{width:104px;height:104px;border-radius:50%;object-fit:cover;margin:0 auto 14px;display:block;
+  background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.22);
+  box-shadow:0 20px 50px -18px rgba(0,0,0,.9)}
+.pv-hero h2{margin:0;font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.pv-tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:12px}
+.pv-tag{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:var(--ink-dim)}
+.pv-tag.gold{background:rgba(255,209,102,.16);border-color:rgba(255,209,102,.34);color:var(--amber)}
+.pv-tag.mint{background:rgba(94,242,192,.15);border-color:rgba(94,242,192,.36);color:var(--mint)}
+.pv-tag.coral{background:rgba(255,109,138,.14);border-color:rgba(255,109,138,.3);color:var(--coral)}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+.pv-stat{display:flex;align-items:center;gap:11px;padding:13px 12px;border-radius:var(--r-md);
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+.pv-stat .e{font-size:20px;line-height:1;flex:none;width:26px;text-align:center}
+.pv-stat div{min-width:0}
+.pv-stat b{display:block;font-size:19px;font-weight:800;letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums;line-height:1.15}
+.pv-stat b em{font-style:normal;font-size:12px;font-weight:600;color:var(--ink-faint)}
+.pv-stat span{display:block;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the month, with each day's mileage in the cell */
+.pv-cal .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.pv-cal .cal-day b{font-size:12px;font-weight:700;line-height:1}
+.pv-cal .cal-day i{font-style:normal;font-size:8.5px;font-weight:600;opacity:.82;line-height:1;
+  font-variant-numeric:tabular-nums}
+.pv-runs{margin-top:2px}
+.pv-run{display:flex;align-items:center;gap:11px;padding:11px 4px;
+  border-bottom:1px solid rgba(255,255,255,.06)}
+.pv-run:last-child{border-bottom:0}
+.pv-run .d{flex:none;width:52px;font-size:11px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.pv-run .mi{flex:1;font-size:15px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pv-run .mi em{font-style:normal;font-size:11px;font-weight:600;color:var(--ink-faint);margin-left:4px}
+.pv-run .tm{flex:none;font-size:12.5px;font-weight:600;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.pv-badges{display:flex;flex-wrap:wrap;gap:8px;padding:4px 2px 2px}
+.pv-badge{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;font-size:12.5px;
+  font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--ink-dim)}
+.pv-badge .e{font-size:15px}
+.pv-empty{padding:26px 16px;text-align:center;color:var(--ink-faint);font-size:13.5px;line-height:1.6}
+
 /* ---- wrapped ---- */
 .wrap-row{display:flex;align-items:center;gap:11px;padding:11px 4px}
 .wrap-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
@@ -497,6 +546,10 @@ body.noscroll{overflow:hidden}
 .row.me{background:linear-gradient(140deg,rgba(94,242,192,.16),rgba(167,139,250,.12));border-color:rgba(94,242,192,.32)}
 .row .rank{width:24px;font-size:15px;font-weight:800;color:var(--ink-faint);text-align:center;flex:none}
 .row img{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;background:rgba(255,255,255,.1)}
+/* every avatar that opens a profile says so by feeling tappable */
+.who-av{cursor:pointer;transition:transform .12s,box-shadow .12s}
+.who-av:hover{box-shadow:0 0 0 2px rgba(94,242,192,.45)}
+.who-av:active{transform:scale(.93)}
 .row .nm{flex:1;min-width:0}
 .row .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .nm span{font-size:11.5px;color:var(--ink-faint)}
@@ -864,6 +917,12 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <button class="btn danger" id="cfYes">Delete</button>
     </div>
   </div>
+</div>
+
+<!-- ---------- PLAYER PROFILE ---------- -->
+<div id="playerView" class="pv hide">
+  <button class="wrap-x" id="pvX" aria-label="Close">✕</button>
+  <div class="pv-inner" id="pvBody"></div>
 </div>
 
 <!-- ---------- WRAPPED ---------- -->
@@ -1644,7 +1703,7 @@ function postHTML(r, compact=false){
   const open = openComments.has(r.id);
   return `<article class="post glass" data-post="${r.id}">
     <div class="post-top">
-      <img src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
+      <img class="who-av" data-who="${esc(r.uid)}" src="${esc(photoOf(r.uid, r.photo) || avatarFor(nameOf(r.uid, r.name)))}" alt="${esc(nameOf(r.uid, r.name))}" title="See ${esc(nameOf(r.uid, r.name))}'s profile" onerror="this.src='${avatarFor(nameOf(r.uid, r.name))}'"/>
       <div class="who"><b>${esc(nameOf(r.uid, r.name))}</b>
         <span title="${esc([mine ? 'You' : '', dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : ''), (r.weather && r.weather.p) || ''].filter(Boolean).join(' · '))}">${mine ? '<i>You</i> · ' : ''}${
           dstr === 'Today' ? (when || 'Today') : dstr + (when ? ' · ' + when : '')}${
@@ -2206,6 +2265,118 @@ function wrappedCards(s){
   return cards;
 }
 
+/* ============================================================
+   11d. PLAYER PROFILE — tap anyone's picture in the feed or the
+   standings. Read-only, and it reuses wrappedStats so a number here
+   can never disagree with the same number in their Wrapped.
+   ============================================================ */
+function playerCalendar(p){
+  const done = new Set(p.completed);
+  const start = new Date(CHALLENGE.startISO + 'T12:00:00');
+  const end   = new Date(CHALLENGE.endISO   + 'T12:00:00');
+  const tk = todayKey();
+  const cells = [];
+  for (let i = 0; i < start.getDay(); i++) cells.push('<div></div>');
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
+    const k = dayKey(d), mi = p.days.get(k) || 0;
+    const cls = done.has(k) ? 'done' : (k < tk ? 'miss' : '');
+    // a day under the goal still gets its mileage shown — it just isn't "done"
+    cells.push(`<div class="cal-day ${cls} ${k === tk ? 'today' : ''}" title="${k}${mi ? ` · ${mi.toFixed(2)} mi` : ''}">
+      <b>${d.getDate()}</b>${mi > 0 ? `<i>${mi.toFixed(mi >= 10 ? 0 : 1)}</i>` : ''}</div>`);
+  }
+  return `<div class="cal-grid">${['S','M','T','W','T','F','S']
+      .map(x => `<div class="cal-dow">${x}</div>`).join('')}</div>
+    <div class="cal-grid pv-cal" style="margin-top:6px">${cells.join('')}</div>`;
+}
+
+function openPlayer(uid){
+  const all = byPlayer();
+  const p = all.get(uid);
+  if (!p){ toast('No profile for that runner yet'); return; }
+  const ranked = [...all.values()].filter(x => x.runs > 0)
+    .sort((a,b) => b.completed.length - a.completed.length || b.miles - a.miles);
+  const s = wrappedStats(p, ranked);
+  const mine = p.uid === ME?.uid;
+  const hrs = Math.floor(s.seconds / 3600), mins = Math.round(s.seconds % 3600 / 60);
+  const timeStr = hrs > 0 ? (mins ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
+
+  const stat = (e, v, label) =>
+    `<div class="pv-stat"><span class="e">${e}</span><div><b>${v}</b><span>${label}</span></div></div>`;
+
+  const recent = [...p.runList].sort((a,b) => (b.startedAt || 0) - (a.startedAt || 0)).slice(0, 8);
+
+  $('#pvBody').innerHTML = `
+    <div class="glass pv-hero">
+      <img class="pv-av" src="${esc(p.photo || avatarFor(p.name))}" alt=""
+           onerror="this.src='${avatarFor(p.name)}'"/>
+      <h2>${esc(p.name)}</h2>
+      <div class="pv-tags">
+        ${s.rank > 0 ? `<span class="pv-tag ${s.rank === 1 ? 'gold' : ''}">${
+          s.rank === 1 ? '👑 1st' : `#${s.rank} of ${s.of}`}</span>` : ''}
+        ${mine ? '<span class="pv-tag mint">That\'s you</span>' : ''}
+        ${p.runs ? (p.alive
+          ? `<span class="pv-tag mint">${p.streak ? `🔥 ${p.streak}-day streak` : 'Still alive'}</span>`
+          : '<span class="pv-tag coral">Streak broken</span>') : ''}
+        ${p.doneToday ? '<span class="pv-tag mint">✓ In today</span>'
+                      : (p.runs ? '<span class="pv-tag">Not in yet today</span>' : '')}
+      </div>
+    </div>
+
+    ${p.runs ? `
+    <div class="h2"><h2>The numbers</h2></div>
+    <div class="pv-grid">
+      ${stat('🏃', s.miles.toFixed(1), 'Total miles')}
+      ${stat('📅', `${s.days}<em>/30</em>`, 'Days logged')}
+      ${stat('⚡', s.fastest ? paceStr(s.fastest) : '—', 'Quickest mile')}
+      ${stat('🎯', s.avgPace ? paceStr(s.avgPace) : '—', 'Average pace')}
+      ${stat('🔥', s.streak, 'Best streak')}
+      ${stat('🥾', s.longest ? s.longest.miles.toFixed(2) : '—', 'Longest run')}
+      ${stat('⏱️', s.seconds ? timeStr : '—', 'Time on feet')}
+      ${stat('👟', s.runs, s.runs === 1 ? 'Run logged' : 'Runs logged')}
+      ${s.hasWx ? stat('🌡️', `${s.avgTemp}°`, 'Average temp') : ''}
+      ${s.topCity.value ? stat('📍', esc(String(s.topCity.value).split(',')[0]), 'Runs here most') : ''}
+      ${s.topDow >= 0 && s.dowCount > 1 ? stat('🗓️', DOW[s.topDow].slice(0,3), 'Favourite day') : ''}
+      ${s.reactions ? stat('❤️', s.reactions, 'Reactions earned') : ''}
+    </div>
+
+    <div class="h2"><h2>September</h2><span>${s.days} of 30</span></div>
+    <div class="glass cal">${playerCalendar(p)}</div>
+
+    ${s.badges.length ? `<div class="h2"><h2>Badges</h2><span>${s.badges.length} of ${ACHIEVEMENTS.length}</span></div>
+      <div class="glass" style="padding:10px 12px"><div class="pv-badges">${s.badges.map(a =>
+        `<span class="pv-badge"><span class="e">${a.emoji}</span>${esc(a.title)}</span>`).join('')}</div></div>` : ''}
+
+    ${recent.length ? `<div class="h2"><h2>Recent runs</h2><span>${p.runList.length} in September</span></div>
+      <div class="glass" style="padding:4px 14px 8px"><div class="pv-runs">${recent.map(r => `
+        <div class="pv-run">
+          <span class="d">${esc(shortDay(r.day))}</span>
+          <span class="mi">${(r.miles || 0).toFixed(2)}<em>mi</em></span>
+          <span class="tm">${r.seconds > 30
+            ? `${clock(r.seconds)} · ${paceStr(r.seconds / r.miles)}/mi` : '—'}</span>
+        </div>`).join('')}</div></div>` : ''}
+
+    ${challengeOver() ? `<div class="cta" style="margin-top:18px">
+      <button class="btn primary" data-wrap="${esc(p.uid)}">🎬 ${mine ? 'See your' : 'See their'} Wrapped</button>
+    </div>` : ''}
+    ${mine ? `<button class="linkbtn" id="pvEdit" style="width:100%;margin-top:14px">Edit your profile</button>` : ''}
+    ` : `<div class="glass pv-empty">${esc(p.name)} hasn't logged a mile yet.<br/>Nothing to show here until they do.</div>`}
+  `;
+
+  if (mine) $('#pvEdit').onclick = () => { closePlayer(); openProfile(); };
+  show($('#playerView'), true);
+  $('#playerView').scrollTop = 0;
+  document.body.classList.add('noscroll');
+}
+function closePlayer(){
+  show($('#playerView'), false);
+  document.body.classList.remove('noscroll');
+  $('#pvBody').innerHTML = '';
+}
+$('#pvX').onclick = closePlayer;
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#playerView').classList.contains('hide')) closePlayer();
+});
+
 /* ---- the deck ---- */
 let wrapIdx = 0, wrapDeck = [], wrapOpen = false, wrapToken = 0;
 
@@ -2289,7 +2460,7 @@ function renderBoard(){
   el.innerHTML = players.length ? players.map((p,i) => `
     <div class="row ${p.uid===ME?.uid?'me':''} ${p.alive?'':'dead'}">
       <div class="rank">${i+1}</div>
-      <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+      <img class="who-av" data-who="${esc(p.uid)}" src="${esc(p.photo || avatarFor(p.name))}" alt="${esc(p.name)}" title="See ${esc(p.name)}'s profile"/>
       <div class="nm"><b>${esc(p.name)}</b>
         <span>${p.runs ? `${p.completed.length}/30 days${p.streak ? ` · ${p.streak}🔥 streak` : ''}${p.alive ? '' : ' · broken'}` : 'no miles logged yet'}</span></div>
       <div class="figs">
@@ -2328,8 +2499,11 @@ document.addEventListener('click', async e => {
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
 
+  const who = e.target.closest('[data-who]');
+  if (who){ openPlayer(who.dataset.who); return; }
+
   const wrap = e.target.closest('[data-wrap]');
-  if (wrap){ openWrapped(wrap.dataset.wrap); return; }
+  if (wrap){ closePlayer(); openWrapped(wrap.dataset.wrap); return; }
 
   const bigPhoto = e.target.closest('.shot > img, .selfie > img');
   if (bigPhoto){
