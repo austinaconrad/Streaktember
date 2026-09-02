@@ -334,6 +334,25 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .fin-badges .none{color:var(--ink-faint);font-size:12px}
 .fin-foot{text-align:center;color:var(--ink-faint);font-size:12.5px;margin:22px 0 6px;letter-spacing:.04em}
 
+/* ---- who reacted ---- */
+.reactwho{display:inline-flex;align-items:center;gap:0;padding:4px 10px 4px 5px;border-radius:999px;
+  cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
+  transition:background .15s,border-color .15s}
+.reactwho:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.24)}
+.reactwho:active{transform:scale(.94)}
+.reactwho img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;
+  background:rgba(255,255,255,.12);border:1.5px solid rgba(14,16,28,.95)}
+.reactwho img + img{margin-left:-9px}
+.reactwho span{margin-left:6px;font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+.rx-row{display:flex;align-items:center;gap:11px;padding:11px 2px;
+  border-bottom:1px solid rgba(255,255,255,.06)}
+.rx-row:last-child{border-bottom:0}
+.rx-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.rx-row b{flex:1;min-width:0;font-size:14.5px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rx-row .em{flex:none;font-size:17px;letter-spacing:2px}
+#rxList{max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+
 /* ---- player profile ---- */
 .pv{position:fixed;inset:0;z-index:86;overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;background:
@@ -908,6 +927,18 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
 </div>
 
 <!-- ======================= CONFIRM SHEET ======================= -->
+<!-- ======================= WHO REACTED ======================= -->
+<div id="reactSheet" class="sheet hide">
+  <div class="card glass">
+    <h3>Reactions</h3>
+    <p class="sub" id="rxSub">—</p>
+    <div id="rxList"></div>
+    <div class="sheet-btns" style="grid-template-columns:1fr">
+      <button class="btn ghost" id="rxClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="confirmSheet" class="sheet hide">
   <div class="card glass">
     <h3 id="cfTitle">Are you sure?</h3>
@@ -1264,6 +1295,17 @@ function copyCanvas(src){
   return cv;
 }
 
+/* Past the cap the route used to be .slice(0,300)'d — the tail was simply cut, so a
+   long run's map stopped partway and planted the finish dot mid-route. Sample evenly
+   instead, always keeping the true first and last point. */
+function capPoints(pts, max){
+  if (!Array.isArray(pts)) return [];
+  if (pts.length <= max) return pts;
+  const out = [], step = (pts.length - 1) / (max - 1);
+  for (let i = 0; i < max; i++) out.push(pts[Math.round(i * step)]);
+  return out;
+}
+
 /* Returns true once this element is showing a map, false if it should be retried. */
 const pathFetches = new Map();
 async function loadPath(runId){
@@ -1372,6 +1414,7 @@ const REACTS = [
   {k:'goat',  e:'🐐'},
   {k:'clap',  e:'👏'}
 ];
+const EMOJI_OF = Object.fromEntries(REACTS.map(x => [x.k, x.e]));
 
 /* ============================================================
    6. AUTH
@@ -1403,7 +1446,7 @@ onAuthStateChanged(auth, async user => {
     if (!snap.exists()){
       await setDoc(uref, {
         uid: user.uid,
-        name: user.displayName || (user.email || 'Runner').split('@')[0],
+        name: cleanName(user.displayName || (user.email || 'Runner').split('@')[0]),
         photo: user.photoURL || '',
         joinedAt: serverTimestamp(),
         lastSeen: serverTimestamp()
@@ -1414,6 +1457,11 @@ onAuthStateChanged(auth, async user => {
   } catch (err){ console.warn('profile', err.code || err); }
   watchRuns();
 });
+
+/* The rules cap a display name at 24 characters, and a Google account can easily
+   exceed that — the write was rejected and the failure only reached console.warn,
+   leaving that player with no profile doc at all. Clamp before every write. */
+const cleanName = n => (String(n ?? '').trim().slice(0, 24) || 'Runner');
 
 /* Names and photos are read live so a rename applies to old posts too. */
 const nameOf  = (uid, fallback) => (PROFILE.get(uid)?.name  || fallback || 'Runner');
@@ -1446,7 +1494,8 @@ function watchRuns(){
 
   // everyone who has signed in, so players show on the board before their first mile
   unsubUsers?.();
-  unsubUsers = onSnapshot(collection(db,'users'), snap => {
+  // every other listener is bounded; this one wasn't, and a user doc can carry a 90 KB avatar
+  unsubUsers = onSnapshot(query(collection(db,'users'), limit(500)), snap => {
     PLAYERS = snap.docs.map(d => d.data());
     PROFILE.clear();
     for (const u of PLAYERS) if (u.uid) PROFILE.set(u.uid, { name: u.name, photo: u.photo });
@@ -1666,7 +1715,7 @@ function renderMyRuns(){
 function renderFeed(){
   const el = $('#feed');
   $('#feedCount').textContent = RUNS.length ? `${RUNS.length} posts` : '';
-  RUNS.slice(0,12).forEach(r => watchComments(r.id));   // live counts for the top of the feed only
+  syncCommentWatchers();      // live counts for the top of the feed, and nothing else
   el.innerHTML = RUNS.length
     ? RUNS.slice(0,60).map(r => postHTML(r)).join('')
     : `<div class="empty"><span class="em">🌙</span>Quiet in here.<br>First mile of the day posts itself.</div>`;
@@ -1697,8 +1746,15 @@ function postHTML(r, compact=false){
     ? `<span class="picker">${REACTS.map(x =>
         `<button class="react pick" data-react="${x.k}" data-run="${r.id}">${x.e}</button>`).join('')}</span>`
     : '';
+  // built from the same map the sheet uses, so the button can never appear
+  // over a reaction map the sheet would find empty
+  const reactors = [...reactorsOf(r).keys()];
+  const whoBtn = reactors.length ? `<button class="reactwho" data-reacts="${r.id}"
+      title="See who reacted" aria-label="See who reacted">${
+      reactors.slice(0,3).map(u => `<img src="${esc(photoOf(u,'') || avatarFor(nameOf(u)))}" alt=""/>`).join('')
+    }${reactors.length > 3 ? `<span>+${reactors.length - 3}</span>` : ''}</button>` : '';
   const reactBtns = `${chips}<button class="addreact ${picking?'on':''}" data-pick="${r.id}"
-      aria-label="Add a reaction">${picking ? '×' : '☺+'}</button>${picker}`;
+      aria-label="Add a reaction">${picking ? '×' : '☺+'}</button>${picker}${whoBtn}`;
   const cmts = commentCache.get(r.id) || [];
   const open = openComments.has(r.id);
   return `<article class="post glass" data-post="${r.id}">
@@ -1801,10 +1857,12 @@ const ACHIEVEMENTS = [
 
   { key:'cruise', emoji:'👟', title:'Steady Cruiser', req:'Hold the same pace (±5s) across 3 runs in a row',
     earned: p => {
-      const paces = [...p.runList].sort((a,b) => (a.startedAt||0) - (b.startedAt||0))
-                                  .map(paceOf).filter(Boolean);
+      // keep the nulls: filtering untimed runs out would make runs 20 days apart
+      // look adjacent, and the badge says "in a row"
+      const paces = [...p.runList].sort((a,b) => (a.startedAt||0) - (b.startedAt||0)).map(paceOf);
       for (let i = 0; i + 2 < paces.length; i++){
         const w = paces.slice(i, i+3);
+        if (w.some(v => !v)) continue;
         if (Math.max(...w) - Math.min(...w) <= 5) return true;
       }
       return false;
@@ -1991,6 +2049,11 @@ function dayDate(k){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k || '');
   return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
 }
+const addDays = (iso, n) => {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return dayKey(d);
+};
 const shortDay = k => { const d = dayDate(k);
   return d ? d.toLocaleDateString(undefined,{month:'short', day:'numeric'}) : ''; };
 const timedPace = rs => {
@@ -2050,8 +2113,10 @@ function wrappedStats(p, ranked){
     Infinity);
 
   // opening ten days against closing ten — did the month make them faster?
-  const early = timedPace(timed.filter(r => r.day <= '2026-09-10'));
-  const late  = timedPace(timed.filter(r => r.day >= '2026-09-21'));
+  // derived from CHALLENGE, not hardcoded — a bumped year would have silently
+  // dropped the card rather than erroring, which is the hard kind of bug to notice
+  const early = timedPace(timed.filter(r => r.day <= addDays(CHALLENGE.startISO, 9)));
+  const late  = timedPace(timed.filter(r => r.day >= addDays(CHALLENGE.endISO, -9)));
 
   const byDow = new Array(7).fill(0);
   for (const r of runs){ const d = dayDate(r.day); if (d) byDow[d.getDay()]++; }
@@ -2062,7 +2127,8 @@ function wrappedStats(p, ranked){
   const emojiTally = [];
   for (const r of runs)
     for (const [e,l] of Object.entries(r.reactions || {}))
-      if (Array.isArray(l)) for (let i = 0; i < l.length; i++) emojiTally.push(e);
+      // reactions are keyed 'fire'/'goat'/… — the card must show the emoji, not the key
+      if (Array.isArray(l)) for (let i = 0; i < l.length; i++) emojiTally.push(EMOJI_OF[e] || e);
   const topPost = reactions ? best(runs, reactCount) : null;
 
   // ---- weather ----
@@ -2135,7 +2201,8 @@ function wrappedCards(s){
   const big  = (v, unit) => `<div class="wbig">${v}${unit ? `<span>${unit}</span>` : ''}</div>`;
   const line = t => `<p class="wline">${t}</p>`;
   const foot = t => `<p class="wfoot">${t}</p>`;
-  const hrs  = Math.floor(s.seconds / 3600), mins = Math.round(s.seconds % 3600 / 60);
+  // floor, not round — 7185s rounded gives the nonsense "1h 60m"
+  const hrs  = Math.floor(s.seconds / 3600), mins = Math.floor(s.seconds % 3600 / 60);
   const laps = Math.round(s.miles * MI / 400);
   const cssUrl = u => `url("${String(u).replace(/["\\]/g, encodeURIComponent)}")`;
   const cards = [];
@@ -2265,6 +2332,37 @@ function wrappedCards(s){
   return cards;
 }
 
+/* Who reacted, and with what. The names were only ever in a title attribute,
+   which a phone can't show. */
+/* uid -> [emoji, ...], in REACTS order. Only keys the app actually writes count. */
+function reactorsOf(r){
+  const per = new Map();
+  for (const { k, e } of REACTS)
+    for (const uid of (Array.isArray(r?.reactions?.[k]) ? r.reactions[k] : []))
+      if (uid) per.set(uid, [...(per.get(uid) || []), e]);
+  return per;
+}
+
+function openReactors(runId){
+  const r = RUNS.find(x => x.id === runId);
+  if (!r) return;
+  const per = reactorsOf(r);
+  if (!per.size) return;
+  const total = [...per.values()].reduce((n, l) => n + l.length, 0);
+  $('#rxSub').textContent = `${total} from ${per.size} ${per.size === 1 ? 'person' : 'people'}`
+    + ` · ${nameOf(r.uid, r.name)}'s ${(r.miles || 0).toFixed(2)} mi`;
+  $('#rxList').innerHTML = [...per].map(([uid, emo]) => `
+    <div class="rx-row">
+      <img src="${esc(photoOf(uid, '') || avatarFor(nameOf(uid)))}" alt=""
+           onerror="this.src='${avatarFor(nameOf(uid))}'"/>
+      <b>${esc(nameOf(uid))}${uid === ME?.uid ? ' · you' : ''}</b>
+      <span class="em">${emo.join('')}</span>
+    </div>`).join('');
+  show($('#reactSheet'), true);
+}
+$('#rxClose').onclick = () => show($('#reactSheet'), false);
+$('#reactSheet').onclick = e => { if (e.target === $('#reactSheet')) show($('#reactSheet'), false); };
+
 /* ============================================================
    11d. PLAYER PROFILE — tap anyone's picture in the feed or the
    standings. Read-only, and it reuses wrappedStats so a number here
@@ -2297,8 +2395,8 @@ function openPlayer(uid){
     .sort((a,b) => b.completed.length - a.completed.length || b.miles - a.miles);
   const s = wrappedStats(p, ranked);
   const mine = p.uid === ME?.uid;
-  const hrs = Math.floor(s.seconds / 3600), mins = Math.round(s.seconds % 3600 / 60);
-  const timeStr = hrs > 0 ? (mins ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
+  // clock() keeps the seconds — h:mm:ss over an hour, m:ss under it
+  const timeStr = clock(s.seconds);
 
   const stat = (e, v, label) =>
     `<div class="pv-stat"><span class="e">${e}</span><div><b>${v}</b><span>${label}</span></div></div>`;
@@ -2336,7 +2434,6 @@ function openPlayer(uid){
       ${s.hasWx ? stat('🌡️', `${s.avgTemp}°`, 'Average temp') : ''}
       ${s.topCity.value ? stat('📍', esc(String(s.topCity.value).split(',')[0]), 'Runs here most') : ''}
       ${s.topDow >= 0 && s.dowCount > 1 ? stat('🗓️', DOW[s.topDow].slice(0,3), 'Favourite day') : ''}
-      ${s.reactions ? stat('❤️', s.reactions, 'Reactions earned') : ''}
     </div>
 
     <div class="h2"><h2>September</h2><span>${s.days} of 30</span></div>
@@ -2389,6 +2486,7 @@ async function openWrapped(uid){
   const token = ++wrapToken;
   wrapOpen = true;
   wrapIdx  = 0;
+  wrapDeck = [];              // otherwise a tap during the load paints the PREVIOUS player's card
   $('#wrapBars').innerHTML = '';
   $('#wrapStage').innerHTML =
     `<div class="wcard t-open"><div class="wk">September 1–30</div>
@@ -2409,6 +2507,7 @@ async function openWrapped(uid){
 function closeWrapped(){
   wrapOpen = false;
   wrapToken++;
+  wrapDeck = [];
   show($('#wrapped'), false);
   document.body.classList.remove('noscroll');
   $('#wrapStage').innerHTML = '';
@@ -2453,6 +2552,30 @@ document.addEventListener('keydown', e => {
   });
 })();
 
+/* Deleting used to await each media doc in turn. With persistentLocalCache a write
+   promise settles only on SERVER ack, so offline the very first await never resolved
+   and the run doc's own delete was never even enqueued — the run silently stayed.
+   Fire them together, race the same 4s saveRun uses, and only ask for the media docs
+   that exist (a delete on a missing doc is denied by the rules anyway). */
+async function deleteRun(id, run){
+  const kinds = ['photo','shot','path'].filter(k =>
+    k === 'photo' ? run?.hasPhoto : k === 'shot' ? run?.hasShot : run?.hasPath);
+  const jobs = [
+    ...kinds.map(k => deleteDoc(doc(db,'runs',id,'media',k)).catch(() => null)),
+    deleteDoc(doc(db,'runs',id))
+  ];
+  mapPaths.delete(id); pathFetches.delete(id); mapCache.delete(id);
+  for (const k of ['photo','shot','path']) photoCache.delete(`${id}|${k}`);
+  commentCache.delete(id);
+  const un = commentUnsubs.get(id);
+  if (typeof un === 'function') un();
+  commentUnsubs.delete(id);
+  return Promise.race([
+    Promise.all(jobs).then(() => null, e => e),
+    new Promise(r => setTimeout(() => r('queued'), 4000))
+  ]);
+}
+
 function renderBoard(){
   const players = [...byPlayer().values()].sort((a,b) =>
     b.completed.length - a.completed.length || (b.doneToday?1:0) - (a.doneToday?1:0) || b.miles - a.miles);
@@ -2476,6 +2599,11 @@ function renderBoard(){
   $('#cAlive').textContent = `${alive}/${players.length}`;
   $('#cMiles').textContent = players.reduce((s,p)=>s+p.miles,0).toFixed(0);
 }
+
+/* test hooks — inert in normal use, no behaviour of their own */
+window.__capPoints = capPoints;
+window.__saveRun   = (...a) => saveRun(...a);
+window.__openSaveSheet = (...a) => openSaveSheet(...a);
 
 /* ============================================================
    10. TABS
@@ -2501,6 +2629,9 @@ document.addEventListener('click', async e => {
 
   const who = e.target.closest('[data-who]');
   if (who){ openPlayer(who.dataset.who); return; }
+
+  const rx = e.target.closest('[data-reacts]');
+  if (rx){ openReactors(rx.dataset.reacts); return; }
 
   const wrap = e.target.closest('[data-wrap]');
   if (wrap){ closePlayer(); openWrapped(wrap.dataset.wrap); return; }
@@ -2539,7 +2670,14 @@ document.addEventListener('click', async e => {
   }
   if (cmt){
     const id = cmt.dataset.cmt;
-    if (openComments.has(id)) { openComments.delete(id); }
+    if (openComments.has(id)){
+      // closing left the listener streaming forever — peek at 200 runs over the
+      // month and you sail past Firestore's ~100 concurrent-listener ceiling
+      openComments.delete(id);
+      const un = commentUnsubs.get(id);
+      if (typeof un === 'function') un();
+      commentUnsubs.delete(id);            // the cached text stays, so the count survives
+    }
     else { openComments.add(id); watchComments(id); }
     renderFeed(); renderMyRuns();
   }
@@ -2550,10 +2688,14 @@ document.addEventListener('click', async e => {
     input.value = '';
     try {
       await addDoc(collection(db,'runs',id,'comments'), {
-        uid:ME.uid, name:ME.displayName || 'Runner', photo:ME.photoURL || '',
+        uid:ME.uid, name:cleanName(ME.displayName || 'Runner'), photo:ME.photoURL || '',
         text, createdAt: serverTimestamp(), ts: Date.now()
       });
-    } catch (err) { console.error(err); toast('Comment failed'); }
+    } catch (err) {
+      console.error(err);
+      if (input.isConnected && !input.value) input.value = text;   // don't eat what they wrote
+      toast('Comment failed — your text is still there');
+    }
   }
   if (del && ME){
     const id = del.dataset.del;
@@ -2562,20 +2704,30 @@ document.addEventListener('click', async e => {
       r ? `${(r.miles||0).toFixed(2)} mi in ${clock(r.seconds||0)}. It stops counting toward that day and disappears from the feed. This can't be undone.`
         : `It stops counting toward that day and disappears from the feed.`);
     if (!ok) return;
-    try {
-      for (const k of ['photo','shot','path'])
-        await deleteDoc(doc(db,'runs',id,'media',k)).catch(()=>{});
-      await deleteDoc(doc(db,'runs',id));
-      mapPaths.delete(id); pathFetches.delete(id);
-      photoCache.delete(id);
-      toast('Run deleted');
-    } catch (err) { console.error(err); toast('Delete failed'); }
+    const res = await deleteRun(id, r);
+    if (res === 'queued') toast("Deleted — will sync when you're back online", 4200);
+    else if (res) { console.error(res); toast('Delete failed: ' + (res.code || res.message)); }
+    else toast('Run deleted');
   }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.dataset?.cinput)
     document.querySelector(`[data-csend="${e.target.dataset.cinput}"]`)?.click();
 });
+/* The top of the feed moves as runs come in, so subscribing to it on every render
+   left every run that was ever in the top 12 streaming forever — 600 runs over a
+   month is 600 listeners, well past Firestore's ~100 concurrent-target ceiling.
+   Keep exactly the current top 12 plus whatever threads are actually open. */
+function syncCommentWatchers(){
+  const keep = new Set([...RUNS.slice(0, 12).map(r => r.id), ...openComments]);
+  for (const [id, un] of [...commentUnsubs]){
+    if (keep.has(id)) continue;
+    if (typeof un === 'function') un();
+    commentUnsubs.delete(id);
+  }
+  keep.forEach(watchComments);
+}
+
 function watchComments(runId){
   if (commentUnsubs.has(runId)) return;
   commentUnsubs.set(runId, null);           // claim it first — the callback can fire synchronously
@@ -2613,15 +2765,10 @@ $('#btnUndo').onclick = async () => {
     `${(r.miles||0).toFixed(2)} mi in ${clock(r.seconds||0)}, logged today. It comes off your total and out of the feed.`,
     'Undo it');
   if (!ok) return;
-  try {
-    for (const k of ['photo','shot','path'])
-      await deleteDoc(doc(db,'runs',id,'media',k)).catch(()=>{});
-    await deleteDoc(doc(db,'runs',id));
-    mapPaths.delete(id); pathFetches.delete(id);
-    photoCache.delete(id);
-    toast('Log undone');
-  }
-  catch (err) { console.error(err); toast('Could not undo: ' + (err.code || err.message)); }
+  const res = await deleteRun(id, r);
+  if (res === 'queued') toast("Undone — will sync when you're back online", 4200);
+  else if (res) { console.error(res); toast('Could not undo: ' + (res.code || res.message)); }
+  else toast('Log undone');
 };
 
 $('#lnkLive').onclick = () => { show($('#manualSheet'), false); startRun(); };
@@ -2711,7 +2858,7 @@ async function finishRun(){
   show($('#tracker'), false);
   const mi = T.meters / MI;
   if (mi < 0.02 && T.elapsed < 30) { toast('Run discarded — nothing recorded'); return; }
-  openSaveSheet(mi, T.elapsed, simplify(T.points).slice(0,300), T.blackout || 0);
+  openSaveSheet(mi, T.elapsed, capPoints(simplify(T.points), 300), T.blackout || 0);
 }
 /* A backgrounded tab gets its GPS cut off by the OS. We can't prevent that, so we
    measure the blackout and tell the truth about it instead of silently under-counting. */
@@ -3033,14 +3180,21 @@ function paintWeatherSlot(state, detail){
   }
 }
 
+let wxToken = 0;
 async function addWeather(){
+  // scrubbing the time picker fires this per keystroke; without a token an earlier
+  // request can resolve last and leave the pill showing the wrong hour
+  const token = ++wxToken;
   paintWeatherSlot('busy');
   try {
-    mnWx = await fetchWeather(chosenWhen());
+    const got = await fetchWeather(chosenWhen());
+    if (token !== wxToken) return;
+    mnWx = got;
     try { localStorage.setItem(WX_PREF, 'on'); } catch {}
     paintWeatherSlot('got');
   } catch (err){
     console.warn('weather:', err);
+    if (token !== wxToken) return;
     mnWx = null;
     paintWeatherSlot('failed',
       err && err.code === 1 ? 'Location permission denied'
@@ -3065,7 +3219,7 @@ function openProfile(){
   const me = byPlayer().get(ME.uid);
   const cur = PROFILE.get(ME.uid) || {};
   pfPhoto = null;
-  $('#pfName').value = cur.name || ME.displayName || '';
+  $('#pfName').value = cleanName(cur.name || ME.displayName || '');
   $('#pfImg').src    = cur.photo || ME.photoURL || avatarFor(cur.name || ME.displayName);
   $('#pfDays').textContent   = me ? me.completed.length : 0;
   $('#pfMiles').textContent  = me ? me.miles.toFixed(1) : '0.0';
@@ -3183,7 +3337,7 @@ $('#gpxInput').onchange = async () => {
         : `That doesn't look like a GPX or TCX file.`);
     const parsed = parseTrackFile(text);
     if (parsed.miles < 0.01) return toast('That track has no distance in it');
-    openSaveSheet(parsed.miles, parsed.seconds, simplify(parsed.path).slice(0,300), 0, {
+    openSaveSheet(parsed.miles, parsed.seconds, capPoints(simplify(parsed.path), 300), 0, {
       imported: true,
       when: parsed.started,
       label: parsed.name,
@@ -3370,19 +3524,29 @@ function openSaveSheet(miles, seconds, path, blackout = 0, meta = null){
   }
   $('#savePreview').innerHTML = routeSVG(path, 380, 200);
   if (path.length > 1){
-    const key = 'preview-' + Date.now();
-    mapPaths.set(key, path);
-    $('#savePreview').dataset.map = key;
+    // one key, reused — 'preview-'+Date.now() left a dead entry in mapPaths per save
+    mapPaths.set('preview', path);
+    $('#savePreview').dataset.map = 'preview';
     delete $('#savePreview').dataset.done;
-    upgradeToMap($('#savePreview'));
-  } else { delete $('#savePreview').dataset.map; }
+    mapCache.delete('preview');
+    previewPending = true;          // upgraded after the sheet is shown, see below
+  } else { delete $('#savePreview').dataset.map; previewPending = false; }
   $('#svMiles').textContent = miles.toFixed(2);
   $('#svTime').textContent  = clock(seconds);
   $('#svPace').textContent  = miles > 0.02 ? paceStr(seconds/miles) : '—:—';
   $('#svNote').value = '';
   svPhoto.reset();
   show($('#saveSheet'), true);
+  /* upgradeToMap measures the element, and while the sheet still had .hide it
+     measured 0x0 and bailed before marking itself done — so the save preview
+     never showed a basemap even though the same run did in the feed a second
+     later. Show first, then upgrade on the next frame. */
+  if (previewPending){
+    previewPending = false;
+    requestAnimationFrame(() => upgradeToMap($('#savePreview')));
+  }
 }
+let previewPending = false;
 $('#svDiscard').onclick = async () => {
   if (!await askConfirm('Discard this run?', 'It will not be saved and the GPS trace is gone for good.', 'Discard')) return;
   pending = null; show($('#saveSheet'), false);
@@ -3421,10 +3585,10 @@ const toLocalInput = d => {
 function backdateFloor(){
   const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d;
 }
-const mnSeconds = () =>
-  (parseFloat($('#mnHrs').value)  || 0) * 3600 +
-  (parseFloat($('#mnMins').value) || 0) * 60 +
-  (parseFloat($('#mnSecs').value) || 0);
+/* min="0" is not enforced for typed input, and a negative total is refused by the
+   rules — which would reject the whole run rather than just the time */
+const nonNeg = sel => Math.max(0, parseFloat($(sel).value) || 0);
+const mnSeconds = () => nonNeg('#mnHrs') * 3600 + nonNeg('#mnMins') * 60 + nonNeg('#mnSecs');
 
 /* fill h:m:s from a total, so the splits sum and the reset agree on the format */
 function setMnTime(total){
@@ -3502,6 +3666,7 @@ $('#mnSave').onclick = async () => {
   const secs  = mnSeconds();
   if (!(miles > 0)) return toast('Enter your miles');
   if (miles > 100) return toast('That is a lot of miles');
+  if (secs > 86400) return toast('That is more than a day of running');
 
   const when = chosenWhen(), now = new Date();
   if (when > now)               return toast("You can't log a run in the future");
@@ -3517,6 +3682,14 @@ $('#mnSave').onclick = async () => {
 };
 
 async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather, splits}){
+  /* The rules cap miles at 200 and refuse a negative time. Offline, a write that
+     breaks those is queued, reported as saved, then silently dropped by the server —
+     so it has to be caught here, on the client, while the run is still recoverable. */
+  if (!(miles > 0) || miles >= 200){
+    toast(miles >= 200 ? "That's over 200 miles — check the file you imported" : 'That run has no distance', 6000);
+    return false;
+  }
+  if (!(seconds >= 0)){ toast('That run has a negative time', 5000); return false; }
   if (!ME) { toast('Not signed in'); return false; }
 
   // With the offline cache on, a write promise settles only when the SERVER acks —
@@ -3531,7 +3704,7 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
   const pts = (path || []).map(p => ({ lat:+p.lat.toFixed(5), lng:+p.lng.toFixed(5) }));
   const runWrite = setDoc(ref, {
     uid: ME.uid,
-    name: ME.displayName || (ME.email||'Runner').split('@')[0],
+    name: cleanName(ME.displayName || (ME.email||'Runner').split('@')[0]),
     photo: ME.photoURL || '',
     day: day || todayKey(),
     miles: Math.round(miles * 1000) / 1000,
@@ -3569,6 +3742,13 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
   const report = fails => {
     const runFail   = fails.find(f => f?.what === 'run');
     const pathFail  = fails.find(f => f?.what === 'path');
+    // the run comes first: if it never saved there is no document to repair, and the
+    // merge below would try to CREATE one carrying only hasPath
+    if (runFail){
+      console.error(runFail.e);
+      toast('Run did not save: ' + (runFail.e.code || runFail.e.message), 6000);
+      return;
+    }
     if (pathFail){
       console.error(pathFail.e);
       setDoc(ref, { hasPath:false }, { merge:true }).catch(()=>{});
@@ -3576,11 +3756,6 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
             + '. The run still counts.', 7000);
     }
     const photoFail = fails.find(f => f?.what === 'photo');
-    if (runFail){
-      console.error(runFail.e);
-      toast('Run did not save: ' + (runFail.e.code || runFail.e.message), 6000);
-      return;
-    }
     if (photoFail){
       console.error(photoFail.e);
       photoCache.delete(`${ref.id}|${photoFail.kind}`);
