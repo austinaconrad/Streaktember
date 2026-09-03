@@ -2813,13 +2813,16 @@ window.__openSaveSheet = (...a) => openSaveSheet(...a);
    The guard that matters is eggBusy: one tap, one show, and mashing
    it does nothing until the current one has finished and cleaned up.
    ============================================================ */
-const EGG_MS = 4200;
-const EGG_COLORS = ['#5ef2c0','#39d3ff','#a78bfa','#ffd166','#ff6d8a','#ffffff'];
-const EGG_EMOJI  = ['🏃','🏃‍♀️','🏃‍♂️','👟','🎉','🎆','✨','🔥'];
+const EGG_MS = 6400;
+const EGG_COLORS = ['#5ef2c0','#39d3ff','#a78bfa','#ffd166','#ff6d8a','#ffffff','#7ee0ff','#ff9f6d'];
+const EGG_EMOJI  = ['🏃','🏃‍♀️','🏃‍♂️','👟','🎉','🎆','✨','🔥','🎊','🥇'];
+const EGG_MAX    = 1500;                     // hard ceiling on live particles
+const ALPHA_STEPS = 6;                       // fade quantised so sparks can be batched
+const WHITE_I     = EGG_COLORS.indexOf('#ffffff');
 let eggBusy = false;
 
 function fireworks(){
-  if (eggBusy) return;                       // never stack two
+  if (eggBusy) return;                       // one tap, one show
   eggBusy = true;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -2833,16 +2836,16 @@ function fireworks(){
   wrap.appendChild(shout);
 
   if (!reduced)
-    for (let i = 0; i < 22; i++){
+    for (let i = 0; i < 40; i++){
       const s = document.createElement('span');
       s.className = 'runner';
       s.textContent = EGG_EMOJI[Math.floor(Math.random() * EGG_EMOJI.length)];
       s.style.left = (Math.random() * 96) + '%';
-      s.style.fontSize = (22 + Math.random() * 20) + 'px';
-      s.style.setProperty('--d', (2.4 + Math.random() * 1.6) + 's');
-      s.style.setProperty('--delay', (Math.random() * 1.5) + 's');
-      s.style.setProperty('--x', (Math.random() * 90 - 45) + 'px');
-      s.style.setProperty('--r', (Math.random() * 60 - 30) + 'deg');
+      s.style.fontSize = (20 + Math.random() * 24) + 'px';
+      s.style.setProperty('--d', (2.4 + Math.random() * 2.2) + 's');
+      s.style.setProperty('--delay', (Math.random() * 3.4) + 's');
+      s.style.setProperty('--x', (Math.random() * 110 - 55) + 'px');
+      s.style.setProperty('--r', (Math.random() * 80 - 40) + 'deg');
       wrap.appendChild(s);
     }
 
@@ -2856,48 +2859,110 @@ function fireworks(){
   const ctx = cv.getContext('2d');
   ctx.scale(dpr, dpr);
 
+  /* Sparks are drawn as short lines from where they were to where they are —
+     that reads as a trail without painting a dark wash over the app the way a
+     translucent full-canvas fill would. */
   const parts = [];
-  const burst = () => {
-    const x = W * (0.15 + Math.random() * 0.7), y = H * (0.12 + Math.random() * 0.45);
-    const c = EGG_COLORS[Math.floor(Math.random() * EGG_COLORS.length)];
-    const n = 34 + Math.floor(Math.random() * 14);
-    for (let i = 0; i < n; i++){
-      const a = (Math.PI * 2 * i) / n + Math.random() * 0.2;
-      const sp = 1.6 + Math.random() * 3.4;
-      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-                   life: 1, fade: 0.008 + Math.random() * 0.012, c,
-                   r: 1.4 + Math.random() * 1.8 });
-    }
+  // reused every frame, never reallocated
+  const bins = Array.from({ length: EGG_COLORS.length * ALPHA_STEPS * 2 }, () => []);
+  const spark = (x, y, vx, vy, ci, size, fade) => {
+    if (parts.length >= EGG_MAX) return;      // checked here, not per burst, so the cap is exact
+    parts.push({ x, y, px:x, py:y, vx, vy, ci, r:size, life:1,
+                 fade: fade || (0.006 + Math.random() * 0.010) });
   };
+
+  function burst(x, y, colour, scale){
+    const ci = colour === undefined || colour === null
+      ? Math.floor(Math.random() * EGG_COLORS.length) : colour;
+    const n = Math.round((44 + Math.random() * 34) * (scale || 1));
+    const ring = Math.random() < 0.45;       // some are neat rings, some are scattered
+    const base = 2.0 + Math.random() * 3.6;
+    for (let i = 0; i < n; i++){
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.25;
+      const sp = ring ? base * (0.92 + Math.random() * 0.16) : base * (0.35 + Math.random());
+      spark(x, y, Math.cos(a) * sp, Math.sin(a) * sp, ci, 1.1 + Math.random() * 1.7);
+    }
+    // a brighter core so the flash reads at the moment of the burst
+    for (let i = 0; i < 12; i++){
+      const a = Math.random() * Math.PI * 2, sp = Math.random() * 1.5;
+      spark(x, y, Math.cos(a) * sp, Math.sin(a) * sp, WHITE_I, 1.6 + Math.random(), 0.03);
+    }
+  }
+
+  /* a rocket climbs, trailing, then explodes at the top */
+  const rockets = [];
+  function rocket(){
+    if (reduced) return;
+    const x = W * (0.1 + Math.random() * 0.8);
+    rockets.push({ x, y: H + 10, vx: (Math.random() - 0.5) * 0.7,
+                   vy: -(7.5 + Math.random() * 3.2),
+                   target: H * (0.08 + Math.random() * 0.34),
+                   ci: Math.floor(Math.random() * EGG_COLORS.length) });
+  }
 
   let raf = 0, stopped = false;
   const timers = [];
+  const frames = [];                          // for the perf probe
   if (!reduced){
-    burst();
-    // a handful of bursts, stopping well before the overlay is torn down
-    for (let i = 1; i < 7; i++) timers.push(setTimeout(burst, 380 * i + Math.random() * 220));
+    for (let i = 0; i < 3; i++) burst(W * (0.2 + Math.random() * 0.6), H * (0.15 + Math.random() * 0.3));
+    // a steady stream, stopping early enough that everything can fall and fade
+    for (let i = 1; i <= 26; i++)
+      timers.push(setTimeout(() => burst(W * (0.08 + Math.random() * 0.84),
+                                         H * (0.08 + Math.random() * 0.5),
+                                         null, 0.8 + Math.random() * 0.7),
+                             150 * i + Math.random() * 160));
+    for (let i = 0; i < 9; i++) timers.push(setTimeout(rocket, 250 + i * 430 + Math.random() * 260));
   }
 
-  const frame = () => {
+  let last = performance.now();
+  const frame = now => {
     if (stopped) return;
+    frames.push(now - last); last = now;
     ctx.clearRect(0, 0, W, H);
+
+    for (let i = rockets.length - 1; i >= 0; i--){
+      const k = rockets[i];
+      k.vy += 0.10;
+      const px = k.x, py = k.y;
+      k.x += k.vx; k.y += k.vy;
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = EGG_COLORS[k.ci]; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(k.x, k.y); ctx.stroke();
+      if (k.y <= k.target || k.vy >= 0){ burst(k.x, k.y, k.ci, 1.25); rockets.splice(i, 1); }
+    }
+
+    ctx.lineCap = 'round';
+    for (let i = 0; i < bins.length; i++) bins[i].length = 0;
     for (let i = parts.length - 1; i >= 0; i--){
       const p = parts[i];
-      p.vy += 0.045;                       // gravity
-      p.vx *= 0.992; p.vy *= 0.992;
+      p.vy += 0.055;                          // gravity
+      p.vx *= 0.988; p.vy *= 0.988;
+      p.px = p.x; p.py = p.y;
       p.x += p.vx; p.y += p.vy;
       p.life -= p.fade;
-      if (p.life <= 0 || p.y > H + 40){ parts.splice(i, 1); continue; }
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillStyle = p.c;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      if (p.life <= 0 || p.y > H + 50){ parts.splice(i, 1); continue; }
+      const aB = p.life >= 1 ? ALPHA_STEPS - 1 : (p.life * ALPHA_STEPS) | 0;
+      bins[(p.ci * ALPHA_STEPS + aB) * 2 + (p.r > 1.9 ? 1 : 0)].push(p);
+    }
+    for (let b = 0; b < bins.length; b++){
+      const bin = bins[b];
+      if (!bin.length) continue;
+      const wide = b & 1, aB = ((b >> 1) % ALPHA_STEPS), ci = (b >> 1) / ALPHA_STEPS | 0;
+      ctx.globalAlpha = (aB + 0.5) / ALPHA_STEPS;
+      ctx.strokeStyle = EGG_COLORS[ci];
+      ctx.lineWidth = wide ? 2.4 : 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < bin.length; i++){
+        const p = bin[i];
+        ctx.moveTo(p.px, p.py); ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
     }
     ctx.globalAlpha = 1;
     raf = requestAnimationFrame(frame);
   };
   if (!reduced) raf = requestAnimationFrame(frame);
 
-  if (navigator.vibrate) { try { navigator.vibrate([12, 40, 12]); } catch {} }
+  if (navigator.vibrate) { try { navigator.vibrate([12, 40, 12, 60, 18]); } catch {} }
 
   timers.push(setTimeout(() => {
     stopped = true;
@@ -2905,7 +2970,15 @@ function fireworks(){
     timers.forEach(clearTimeout);
     wrap.remove();
     eggBusy = false;
+    window.__eggFrames = frames;              // test hook: frame deltas
+    window.__eggPeak = window.__eggPeakLive || 0;
   }, reduced ? 1800 : EGG_MS));
+
+  // track the busiest moment, so the ceiling can be checked
+  const watch = setInterval(() => {
+    window.__eggPeakLive = Math.max(window.__eggPeakLive || 0, parts.length);
+  }, 60);
+  timers.push(setTimeout(() => clearInterval(watch), EGG_MS));
 }
 
 $('#eggMark').onclick = fireworks;
