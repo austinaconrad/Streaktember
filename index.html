@@ -389,14 +389,6 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 /* pointer-events:none throughout — it must never swallow a tap meant for the app */
 .egg{position:fixed;inset:0;z-index:120;pointer-events:none;overflow:hidden}
 .egg canvas{position:absolute;inset:0;width:100%;height:100%}
-.egg .runner{position:absolute;bottom:-60px;line-height:1;will-change:transform,opacity;
-  animation:eggrun var(--d,3s) var(--delay,0s) cubic-bezier(.25,.6,.35,1) forwards}
-@keyframes eggrun{
-  0%{transform:translate3d(0,0,0) rotate(0deg);opacity:0}
-  12%{opacity:1}
-  80%{opacity:1}
-  100%{transform:translate3d(var(--x,0px),calc(-100dvh - 90px),0) rotate(var(--r,20deg));opacity:0}
-}
 .egg .shout{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:800;
   letter-spacing:-.03em;opacity:0;
   background:linear-gradient(120deg,var(--mint),#7ee0ff 45%,var(--violet));
@@ -410,7 +402,6 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   100%{opacity:0;transform:scale(1.04)}
 }
 @media (prefers-reduced-motion:reduce){
-  .egg .runner{display:none}
   .egg .shout{animation-duration:1.4s}
 }
 
@@ -2815,7 +2806,6 @@ window.__openSaveSheet = (...a) => openSaveSheet(...a);
    ============================================================ */
 const EGG_MS = 6400;
 const EGG_COLORS = ['#5ef2c0','#39d3ff','#a78bfa','#ffd166','#ff6d8a','#ffffff','#7ee0ff','#ff9f6d'];
-const EGG_EMOJI  = ['🏃','🏃‍♀️','🏃‍♂️','👟','🎉','🎆','✨','🔥','🎊','🥇'];
 const EGG_MAX    = 1500;                     // hard ceiling on live particles
 const ALPHA_STEPS = 6;                       // fade quantised so sparks can be batched
 const WHITE_I     = EGG_COLORS.indexOf('#ffffff');
@@ -2834,20 +2824,6 @@ function fireworks(){
   shout.className = 'shout';
   shout.textContent = 'STREAKTEMBER';
   wrap.appendChild(shout);
-
-  if (!reduced)
-    for (let i = 0; i < 40; i++){
-      const s = document.createElement('span');
-      s.className = 'runner';
-      s.textContent = EGG_EMOJI[Math.floor(Math.random() * EGG_EMOJI.length)];
-      s.style.left = (Math.random() * 96) + '%';
-      s.style.fontSize = (20 + Math.random() * 24) + 'px';
-      s.style.setProperty('--d', (2.4 + Math.random() * 2.2) + 's');
-      s.style.setProperty('--delay', (Math.random() * 3.4) + 's');
-      s.style.setProperty('--x', (Math.random() * 110 - 55) + 'px');
-      s.style.setProperty('--r', (Math.random() * 80 - 40) + 'deg');
-      wrap.appendChild(s);
-    }
 
   const cv = document.createElement('canvas');
   wrap.appendChild(cv);
@@ -2896,7 +2872,7 @@ function fireworks(){
     const x = W * (0.1 + Math.random() * 0.8);
     rockets.push({ x, y: H + 10, vx: (Math.random() - 0.5) * 0.7,
                    vy: -(7.5 + Math.random() * 3.2),
-                   target: H * (0.08 + Math.random() * 0.34),
+                   target: H * (0.07 + Math.random() * 0.42),
                    ci: Math.floor(Math.random() * EGG_COLORS.length) });
   }
 
@@ -2904,11 +2880,11 @@ function fireworks(){
   const timers = [];
   const frames = [];                          // for the perf probe
   if (!reduced){
-    for (let i = 0; i < 3; i++) burst(W * (0.2 + Math.random() * 0.6), H * (0.15 + Math.random() * 0.3));
+    for (let i = 0; i < 3; i++) burst(W * (0.18 + Math.random() * 0.64), H * (0.15 + Math.random() * 0.35));
     // a steady stream, stopping early enough that everything can fall and fade
     for (let i = 1; i <= 26; i++)
-      timers.push(setTimeout(() => burst(W * (0.08 + Math.random() * 0.84),
-                                         H * (0.08 + Math.random() * 0.5),
+      timers.push(setTimeout(() => burst(W * (0.06 + Math.random() * 0.88),
+                                         H * (0.07 + Math.random() * 0.66),
                                          null, 0.8 + Math.random() * 0.7),
                              150 * i + Math.random() * 160));
     for (let i = 0; i < 9; i++) timers.push(setTimeout(rocket, 250 + i * 430 + Math.random() * 260));
