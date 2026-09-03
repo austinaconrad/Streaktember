@@ -624,7 +624,7 @@ body.noscroll{overflow:hidden}
 .ach-who .none{font-size:10.5px;color:var(--ink-faint);letter-spacing:.04em}
 
 /* ---- standings ---- */
-.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:var(--r-md);margin-bottom:8px;
+.row{display:flex;align-items:center;gap:11px;padding:13px 12px;border-radius:var(--r-md);margin-bottom:8px;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .row.me{background:linear-gradient(140deg,rgba(94,242,192,.16),rgba(167,139,250,.12));border-color:rgba(94,242,192,.32)}
 .row .rank{width:24px;font-size:15px;font-weight:800;color:var(--ink-faint);text-align:center;flex:none}
@@ -636,11 +636,13 @@ body.noscroll{overflow:hidden}
 .row .nm{flex:1;min-width:0}
 .row .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .nm span{font-size:11.5px;color:var(--ink-faint)}
-.row .figs{display:flex;gap:13px;flex:none;align-items:flex-start}
+/* the second decimal on Miles costs about a character's width; taken back from
+   the gaps and the figure's own size so a normal name still fits on one line */
+.row .figs{display:flex;gap:10px;flex:none;align-items:flex-start}
 .row .fig{text-align:right;flex:none;min-width:40px}
 .row .fig b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
 .row .fig span{font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
-.row .fig.mi b{color:var(--ink-dim);font-size:16px}
+.row .fig.mi b{color:var(--ink-dim);font-size:15px;letter-spacing:-.035em}
 .flame{color:var(--amber)}
 .tick{font-size:22px;line-height:1;font-weight:800}
 .tick.yes{color:var(--mint)} .tick.no{color:var(--coral);opacity:.75}
@@ -2757,7 +2759,7 @@ function renderBoard(){
       <div class="nm"><b>${esc(p.name)}</b>
         <span>${p.runs ? `${p.completed.length}/30 days${p.streak ? ` · ${p.streak}🔥 streak` : ''}${p.alive ? '' : ' · broken'}` : 'no miles logged yet'}</span></div>
       <div class="figs">
-        <div class="fig mi"><b class="mono">${p.miles.toFixed(1)}</b><span>Miles</span></div>
+        <div class="fig mi"><b class="mono">${p.miles.toFixed(2)}</b><span>Miles</span></div>
         <div class="fig"><b class="tick ${p.doneToday ? 'yes' : 'no'}">${p.doneToday ? '✓' : '✕'}</b><span>Today</span></div>
       </div>
     </div>`).join('')
