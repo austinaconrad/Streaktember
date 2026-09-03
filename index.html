@@ -117,20 +117,6 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .linkbtn{appearance:none;background:none;border:0;color:var(--ink-faint);font:500 13px 'Outfit',sans-serif;
   padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.2)}
 .linkbtn:hover{color:var(--ink-dim)}
-/* how many of the group are in today, at a glance on load */
-.intoday{appearance:none;display:inline-flex;align-items:baseline;gap:5px;margin-top:13px;
-  padding:8px 15px;border-radius:999px;cursor:pointer;font:700 15px 'Outfit',sans-serif;
-  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);color:var(--ink);
-  transition:background .15s,border-color .15s}
-.intoday:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
-.intoday:active{transform:scale(.96)}
-.intoday b{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
-/* mint only once YOU are one of them */
-.intoday.mine{background:rgba(94,242,192,.13);border-color:rgba(94,242,192,.34)}
-.intoday.mine b{color:var(--mint)}
-.intoday .sl{color:var(--ink-faint);font-weight:600}
-.intoday em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--ink-faint);
-  letter-spacing:.09em;text-transform:uppercase;margin-left:3px}
 .done-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
   background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:12px}
 
@@ -751,9 +737,6 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   <section id="tab-today">
     <div class="hero glass">
       <div class="datestrip" id="todayLabel">—</div>
-      <button class="intoday hide" id="todayIn" title="See the standings">
-        <b id="tiDone">0</b><span class="sl">/</span><span id="tiTotal">0</span><em>in today</em>
-      </button>
       <div class="ring-wrap">
         <svg width="210" height="210" viewBox="0 0 210 210">
           <defs>
@@ -1738,18 +1721,9 @@ function renderToday(){
   const left = Math.max(0, CHALLENGE.goalMiles - today);
   $('#todayGoalTxt').textContent = left > 0 ? `${left.toFixed(2)} mi to go` : `+${(today - CHALLENGE.goalMiles).toFixed(2)} mi over`;
   show($('#todayDonePill'), left <= 0);
-  // the same numbers the standings header shows, so they can't drift apart
+  // the same roster the group tile and the standings header read, so they agree
   const roster = [...players.values()];
   const inToday = roster.filter(p => p.doneToday).length;
-  const pill = $('#todayIn');
-  show(pill, roster.length > 0);
-  $('#tiDone').textContent  = inToday;
-  $('#tiTotal').textContent = roster.length;
-  pill.classList.toggle('mine', left <= 0);          // green once YOU'RE one of them
-  pill.setAttribute('aria-label',
-    `${inToday} of ${roster.length} logged today${left <= 0 ? ', including you' : ''}. See the standings.`);
-
-  // the group tile — same roster again, so all three places agree
   const alive = roster.filter(p => p.alive).length;
   const n = roster.length;
   const frac = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
@@ -3827,7 +3801,6 @@ $('#mnHrs').oninput   = updatePaceHint;
 $('#mnMins').oninput  = updatePaceHint;
 $('#mnSecs').oninput  = updatePaceHint;
 
-$('#todayIn').onclick = () => switchTab('board');
 $('#grpTile').onclick = () => switchTab('board');
 
 $('#mnCancel').onclick = () => show($('#manualSheet'), false);
