@@ -95,7 +95,9 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   padding:calc(var(--safe-t) + 14px) 16px 14px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand .mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,var(--mint),var(--violet));
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s;
   display:grid;place-items:center;font-size:18px;box-shadow:0 8px 20px -8px rgba(124,92,255,.8)}
+.brand .mark:active{transform:scale(.9)}
 .brand h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
 .brand small{display:block;font-size:11px;font-weight:500;color:var(--ink-faint);letter-spacing:.09em;text-transform:uppercase;margin-top:1px}
 .avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--glass-brd);object-fit:cover;cursor:pointer;background:rgba(255,255,255,.08)}
@@ -381,6 +383,35 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   .cta{margin-top:10px}
   .cta .btn{padding:15px;font-size:16px}
   .h2{margin:12px 4px 8px}
+}
+
+/* ---- easter egg ---- */
+/* pointer-events:none throughout — it must never swallow a tap meant for the app */
+.egg{position:fixed;inset:0;z-index:120;pointer-events:none;overflow:hidden}
+.egg canvas{position:absolute;inset:0;width:100%;height:100%}
+.egg .runner{position:absolute;bottom:-60px;line-height:1;will-change:transform,opacity;
+  animation:eggrun var(--d,3s) var(--delay,0s) cubic-bezier(.25,.6,.35,1) forwards}
+@keyframes eggrun{
+  0%{transform:translate3d(0,0,0) rotate(0deg);opacity:0}
+  12%{opacity:1}
+  80%{opacity:1}
+  100%{transform:translate3d(var(--x,0px),calc(-100dvh - 90px),0) rotate(var(--r,20deg));opacity:0}
+}
+.egg .shout{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:800;
+  letter-spacing:-.03em;opacity:0;
+  background:linear-gradient(120deg,var(--mint),#7ee0ff 45%,var(--violet));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:eggpop 2.2s .25s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes eggpop{
+  0%{opacity:0;transform:scale(.7)}
+  18%{opacity:1;transform:scale(1.06)}
+  30%{transform:scale(1)}
+  75%{opacity:1}
+  100%{opacity:0;transform:scale(1.04)}
+}
+@media (prefers-reduced-motion:reduce){
+  .egg .runner{display:none}
+  .egg .shout{animation-duration:1.4s}
 }
 
 /* ---- the group tile ---- */
@@ -758,7 +789,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
 <div id="app" class="hide">
   <header>
     <div class="brand">
-      <div class="mark">🏃</div>
+      <div class="mark" id="eggMark" title="Streaktember">🏃</div>
       <div><h1>Streaktember</h1><small id="dayCounter">—</small></div>
     </div>
     <img class="avatar" id="meAvatar" alt="You" />
@@ -2776,6 +2807,109 @@ function renderBoard(){
 window.__capPoints = capPoints;
 window.__saveRun   = (...a) => saveRun(...a);
 window.__openSaveSheet = (...a) => openSaveSheet(...a);
+
+/* ============================================================
+   9c. EASTER EGG — tap the runner in the header.
+   The guard that matters is eggBusy: one tap, one show, and mashing
+   it does nothing until the current one has finished and cleaned up.
+   ============================================================ */
+const EGG_MS = 4200;
+const EGG_COLORS = ['#5ef2c0','#39d3ff','#a78bfa','#ffd166','#ff6d8a','#ffffff'];
+const EGG_EMOJI  = ['🏃','🏃‍♀️','🏃‍♂️','👟','🎉','🎆','✨','🔥'];
+let eggBusy = false;
+
+function fireworks(){
+  if (eggBusy) return;                       // never stack two
+  eggBusy = true;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'egg';
+  wrap.setAttribute('aria-hidden', 'true');
+
+  const shout = document.createElement('div');
+  shout.className = 'shout';
+  shout.textContent = 'STREAKTEMBER';
+  wrap.appendChild(shout);
+
+  if (!reduced)
+    for (let i = 0; i < 22; i++){
+      const s = document.createElement('span');
+      s.className = 'runner';
+      s.textContent = EGG_EMOJI[Math.floor(Math.random() * EGG_EMOJI.length)];
+      s.style.left = (Math.random() * 96) + '%';
+      s.style.fontSize = (22 + Math.random() * 20) + 'px';
+      s.style.setProperty('--d', (2.4 + Math.random() * 1.6) + 's');
+      s.style.setProperty('--delay', (Math.random() * 1.5) + 's');
+      s.style.setProperty('--x', (Math.random() * 90 - 45) + 'px');
+      s.style.setProperty('--r', (Math.random() * 60 - 30) + 'deg');
+      wrap.appendChild(s);
+    }
+
+  const cv = document.createElement('canvas');
+  wrap.appendChild(cv);
+  document.body.appendChild(wrap);
+
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const parts = [];
+  const burst = () => {
+    const x = W * (0.15 + Math.random() * 0.7), y = H * (0.12 + Math.random() * 0.45);
+    const c = EGG_COLORS[Math.floor(Math.random() * EGG_COLORS.length)];
+    const n = 34 + Math.floor(Math.random() * 14);
+    for (let i = 0; i < n; i++){
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.2;
+      const sp = 1.6 + Math.random() * 3.4;
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                   life: 1, fade: 0.008 + Math.random() * 0.012, c,
+                   r: 1.4 + Math.random() * 1.8 });
+    }
+  };
+
+  let raf = 0, stopped = false;
+  const timers = [];
+  if (!reduced){
+    burst();
+    // a handful of bursts, stopping well before the overlay is torn down
+    for (let i = 1; i < 7; i++) timers.push(setTimeout(burst, 380 * i + Math.random() * 220));
+  }
+
+  const frame = () => {
+    if (stopped) return;
+    ctx.clearRect(0, 0, W, H);
+    for (let i = parts.length - 1; i >= 0; i--){
+      const p = parts[i];
+      p.vy += 0.045;                       // gravity
+      p.vx *= 0.992; p.vy *= 0.992;
+      p.x += p.vx; p.y += p.vy;
+      p.life -= p.fade;
+      if (p.life <= 0 || p.y > H + 40){ parts.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(frame);
+  };
+  if (!reduced) raf = requestAnimationFrame(frame);
+
+  if (navigator.vibrate) { try { navigator.vibrate([12, 40, 12]); } catch {} }
+
+  timers.push(setTimeout(() => {
+    stopped = true;
+    cancelAnimationFrame(raf);
+    timers.forEach(clearTimeout);
+    wrap.remove();
+    eggBusy = false;
+  }, reduced ? 1800 : EGG_MS));
+}
+
+$('#eggMark').onclick = fireworks;
+window.__fireworks = fireworks;              // test hook
 
 /* ============================================================
    10. TABS
