@@ -385,6 +385,42 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   .h2{margin:12px 4px 8px}
 }
 
+/* ---- standings view toggle ---- */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;margin:0 0 10px;border-radius:999px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.seg button{appearance:none;border:0;background:none;cursor:pointer;padding:9px 10px;border-radius:999px;
+  font:700 13px 'Outfit',sans-serif;color:var(--ink-faint);transition:background .15s,color .15s}
+.seg button.on{background:rgba(255,255,255,.11);color:var(--ink)}
+
+/* ---- the month heatmap ---- */
+.hm{padding:14px 12px 12px}
+.hm-scale{display:flex;margin:0 0 8px 28px}
+.hm-scale i{flex:1;font-style:normal;font-size:8.5px;font-weight:700;letter-spacing:.04em;
+  color:var(--ink-faint);text-align:left}
+.hm-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.hm-row img{width:22px;height:22px;border-radius:50%;flex:none;object-fit:cover;
+  background:rgba(255,255,255,.1)}
+.hm-cells{display:grid;grid-template-columns:repeat(30,1fr);gap:2px;flex:1;min-width:0}
+/* scoped to .hm, not .hm-cells, so the legend swatches get the same fills */
+.hm .c{border-radius:2.5px;background:rgba(255,255,255,.05)}
+.hm-cells .c{aspect-ratio:1}
+.hm .c.on{background:rgba(94,242,192,.78)}
+.hm .c.miss{background:rgba(255,109,138,.16)}
+.hm .c.fut{background:rgba(255,255,255,.035)}
+.hm .c.today{box-shadow:0 0 0 1.5px rgba(255,255,255,.75)}
+/* fastest mile of the month. The star is an SVG mask, not a glyph — a 7px font
+   character gets hinted into mush, this stays sharp at any pixel density. */
+.hm .c.best{background:linear-gradient(140deg,#ffd166,#ffb03a);position:relative}
+.hm .c.best::after{content:'';position:absolute;inset:1px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23181206' d='M12 2.6l2.7 6.1 6.6.6-5 4.4 1.5 6.5L12 16.8 6.2 20.2l1.5-6.5-5-4.4 6.6-.6z'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center}
+.hm-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;
+  padding-top:9px;border-top:1px solid rgba(255,255,255,.07)}
+.hm-legend{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);flex-wrap:wrap}
+.hm-legend .c{width:11px;height:11px;flex:none;border-radius:2.5px}
+.hm-foot .note{font-size:11px;color:var(--ink-faint);white-space:nowrap}
+.hm-empty{padding:24px 10px;text-align:center;color:var(--ink-faint);font-size:13px}
+
 /* ---- day-complete celebration ---- */
 .egg.celebrate{z-index:118}
 .ring-wrap.pop{animation:ringpop .85s cubic-bezier(.25,1.5,.4,1)}
@@ -881,7 +917,12 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   <!-- ---------- STANDINGS ---------- -->
   <section id="tab-board" class="hide">
     <div class="h2"><h2>Standings</h2><span id="boardToday">—</span></div>
+    <div class="seg" id="boardSeg" role="tablist">
+      <button class="on" data-view="list" role="tab">List</button>
+      <button data-view="month" role="tab">Month</button>
+    </div>
     <div id="board"><div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div></div>
+    <div id="heatmap" class="glass hm hide"></div>
     <div class="h2"><h2>Challenge</h2></div>
     <div class="glass" style="padding:18px">
       <div class="statrow">
@@ -2784,6 +2825,89 @@ async function deleteRun(id, run){
   ]);
 }
 
+/* The day a player ran their fastest mile — same rule as the Fastest mile record,
+   so the star and the record card can never point at different runs. A logged
+   split beats a whole-run average; an untimed log can't qualify at all. */
+function bestMileDay(p){
+  let best = Infinity, day = null;
+  for (const r of p.runList){
+    const splits = Array.isArray(r.splits) ? r.splits.filter(x => x > 60) : [];
+    let v = Infinity;
+    if (splits.length) v = Math.min(...splits);
+    else if (r.miles >= 1 && r.seconds > 30) v = r.seconds / r.miles;
+    if (v < best){ best = v; day = r.day; }
+  }
+  return isFinite(best) ? { day, pace: best } : null;
+}
+
+const BOARD_VIEW_KEY = 'streaktember.boardView';
+let boardView = (() => {
+  try { return localStorage.getItem(BOARD_VIEW_KEY) === 'month' ? 'month' : 'list'; }
+  catch { return 'list'; }
+})();
+
+function renderHeatmap(){
+  const players = [...byPlayer().values()].filter(p => p.runs > 0)
+    .sort((a,b) => b.completed.length - a.completed.length || b.miles - a.miles);
+  const el = $('#heatmap');
+  if (!players.length){
+    el.innerHTML = '<div class="hm-empty">Nobody has logged a mile yet.</div>';
+    return;
+  }
+  const start = new Date(CHALLENGE.startISO + 'T12:00:00');
+  const end   = new Date(CHALLENGE.endISO   + 'T12:00:00');
+  const tk = todayKey();
+  const days = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) days.push(dayKey(d));
+
+  const scale = [1, 6, 11, 16, 21, 26]
+    .map(n => `<i>${n}</i>`).join('');
+
+  const rows = players.map(p => {
+    const done = new Set(p.completed);
+    const best = bestMileDay(p);
+    const cells = days.map(k => {
+      let cls = k > tk ? 'fut' : done.has(k) ? 'on' : 'miss';
+      if (cls === 'on' && best && best.day === k) cls = 'best';
+      if (k === tk) cls += ' today';
+      const mi = p.days.get(k) || 0;
+      return `<div class="c ${cls}" title="${esc(p.name)} · ${k}${
+        mi ? ` · ${mi.toFixed(2)} mi` : ''}${
+        best && best.day === k ? ` · fastest mile ${paceStr(best.pace)}` : ''}"></div>`;
+    }).join('');
+    return `<div class="hm-row">
+      <img class="who-av" data-who="${esc(p.uid)}" src="${esc(p.photo || avatarFor(p.name))}"
+           alt="${esc(p.name)}" title="See ${esc(p.name)}'s profile"
+           onerror="this.src='${avatarFor(p.name)}'"/>
+      <div class="hm-cells">${cells}</div>
+    </div>`;
+  }).join('');
+
+  const perfect = players.filter(p => p.alive).length;
+  el.innerHTML = `<div class="hm-scale">${scale}</div>${rows}
+    <div class="hm-foot">
+      <div class="hm-legend">
+        <span class="c miss"></span>missed
+        <span class="c on" style="margin-left:7px"></span>logged
+        <span class="c best" style="margin-left:7px"></span>fastest mile
+      </div>
+      <span class="note">${perfect} still perfect</span>
+    </div>`;
+}
+
+function setBoardView(v){
+  boardView = v === 'month' ? 'month' : 'list';
+  try { localStorage.setItem(BOARD_VIEW_KEY, boardView); } catch {}
+  $$('#boardSeg button').forEach(b => b.classList.toggle('on', b.dataset.view === boardView));
+  show($('#board'), boardView === 'list');
+  show($('#heatmap'), boardView === 'month');
+  if (boardView === 'month') renderHeatmap();
+}
+$('#boardSeg').onclick = e => {
+  const b = e.target.closest('button[data-view]');
+  if (b) setBoardView(b.dataset.view);
+};
+
 function renderBoard(){
   const players = [...byPlayer().values()].sort((a,b) =>
     b.completed.length - a.completed.length || (b.doneToday?1:0) - (a.doneToday?1:0) || b.miles - a.miles);
@@ -2806,6 +2930,7 @@ function renderBoard(){
   $('#cDay').textContent   = Math.max(0, Math.min(30, challengeDay()));
   $('#cAlive').textContent = `${alive}/${players.length}`;
   $('#cMiles').textContent = players.reduce((s,p)=>s+p.miles,0).toFixed(0);
+  setBoardView(boardView);          // keeps the toggle, the list and the grid in step
 }
 
 /* test hooks — inert in normal use, no behaviour of their own */
