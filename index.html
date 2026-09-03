@@ -1907,6 +1907,20 @@ function postHTML(r, compact=false){
 /* ============================================================
    RECORDS — one holder each, decided by the numbers.
    ============================================================ */
+/* Where running stops and walking starts. Brisk walking sits around 13-15 min/mile
+   and most jogging is under 12, so this splits them cleanly without punishing a slow
+   run, a hill route or someone easing back from injury.
+   Filtering per RUN, not per player: someone who runs 25 days and walks 5 keeps the
+   25. Gating on a player's average would be a cliff edge — one second the wrong way
+   and they'd lose the lot. */
+const RUN_PACE = 720;                       // 12:00 per mile
+
+/* A run counts only if it was timed and came in under the threshold. An untimed log
+   can't be told apart from a walk, so it sits this record out — it still counts for
+   the daily mile, the streak, the standings and every total. */
+const isRunPace = r => r.seconds > 30 && r.miles > 0 && (r.seconds / r.miles) <= RUN_PACE;
+const runMiles  = p => p.runList.reduce((n, r) => n + (isRunPace(r) ? r.miles : 0), 0);
+
 const RECORDS = [
   { emoji:'⚡', title:'Fastest mile', unit:'Per mile', better:'min', fmt:paceStr,
     note:'fastest single mile — a logged split where there is one, otherwise best average pace',
@@ -1919,9 +1933,9 @@ const RECORDS = [
   { emoji:'🎯', title:'Best average pace', unit:'Per mile', better:'min', fmt:paceStr,
     note:'every timed September mile, divided by every September minute',
     value: p => p.timedMiles >= 1 && p.timedSeconds > 0 ? p.timedSeconds / p.timedMiles : Infinity },
-  { emoji:'👑', title:'Most miles', unit:'Miles', better:'max', fmt: v => v.toFixed(1),
-    note:'the overachiever award',
-    value: p => p.miles }
+  { emoji:'👑', title:'Most miles run', unit:'Miles', better:'max', fmt: v => v.toFixed(1),
+    note:`September miles from runs at ${paceStr(RUN_PACE)} / mile or faster — walked and untimed miles still count everywhere else`,
+    value: p => runMiles(p) }
 ];
 
 /* ============================================================
