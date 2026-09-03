@@ -32,6 +32,7 @@
   --r-lg:26px; --r-md:18px; --r-sm:12px;
   --photo-h:270px;          /* how tall a feed photo may get before it's cropped */
   --safe-b:env(safe-area-inset-bottom,0px);
+  --ring:clamp(150px, 27dvh, 210px);
   --safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -100,28 +101,29 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--glass-brd);object-fit:cover;cursor:pointer;background:rgba(255,255,255,.08)}
 
 /* ---- today ---- */
-.hero{padding:24px 22px 22px;text-align:center;position:relative;overflow:hidden}
+.hero{padding:20px 22px 18px;text-align:center;position:relative;overflow:hidden}
 .hero .datestrip{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
-.ring-wrap{position:relative;width:210px;height:210px;margin:16px auto 6px}
-.ring-wrap svg{transform:rotate(-90deg)}
+/* dvh, not vh — Safari's bottom bar collapses on scroll and vh would ignore it */
+.ring-wrap{position:relative;width:var(--ring);height:var(--ring);margin:12px auto 4px}
+.ring-wrap svg{transform:rotate(-90deg);width:100%;height:100%;display:block}
 .ring-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
 .ring-center .big{font-size:46px;font-weight:800;line-height:1;letter-spacing:-.03em}
 .ring-center .unit{font-size:13px;color:var(--ink-dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
 .ring-center .goal{font-size:12px;color:var(--ink-faint);margin-top:8px}
-.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
 .stat{padding:13px 8px;border-radius:var(--r-md);background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}
 .stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
 .stat span{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
-.cta{display:grid;gap:10px;margin-top:16px}
+.cta{display:grid;gap:9px;margin-top:13px}
 .cta .btn{width:100%;padding:18px;font-size:17px;font-weight:700}
 .linkbtn{appearance:none;background:none;border:0;color:var(--ink-faint);font:500 13px 'Outfit',sans-serif;
   padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.2)}
 .linkbtn:hover{color:var(--ink-dim)}
-.done-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;
-  background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:12px}
+.done-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;
+  background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:9px}
 
 /* ---- section headings ---- */
-.h2{display:flex;align-items:baseline;justify-content:space-between;margin:22px 4px 10px}
+.h2{display:flex;align-items:baseline;justify-content:space-between;margin:16px 4px 9px}
 .h2 h2{margin:0;font-size:15px;font-weight:700;letter-spacing:.02em}
 .h2 span{font-size:12px;color:var(--ink-faint)}
 
@@ -365,6 +367,22 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .rx-row .em{flex:none;font-size:17px;letter-spacing:2px}
 #rxList{max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
 
+/* Short viewport — an iPhone with Safari's bars showing, or an SE. Buy back the
+   last few pixels so the group tile still clears the nav on first paint. */
+@media (max-height:820px){
+  :root{--ring:clamp(138px, 21dvh, 182px)}
+  .hero{padding:14px 20px 14px}
+  .ring-center .big{font-size:40px}
+  .ring-center .unit{margin-top:4px}
+  .ring-center .goal{margin-top:5px;font-size:11.5px}
+  .statrow{margin-top:11px}
+  .stat{padding:10px 6px}
+  .stat b{font-size:20px}
+  .cta{margin-top:10px}
+  .cta .btn{padding:15px;font-size:16px}
+  .h2{margin:12px 4px 8px}
+}
+
 /* ---- the group tile ---- */
 .grp{appearance:none;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:0;
   padding:0;cursor:pointer;text-align:center;color:inherit;font:inherit;
@@ -386,6 +404,12 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   background:linear-gradient(90deg,var(--mint),#7ee0ff);
   transition:width .6s cubic-bezier(.3,.9,.3,1)}
 .grp-bar i.alive{background:linear-gradient(90deg,#ffd166,#ff8fa3)}
+/* must come AFTER the base rules above — an override of equal specificity placed
+   earlier in the file loses, which is what happened the first time */
+@media (max-height:820px){
+  .grp-cell{padding:12px 10px 11px}
+  .grp-bar{margin-top:8px}
+}
 
 /* ---- player profile ---- */
 .pv{position:fixed;inset:0;z-index:86;overflow-y:auto;overscroll-behavior:contain;
@@ -563,9 +587,15 @@ body.noscroll{overflow:hidden}
   background:linear-gradient(145deg,rgba(94,242,192,.2),rgba(167,139,250,.16));border:1px solid rgba(255,255,255,.13)}
 .badge-body{flex:1;min-width:0}
 .badge-body .ttl{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint)}
-.badge-body .who{display:flex;align-items:center;gap:7px;margin-top:4px}
+.badge-body .who{display:flex;align-items:center;gap:7px;margin-top:4px;min-width:0}
+.badge-body .who .faces{display:inline-flex;flex:none}
 .badge-body .who img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
-.badge-body .who b{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* tied holders stack, so several faces still fit beside the name */
+.badge-body .who img + img{margin-left:-8px;border:1.5px solid rgba(14,16,28,.95)}
+.badge-body .who b{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.badge-body .tiepill{display:inline-block;vertical-align:1px;margin-right:5px;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  padding:3px 7px;border-radius:999px;background:rgba(255,209,102,.16);color:var(--amber);
+  border:1px solid rgba(255,209,102,.32)}
 .badge-body .mine{font-size:11.5px;color:var(--ink-faint);margin-top:3px}
 .badge-val{flex:none;text-align:right}
 .badge-val b{display:block;font-size:19px;font-weight:800;letter-spacing:-.02em;
@@ -1905,7 +1935,7 @@ function postHTML(r, compact=false){
 }
 
 /* ============================================================
-   RECORDS — one holder each, decided by the numbers.
+   RECORDS — the best in the group, decided by the numbers. Ties share the record.
    ============================================================ */
 /* Where running stops and walking starts. Brisk walking sits around 13-15 min/mile
    and most jogging is under 12, so this splits them cleanly without punishing a slow
@@ -1933,7 +1963,7 @@ const RECORDS = [
   { emoji:'🎯', title:'Best average pace', unit:'Per mile', better:'min', fmt:paceStr,
     note:'every timed September mile, divided by every September minute',
     value: p => p.timedMiles >= 1 && p.timedSeconds > 0 ? p.timedSeconds / p.timedMiles : Infinity },
-  { emoji:'👑', title:'Most miles run', unit:'Miles', better:'max', fmt: v => v.toFixed(1),
+  { emoji:'👑', title:'Most miles run', unit:'Miles', better:'max', fmt: v => v.toFixed(2),
     note:`September miles from runs at ${paceStr(RUN_PACE)} / mile or faster — walked and untimed miles still count everywhere else`,
     value: p => runMiles(p) }
 ];
@@ -1991,34 +2021,63 @@ const ACHIEVEMENTS = [
     progress: p => [Math.min(Math.max(...p.runList.map(r => r.miles), 0), 3), 3] }
 ];
 
+/* Who holds a record, and everyone level with them.
+   A tie is decided on the value people SEE, not the raw float — 12.3 and
+   12.300000000000001 are the same number on the card and must tie. */
+function recordStandings(b, players){
+  const scored = players.map(p => ({ p, v: b.value(p) })).filter(x => isFinite(x.v) && x.v > 0);
+  scored.sort((x, y) => b.better === 'min' ? x.v - y.v : y.v - x.v);
+  if (!scored.length) return { scored, winners: [], mine: null, rank: 0 };
+  const top = b.fmt(scored[0].v);
+  const winners = scored.filter(x => b.fmt(x.v) === top);
+  const mine = scored.find(x => x.p.uid === ME?.uid) || null;
+  // competition ranking: everyone tied shares a place, so three tied for 1st
+  // puts the next player 4th
+  const rank = mine
+    ? 1 + scored.filter(x => b.fmt(x.v) !== b.fmt(mine.v) &&
+        (b.better === 'min' ? x.v < mine.v : x.v > mine.v)).length
+    : 0;
+  return { scored, winners, mine, rank };
+}
+
+/* "Ally", "Ally & Jordan", "Ally & 3 others" */
+function holderNames(winners){
+  const n = winners.map(w => w.p.name);
+  return n.length === 1 ? n[0]
+       : n.length === 2 ? `${n[0]} & ${n[1]}`
+       : `${n[0]} & ${n.length - 1} others`;
+}
+
 function renderBadges(){
   const players = [...byPlayer().values()].filter(p => p.runs > 0);
   const me = players.find(p => p.uid === ME?.uid);
 
   // ---- records ----
   const recHTML = RECORDS.map(b => {
-    const scored = players.map(p => ({ p, v: b.value(p) })).filter(x => isFinite(x.v) && x.v > 0);
+    const { scored, winners, mine, rank } = recordStandings(b, players);
     if (!scored.length)
       return `<div class="badge-card glass empty-b">
         <div class="badge-ico">${b.emoji}</div>
         <div class="badge-body"><div class="ttl">${b.title}</div>
           <div class="mine" style="margin-top:5px">${esc(b.note)} — nobody qualifies yet</div></div>
         <div class="badge-val"><b>—</b><span>${b.unit}</span></div></div>`;
-    scored.sort((x, y) => b.better === 'min' ? x.v - y.v : y.v - x.v);
-    const win = scored[0], mine = scored.find(x => x.p.uid === ME?.uid);
-    const rank = mine ? scored.indexOf(mine) + 1 : 0;
-    const isMe = win.p.uid === ME?.uid;
+    const isMe = winners.some(w => w.p.uid === ME?.uid);
+    const tied = winners.length > 1;
     return `<div class="badge-card glass">
       <div class="badge-ico">${b.emoji}</div>
       <div class="badge-body">
         <div class="ttl">${b.title}</div>
-        <div class="who"><img src="${esc(win.p.photo || avatarFor(win.p.name))}" alt=""/>
-          <b>${esc(win.p.name)}${isMe ? ' 🎉' : ''}</b></div>
-        <div class="mine">${isMe ? esc(b.note)
+        <div class="who">
+          <span class="faces">${winners.slice(0, 4).map(w =>
+            `<img src="${esc(w.p.photo || avatarFor(w.p.name))}" alt="" title="${esc(w.p.name)}"/>`).join('')}</span>
+          <b>${esc(holderNames(winners))}${isMe ? ' 🎉' : ''}</b>
+        </div>
+        <div class="mine">${tied ? `<span class="tiepill">tied ${winners.length}-way</span> ` : ''}${
+          isMe ? esc(b.note)
           : mine ? `You: ${b.fmt(mine.v)} · ${ordinal(rank)} of ${scored.length}`
                  : esc(b.note)}</div>
       </div>
-      <div class="badge-val"><b>${b.fmt(win.v)}</b><span>${b.unit}</span></div>
+      <div class="badge-val"><b>${b.fmt(winners[0].v)}</b><span>${b.unit}</span></div>
     </div>`;
   }).join('');
 
@@ -2050,7 +2109,7 @@ function renderBadges(){
   const mineCount = me ? ACHIEVEMENTS.filter(a => { try { return a.earned(me); } catch { return false; } }).length : 0;
   $('#badgeSub').textContent = me ? `${mineCount} of ${ACHIEVEMENTS.length} earned` : '';
   $('#badges').innerHTML = players.length
-    ? `<div class="h2" style="margin-top:0"><h2>Records</h2><span>one holder each</span></div>${recHTML}
+    ? `<div class="h2" style="margin-top:0"><h2>Records</h2><span>best in the group</span></div>${recHTML}
        <div class="h2"><h2>Achievements</h2><span>${mineCount ? 'lit ones are yours' : 'go get one'}</span></div>
        <div class="ach-grid">${achHTML}</div>`
     : `<div class="empty"><span class="em">🏅</span>Nothing to award yet.<br>Log a mile and the race starts.</div>`;
@@ -2074,11 +2133,11 @@ function renderFinale(){
   const medal = i => ['🥇','🥈','🥉'][i] || `${i+1}`;
 
   const recHTML = RECORDS.map(b => {
-    const scored = players.map(p => ({ p, v: b.value(p) })).filter(x => isFinite(x.v) && x.v > 0);
+    const { scored, winners } = recordStandings(b, players);
     if (!scored.length) return '';
-    scored.sort((x,y) => b.better === 'min' ? x.v - y.v : y.v - x.v);
     return `<div class="fin-rec"><span class="e">${b.emoji}</span>
-      <div><b>${b.fmt(scored[0].v)}</b><span>${b.title} · ${esc(scored[0].p.name)}</span></div></div>`;
+      <div><b>${b.fmt(winners[0].v)}</b><span>${b.title} · ${esc(holderNames(winners))}${
+        winners.length > 1 ? ' (tied)' : ''}</span></div></div>`;
   }).join('');
 
   $('#finale').innerHTML = `
