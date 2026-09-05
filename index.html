@@ -385,6 +385,28 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   .h2{margin:12px 4px 8px}
 }
 
+/* ---- avatar cropper ---- */
+.crop-stage{position:relative;width:100%;aspect-ratio:1;max-width:300px;margin:4px auto 0;
+  border-radius:var(--r-md);overflow:hidden;background:#0a0d18;touch-action:none;cursor:grab;
+  user-select:none;-webkit-user-select:none}
+.crop-stage:active{cursor:grabbing}
+.crop-stage img{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;
+  -webkit-user-drag:none;pointer-events:none;max-width:none}
+/* the circle is only a guide — it shows what lands in the round avatar */
+.crop-mask{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,transparent 49.6%,rgba(6,8,16,.62) 50%)}
+.crop-mask::after{content:'';position:absolute;inset:0;border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
+.crop-zoom{display:flex;align-items:center;gap:12px;margin:14px 2px 0}
+.crop-zoom span{font-size:17px;font-weight:700;color:var(--ink-faint);width:12px;text-align:center}
+.crop-zoom input{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;
+  background:rgba(255,255,255,.16);outline:none;padding:0}
+.crop-zoom input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(140deg,var(--mint),#7ee0ff);border:0;cursor:pointer;
+  box-shadow:0 4px 12px -4px rgba(0,0,0,.8)}
+.crop-zoom input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:0;
+  background:linear-gradient(140deg,var(--mint),#7ee0ff);cursor:pointer}
+
 /* ---- standings view toggle ---- */
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;margin:0 0 10px;border-radius:999px;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
@@ -863,7 +885,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <div class="statrow">
         <div class="stat"><b class="mono" id="sStreak">0</b><span>Streak</span></div>
         <div class="stat"><b class="mono" id="sDays">0</b><span>Days done</span></div>
-        <div class="stat"><b class="mono" id="sTotal">0.0</b><span>Total mi</span></div>
+        <div class="stat"><b class="mono" id="sTotal">0.00</b><span>Total mi</span></div>
       </div>
       <div class="cta">
         <button class="btn ghost hide" id="btnUndo" style="font-size:14px;padding:13px;color:var(--coral)">↺ Undo last log</button>
@@ -1024,7 +1046,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <div id="mnPace" class="pacehint">—</div>
     <div class="two" style="margin:2px 0 12px">
       <button class="optbtn" id="mnSplitToggle"><span class="k">＋</span>Mile splits</button>
-      <button class="optbtn" id="mnWhenToggle"><span class="k">🕗</span>Different time</button>
+      <button class="optbtn" id="mnWhenToggle"><span class="k">🕗</span>Another day</button>
     </div>
     <div id="mnSplitWrap" class="field hide">
       <label>Mile splits</label>
@@ -1092,6 +1114,27 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <div id="rxList"></div>
     <div class="sheet-btns" style="grid-template-columns:1fr">
       <button class="btn ghost" id="rxClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= CROP AVATAR ======================= -->
+<div id="cropSheet" class="sheet hide">
+  <div class="card glass">
+    <h3>Position your photo</h3>
+    <p class="sub">Drag to move, pinch or use the slider to zoom.</p>
+    <div class="crop-stage" id="cropStage">
+      <img id="cropImg" alt="" draggable="false" />
+      <div class="crop-mask"></div>
+    </div>
+    <div class="crop-zoom">
+      <span>−</span>
+      <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" aria-label="Zoom" />
+      <span>+</span>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn ghost" id="cropCancel">Cancel</button>
+      <button class="btn primary" id="cropUse">Use photo</button>
     </div>
   </div>
 </div>
@@ -1845,7 +1888,7 @@ function renderToday(){
     : `${n - alive} ${n - alive === 1 ? 'streak' : 'streaks'} broken`;
   $('#sStreak').innerHTML = me.streak + (me.streak ? ' <span class="flame">🔥</span>' : '');
   $('#sDays').textContent  = me.completed.length;
-  $('#sTotal').textContent = (me.miles ?? 0).toFixed(1);
+  $('#sTotal').textContent = (me.miles ?? 0).toFixed(2);
   $('#todayLabel').textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
   // "Undo last log" appears only while you have a run logged today
   const lastToday = RUNS.find(r => r.uid === ME?.uid && r.day === todayKey());
@@ -3727,7 +3770,10 @@ async function fetchWeather(when){
   // anyone their weather, so it can only ever resolve to ''
   const placeJob = fetchPlace(c.latitude.toFixed(2), c.longitude.toFixed(2))
                      .catch(err => { console.warn('place:', err); return ''; });
-  const daysBack = Math.min(7, Math.max(0, Math.ceil((Date.now() - when.getTime()) / 864e5)) + 1);
+  // Open-Meteo's forecast endpoint serves up to 92 past days; ask for only what the
+  // run needs. A backfilled day still reads the weather at where you are NOW, which
+  // is the same approximation yesterday always was.
+  const daysBack = Math.min(92, Math.max(0, Math.ceil((Date.now() - when.getTime()) / 864e5)) + 1);
   const url = 'https://api.open-meteo.com/v1/forecast'
     + `?latitude=${lat}&longitude=${lon}`
     + '&hourly=temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m'
@@ -3858,14 +3904,147 @@ $('#pfSignOut').onclick = async () => {
   show($('#profileSheet'), false);
   signOut(auth);
 };
-$('#pfInput').onchange = async () => {
-  const f = $('#pfInput').files?.[0]; if (!f) return;
-  try {
-    // avatars are small and live in the users doc, which everyone loads once
-    pfPhoto = await shrinkImage(f, 220, 0.72);
-    if (pfPhoto.length > 60000) pfPhoto = await shrinkImage(f, 160, 0.6);
-    $('#pfImg').src = pfPhoto;
-  } catch (err){ console.error(err); toast('Could not read that photo'); }
+/* ---- pick the square that becomes the avatar ----
+   A phone photo is nearly always portrait, so "cover" alone crops to the middle
+   of the frame — which is usually a chest. This lets them choose. */
+const AVATAR_PX = 220;
+let cropState = null;
+
+function openCropper(file){
+  const url = URL.createObjectURL(file);
+  const img = $('#cropImg');
+  img.onload = () => {
+    // measure AFTER the sheet is up: a hidden stage measures 0, and the square we
+    // export has to be exactly the square they were looking at
+    show($('#cropSheet'), true);
+    requestAnimationFrame(() => {
+      const stage = $('#cropStage');
+      const S = stage.getBoundingClientRect().width || stage.clientWidth || 300;
+      // the natural size the browser reports already has EXIF orientation applied
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const base = Math.max(S / iw, S / ih);      // smallest scale that still covers
+      cropState = { img, url, S, iw, ih, base, zoom: 1, tx: 0, ty: 0 };
+      // start centred
+      cropState.tx = (S - iw * base) / 2;
+      cropState.ty = (S - ih * base) / 2;
+      $('#cropZoom').value = 1;
+      paintCrop();
+    });
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('Could not read that photo'); };
+  img.style.visibility = 'hidden';   // no flash of the unscaled original
+  img.src = url;
+}
+
+function clampCrop(){
+  const c = cropState, k = c.base * c.zoom;
+  const w = c.iw * k, h = c.ih * k;
+  c.tx = Math.min(0, Math.max(c.S - w, c.tx));   // never let the stage show a gap
+  c.ty = Math.min(0, Math.max(c.S - h, c.ty));
+}
+function paintCrop(){
+  const c = cropState; if (!c) return;
+  clampCrop();
+  c.img.style.transform = `translate(${c.tx}px, ${c.ty}px) scale(${c.base * c.zoom})`;
+  c.img.style.width  = c.iw + 'px';
+  c.img.style.height = c.ih + 'px';
+  c.img.style.visibility = 'visible';
+}
+/* zoom about a point so pinching feels anchored to the fingers */
+function zoomAt(nextZoom, px, py){
+  const c = cropState;
+  const z = Math.min(4, Math.max(1, nextZoom));
+  const k0 = c.base * c.zoom, k1 = c.base * z;
+  c.tx = px - (px - c.tx) * (k1 / k0);
+  c.ty = py - (py - c.ty) * (k1 / k0);
+  c.zoom = z;
+  $('#cropZoom').value = z;
+  paintCrop();
+}
+
+(() => {
+  const stage = $('#cropStage');
+  const pts = new Map();
+  let lastMid = null, lastDist = 0;
+  const local = e => {
+    const r = stage.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  stage.addEventListener('pointerdown', e => {
+    if (!cropState) return;
+    stage.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, local(e));
+    lastMid = null; lastDist = 0;
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!cropState || !pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId), now = local(e);
+    pts.set(e.pointerId, now);
+    const all = [...pts.values()];
+    if (all.length === 1){
+      cropState.tx += now.x - prev.x;
+      cropState.ty += now.y - prev.y;
+      paintCrop();
+    } else if (all.length >= 2){
+      const [a, b] = all;
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const mid  = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (lastDist){
+        zoomAt(cropState.zoom * (dist / lastDist), mid.x, mid.y);
+        cropState.tx += mid.x - lastMid.x;
+        cropState.ty += mid.y - lastMid.y;
+        paintCrop();
+      }
+      lastDist = dist; lastMid = mid;
+    }
+  });
+  const drop = e => { pts.delete(e.pointerId); lastDist = 0; lastMid = null; };
+  stage.addEventListener('pointerup', drop);
+  stage.addEventListener('pointercancel', drop);
+  stage.addEventListener('wheel', e => {
+    if (!cropState) return;
+    e.preventDefault();
+    const p = local(e);
+    zoomAt(cropState.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), p.x, p.y);
+  }, { passive:false });
+})();
+
+$('#cropZoom').oninput = () => {
+  if (!cropState) return;
+  zoomAt(parseFloat($('#cropZoom').value) || 1, cropState.S / 2, cropState.S / 2);
+};
+
+function closeCropper(){
+  if (cropState?.url) URL.revokeObjectURL(cropState.url);
+  cropState = null;
+  show($('#cropSheet'), false);
+}
+$('#cropCancel').onclick = closeCropper;
+
+$('#cropUse').onclick = () => {
+  const c = cropState; if (!c) return;
+  const k = c.base * c.zoom;
+  // the stage shows exactly this square of the source image
+  const sx = -c.tx / k, sy = -c.ty / k, sSize = c.S / k;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = AVATAR_PX;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(c.img, sx, sy, sSize, sSize, 0, 0, AVATAR_PX, AVATAR_PX);
+  let url = cv.toDataURL('image/jpeg', 0.72);
+  // the rules cap a stored avatar; step the quality down rather than fail the save
+  let q = 0.72;
+  while (url.length > 60000 && q > 0.3){ q -= 0.1; url = cv.toDataURL('image/jpeg', q); }
+  pfPhoto = url;
+  $('#pfImg').src = url;
+  closeCropper();
+};
+
+$('#pfInput').onchange = () => {
+  const f = $('#pfInput').files?.[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type || '')) return toast('Pick an image');
+  openCropper(f);
 };
 $('#pfSave').onclick = async () => {
   const name = $('#pfName').value.trim();
@@ -4230,7 +4409,7 @@ $('#btnManual').onclick = () => {
   $('#mnMiles').value = ''; $('#mnHrs').value = '';
   $('#mnMins').value = ''; $('#mnSecs').value = ''; $('#mnNote').value = '';
   show($('#mnWhenWrap'), false);
-  setOpt('#mnWhenToggle', false, '✕', 'Use now', '🕗', 'Different time');
+  setOpt('#mnWhenToggle', false, '✕', 'Use now', '🕗', 'Another day');
   updateWhenHint();
   mnPhoto.reset(); mnShot.reset(); updatePaceHint();
   mnWx = null; maybeAutoWeather();
@@ -4245,11 +4424,25 @@ const toLocalInput = d => {
   const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
-/* Back-dating is limited to yesterday. That covers the honest cases — ran this
-   morning, ran just before midnight — without letting anyone quietly backfill a
-   missed day halfway through the month. */
+/* Back-dating reaches any day of the challenge. Someone who ran but forgot to
+   open the app shouldn't lose the day, and the feed timestamps make a late entry
+   visible anyway — this is a group of friends, not an anti-cheat problem.
+   The floor is the first day of the challenge: earlier than that the run counts
+   toward nothing, so the picker doesn't offer it. */
 function backdateFloor(){
-  const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d;
+  const d = new Date(CHALLENGE.startISO + 'T00:00:00'); d.setHours(0,0,0,0); return d;
+}
+/* how a chosen day reads in the hint: near days by name, older ones by date,
+   because "counts toward Tuesday" is ambiguous once you can reach back a month */
+const startLabel = () => new Date(CHALLENGE.startISO + 'T12:00:00')
+  .toLocaleDateString(undefined, { month:'short', day:'numeric' });
+function dayLabel(k){
+  if (k === todayKey())               return 'today';
+  if (k === dayKey(Date.now()-864e5)) return 'yesterday';
+  const d = new Date(k + 'T12:00:00');
+  const back = Math.round((Date.parse(todayKey()+'T12:00:00') - d) / 864e5);
+  return (back <= 6 ? d.toLocaleDateString(undefined,{weekday:'long'}) + ', ' : '')
+       + d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
 }
 /* min="0" is not enforced for typed input, and a negative total is refused by the
    rules — which would reject the whole run rather than just the time */
@@ -4278,18 +4471,16 @@ function updateWhenHint(){
   if ($('#mnWhenWrap').classList.contains('hide')){ el.textContent = ''; return; }
   const d = chosenWhen(), now = new Date();
   if (d > now){ el.textContent = "That's in the future"; el.classList.remove('on'); return; }
-  if (d < backdateFloor()){ el.textContent = 'You can only log back to yesterday'; el.classList.remove('on'); return; }
+  if (d < backdateFloor()){ el.textContent = `${CHALLENGE.name} starts ${startLabel()}`; el.classList.remove('on'); return; }
   const k = dayKey(d);
-  const label = k === todayKey() ? 'today' : k === dayKey(Date.now() - 864e5) ? 'yesterday'
-              : new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'long'});
-  el.textContent = `Counts toward ${label}, ${d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
+  el.textContent = `Counts toward ${dayLabel(k)}, ${d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
   el.classList.add('on');
 }
 
 $('#mnWhenToggle').onclick = () => {
   const wrap = $('#mnWhenWrap'), opening = wrap.classList.contains('hide');
   show(wrap, opening);
-  setOpt('#mnWhenToggle', opening, '✕', 'Use now', '🕗', 'Different time');
+  setOpt('#mnWhenToggle', opening, '✕', 'Use now', '🕗', 'Another day');
   if (opening){
     $('#mnWhen').value = toLocalInput(new Date());
     $('#mnWhen').min   = toLocalInput(backdateFloor());
@@ -4338,7 +4529,7 @@ $('#mnSave').onclick = async () => {
 
   const when = chosenWhen(), now = new Date();
   if (when > now)               return toast("You can't log a run in the future");
-  if (when < backdateFloor())   return toast('You can only log back to yesterday', 4200);
+  if (when < backdateFloor())   return toast(`${CHALLENGE.name} starts ${startLabel()} — pick a day in the challenge`, 4200);
 
   const before = milesToday();
   const btn = $('#mnSave'); btn.disabled = true; btn.textContent = 'Saving…';
