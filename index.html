@@ -698,24 +698,72 @@ body.noscroll{overflow:hidden}
 .badge-card.empty-b{opacity:.45}
 .badge-card.empty-b .badge-val b{background:none;color:var(--ink-faint)}
 
-/* ---- achievements ---- */
-.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.ach{padding:14px 13px 12px;text-align:center;position:relative;opacity:.62;transition:.25s}
-.ach.on{opacity:1;border-color:rgba(94,242,192,.4);
-  background:linear-gradient(158deg,rgba(94,242,192,.15),rgba(167,139,250,.08))}
-.ach-ico{font-size:29px;line-height:1;filter:grayscale(1) opacity(.55);transition:.25s}
-.ach.on .ach-ico{filter:none;text-shadow:0 6px 18px rgba(94,242,192,.5)}
-.ach b{display:block;font-size:14px;font-weight:700;margin-top:8px;letter-spacing:-.01em}
-.ach span{display:block;font-size:11px;line-height:1.4;color:var(--ink-faint);margin-top:4px;min-height:31px}
-.ach-bar{height:4px;border-radius:999px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
-.ach-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet))}
-.ach-prog{font-size:10px;color:var(--ink-faint);margin-top:4px;font-variant-numeric:tabular-nums;font-weight:600}
-.ach-who{display:flex;justify-content:center;align-items:center;gap:-4px;margin-top:10px;min-height:24px}
-.ach-who img{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(12,12,30,.9);
-  margin-left:-6px;background:rgba(255,255,255,.12)}
-.ach-who img:first-child{margin-left:0}
-.ach-who .more{font-size:11px;color:var(--ink-faint);margin-left:5px;font-weight:600}
-.ach-who .none{font-size:10.5px;color:var(--ink-faint);letter-spacing:.04em}
+/* ---- achievements: the Wall ---- */
+/* Runners down the side, badges across the top. The old 2-up card grid could only
+   afford six 24px faces per badge, which answered "who has this" with a puzzle and
+   never answered "what does Ally have" at all. A grid answers both at a glance.
+   Widths are picked so 9 badges + the name column land inside a 360px phone: any
+   more badges and it scrolls sideways under a frozen name column, which is fine. */
+.wall-wrap{padding:12px 10px 13px}
+.wall-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wall-scroll::-webkit-scrollbar{display:none}
+.wall{border-collapse:separate;border-spacing:0;width:100%}
+.wall th,.wall td{padding:0;text-align:center}
+.wall thead th{height:38px;vertical-align:bottom;padding-bottom:5px}
+.wall td{width:28px;border-top:1px solid rgba(255,255,255,.07)}
+/* the frozen name column needs a solid ground of its own — the glass panel behind
+   it would otherwise show the scrolling cells straight through */
+.wall th.nm,.wall td.nm{position:sticky;left:0;z-index:2;background:#15152a;
+  text-align:left;width:104px;min-width:104px}
+.wall thead th.nm{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);padding-left:2px;vertical-align:bottom}
+.wall .hbtn{appearance:none;border:0;background:none;color:inherit;cursor:pointer;
+  width:100%;padding:6px 0;border-radius:9px;font-size:17px;line-height:1;transition:background .15s}
+.wall .hbtn:hover{background:rgba(255,255,255,.08)}
+.wall .hbtn:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
+.wall .who{display:flex;align-items:center;gap:7px;height:40px;padding-right:9px;cursor:pointer}
+.wall .who img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.wall .who b{flex:1;min-width:0;font-size:13px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wall .who .n{flex:none;font-size:10.5px;font-weight:800;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.wall tr.me td{background:rgba(94,242,192,.075)}
+/* tint layered over the solid, so the frozen cell stays opaque while scrolling */
+.wall tr.me td.nm{background:linear-gradient(90deg,rgba(94,242,192,.17),rgba(94,242,192,.05)),#15152a}
+.wall tr.me .who b{color:var(--mint)}
+.wall tr.me .who .n{color:var(--mint);opacity:.8}
+.wcell{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:9px;font-size:13px;
+  background:rgba(255,255,255,.05);cursor:pointer}
+.wcell.on{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.3));
+  box-shadow:0 3px 10px -3px rgba(94,242,192,.55)}
+.wcell.off{color:rgba(242,244,255,.17);font-size:11px}
+.wall-key{display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;margin:11px 5px 0}
+.wall-key span{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-faint)}
+.wall-key i{width:14px;height:14px;border-radius:5px;flex:none}
+.wall-key i.on{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.3))}
+.wall-key i.off{background:rgba(255,255,255,.06)}
+
+/* ---- one badge, opened from a column header or a lit tile ---- */
+.bs-top{display:flex;align-items:center;gap:13px}
+.bs-ico{width:52px;height:52px;flex:none;border-radius:17px;display:grid;place-items:center;font-size:26px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+.bs-ico.on{background:rgba(94,242,192,.18);border-color:rgba(94,242,192,.42);
+  text-shadow:0 6px 18px rgba(94,242,192,.5)}
+.bs-hd{flex:1;min-width:0}
+.bs-hd b{display:block;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.bs-hd span{display:block;font-size:12.5px;color:var(--ink-faint);line-height:1.4;margin-top:2px}
+.bs-count{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);margin:16px 0 8px}
+.bs-chips{display:flex;flex-wrap:wrap;gap:7px}
+.bs-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 5px;border-radius:999px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+.bs-chip img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.1)}
+.bs-chip.you{background:rgba(94,242,192,.17);border-color:rgba(94,242,192,.42);color:var(--mint)}
+.bs-none{font-size:13px;color:var(--ink-faint)}
+.bs-bar{display:flex;align-items:center;gap:10px;margin-top:15px}
+.bs-bar .track{flex:1;height:5px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.bs-bar .track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet))}
+.bs-bar .lab{flex:none;font-size:11px;font-weight:700;color:var(--ink-faint);font-variant-numeric:tabular-nums}
 
 /* ---- standings ---- */
 .row{display:flex;align-items:center;gap:11px;padding:13px 12px;border-radius:var(--r-md);margin-bottom:8px;
@@ -1135,6 +1183,16 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <div class="sheet-btns">
       <button class="btn ghost" id="cropCancel">Cancel</button>
       <button class="btn primary" id="cropUse">Use photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= ONE BADGE ======================= -->
+<div id="badgeSheet" class="sheet hide">
+  <div class="card glass">
+    <div id="bsBody"></div>
+    <div class="sheet-btns" style="grid-template-columns:1fr">
+      <button class="btn ghost" id="bsClose">Close</button>
     </div>
   </div>
 </div>
@@ -1677,10 +1735,18 @@ const cleanName = n => (String(n ?? '').trim().slice(0, 24) || 'Runner');
 const nameOf  = (uid, fallback) => (PROFILE.get(uid)?.name  || fallback || 'Runner');
 const photoOf = (uid, fallback) => (PROFILE.get(uid)?.photo || fallback || '');
 
+/* Fallback avatar for anyone without a photo. The hue comes from the name, so
+   seven runners are seven colours instead of seven identical slate discs — at the
+   22px the Wall and the feed use them, colour is what tells them apart, not the
+   letter. Saturation and lightness are fixed so every circle stays in the app's
+   range and white initials always read on it. */
 function avatarFor(name){
-  const ltr = (name||'?').trim()[0]?.toUpperCase() || '?';
+  const n = String(name || '?').trim() || '?';
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
+  const ltr = esc(n[0].toUpperCase());
   return 'data:image/svg+xml,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#3a3a6e"/><text x="50%" y="55%" font-family="sans-serif" font-size="34" fill="#dfe2ff" text-anchor="middle" dominant-baseline="middle">${ltr}</text></svg>`);
+    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="hsl(${h} 46% 42%)"/><text x="50%" y="56%" font-family="Outfit,sans-serif" font-size="36" font-weight="700" fill="#f2f4ff" text-anchor="middle" dominant-baseline="middle">${ltr}</text></svg>`);
 }
 
 /* ============================================================
@@ -2105,6 +2171,14 @@ const ACHIEVEMENTS = [
       (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
       (r.miles >= 1 && paceOf(r) && paceOf(r) < 480)) },
 
+  /* The tier above Speed Demon. Stacked on purpose: a 6:50 mile earns both, so
+     nobody loses a badge they already had by getting faster. "Or under" is literal
+     — 7:00.0 counts, where Speed Demon's 8:00 does not. */
+  { key:'stupidfast', emoji:'🚀', title:'Stupid Fast', req:'Log a mile at 7:00 pace or under',
+    earned: p => p.runList.some(r =>
+      (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s <= 420)) ||
+      (r.miles >= 1 && paceOf(r) && paceOf(r) <= 420)) },
+
   { key:'tourist', emoji:'🗺️', title:'Tourist', req:'Log runs in 3 different places',
     // only counts where someone tapped Add weather, which is optional — so this is
     // flavour, never a fair race. The bar shows how close they are anyway.
@@ -2203,38 +2277,90 @@ function renderBadges(){
     </div>`;
   }).join('');
 
-  // ---- achievements ----
-  const achHTML = ACHIEVEMENTS.map(a => {
-    const holders = players.filter(p => { try { return a.earned(p); } catch { return false; } });
-    const mineHas = !!me && holders.some(h => h.uid === me.uid);
-    let bar = '';
-    if (!mineHas && a.progress && me){
-      const [cur, goal] = a.progress(me);
-      const pct = Math.max(0, Math.min(100, cur / goal * 100));
-      bar = `<div class="ach-bar"><i style="width:${pct}%"></i></div>
-             <div class="ach-prog">${typeof cur === 'number' && !Number.isInteger(cur) ? cur.toFixed(1) : cur} / ${goal}</div>`;
-    }
-    return `<div class="ach glass ${mineHas ? 'on' : ''}">
-      <div class="ach-ico">${a.emoji}</div>
-      <b>${a.title}</b>
-      <span>${esc(a.req)}</span>
-      ${bar}
-      <div class="ach-who">${
-        holders.length
-          ? holders.slice(0,6).map(h => `<img src="${esc(h.photo || avatarFor(h.name))}" title="${esc(h.name)}" alt="${esc(h.name)}"/>`).join('')
-            + (holders.length > 6 ? `<span class="more">+${holders.length-6}</span>` : '')
-          : '<span class="none">Nobody yet</span>'
-      }</div>
-    </div>`;
+  // ---- achievements: the Wall ----
+  /* Every badge tested against every player once, up front. A badge whose test
+     throws on one player's data costs that player that badge and nothing else,
+     and the rest of the grid still draws. */
+  const earnedBy = new Map(players.map(p => [p.uid, new Set(
+    ACHIEVEMENTS.filter(a => { try { return a.earned(p); } catch { return false; } }).map(a => a.key))]));
+  const badgeCount = p => earnedBy.get(p.uid).size;
+
+  // most badges first, ties alphabetical — a stable order, so nobody's row jumps
+  // around between renders while the group is level
+  const wallRows = [...players].sort((x, y) =>
+    badgeCount(y) - badgeCount(x) || x.name.localeCompare(y.name));
+
+  const wallHead = `<tr><th class="nm">Runner</th>${ACHIEVEMENTS.map(a =>
+    `<th><button class="hbtn" data-badge="${esc(a.key)}" title="${esc(a.title)} — ${esc(a.req)}"
+       aria-label="${esc(a.title)}. ${esc(a.req)}">${a.emoji}</button></th>`).join('')}</tr>`;
+
+  const wallBody = wallRows.map(p => {
+    const got = earnedBy.get(p.uid);
+    return `<tr class="${p.uid === ME?.uid ? 'me' : ''}">
+      <td class="nm"><span class="who" data-who="${esc(p.uid)}">
+        <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+        <b>${esc(p.name)}</b><span class="n">${got.size}</span></span></td>
+      ${ACHIEVEMENTS.map(a => got.has(a.key)
+        ? `<td><span class="wcell on" data-badge="${esc(a.key)}"
+             title="${esc(p.name)} — ${esc(a.title)}">${a.emoji}</span></td>`
+        : `<td><span class="wcell off" data-badge="${esc(a.key)}"
+             title="${esc(p.name)} — ${esc(a.title)} not yet">·</span></td>`).join('')}
+    </tr>`;
   }).join('');
 
-  const mineCount = me ? ACHIEVEMENTS.filter(a => { try { return a.earned(me); } catch { return false; } }).length : 0;
+  const mineCount = me ? badgeCount(me) : 0;
   $('#badgeSub').textContent = me ? `${mineCount} of ${ACHIEVEMENTS.length} earned` : '';
   $('#badges').innerHTML = players.length
     ? `<div class="h2" style="margin-top:0"><h2>Records</h2><span>best in the group</span></div>${recHTML}
-       <div class="h2"><h2>Achievements</h2><span>${mineCount ? 'lit ones are yours' : 'go get one'}</span></div>
-       <div class="ach-grid">${achHTML}</div>`
+       <div class="h2"><h2>The Wall</h2><span>${
+         me ? `you have ${mineCount} of ${ACHIEVEMENTS.length}` : 'everyone · everything'}</span></div>
+       <div class="glass wall-wrap"><div class="wall-scroll">
+         <table class="wall"><thead>${wallHead}</thead><tbody>${wallBody}</tbody></table>
+       </div></div>
+       <div class="wall-key">
+         <span><i class="on"></i>Earned</span>
+         <span><i class="off"></i>Not yet</span>
+         <span>Tap a badge for the rule and who has it</span>
+       </div>`
     : `<div class="empty"><span class="em">🏅</span>Nothing to award yet.<br>Log a mile and the race starts.</div>`;
+}
+
+/* One badge, opened from a column header or from any tile in its column. This is
+   where the name, the rule and the holders live now that the grid shows only
+   emoji — the Wall is the overview, this is the detail. */
+function openBadge(key){
+  const a = ACHIEVEMENTS.find(x => x.key === key);
+  if (!a) return;
+  const players = [...byPlayer().values()].filter(p => p.runs > 0);
+  const holders = players.filter(p => { try { return a.earned(p); } catch { return false; } });
+  const me = players.find(p => p.uid === ME?.uid);
+  const mineHas = !!me && holders.some(h => h.uid === me.uid);
+
+  let bar = '';
+  if (!mineHas && a.progress && me){
+    try {
+      const [cur, goal] = a.progress(me);
+      const pct = Math.max(0, Math.min(100, cur / goal * 100));
+      bar = `<div class="bs-bar"><div class="track"><i style="width:${pct}%"></i></div>
+        <span class="lab">You ${Number.isInteger(cur) ? cur : cur.toFixed(1)} / ${goal}</span></div>`;
+    } catch { /* a progress fn that throws just means no bar */ }
+  }
+
+  $('#bsBody').innerHTML = `
+    <div class="bs-top">
+      <div class="bs-ico ${mineHas ? 'on' : ''}">${a.emoji}</div>
+      <div class="bs-hd"><b>${esc(a.title)}</b><span>${esc(a.req)}</span></div>
+    </div>
+    <div class="bs-count">${holders.length} of ${players.length} runner${players.length === 1 ? '' : 's'}${
+      mineHas ? ' · including you' : ''}</div>
+    ${holders.length
+      ? `<div class="bs-chips">${holders.map(h =>
+          `<span class="bs-chip ${h.uid === ME?.uid ? 'you' : ''}" data-who="${esc(h.uid)}">
+             <img src="${esc(h.photo || avatarFor(h.name))}" alt=""/>${
+             h.uid === ME?.uid ? 'You' : esc(h.name)}</span>`).join('')}</div>`
+      : `<div class="bs-none">Nobody yet — it's there for the taking.</div>`}
+    ${bar}`;
+  show($('#badgeSheet'), true);
 }
 
 /* ============================================================
@@ -2648,6 +2774,9 @@ function openReactors(runId){
 $('#rxClose').onclick = () => show($('#reactSheet'), false);
 $('#reactSheet').onclick = e => { if (e.target === $('#reactSheet')) show($('#reactSheet'), false); };
 
+$('#bsClose').onclick = () => show($('#badgeSheet'), false);
+$('#badgeSheet').onclick = e => { if (e.target === $('#badgeSheet')) show($('#badgeSheet'), false); };
+
 /* ============================================================
    11d. PLAYER PROFILE — tap anyone's picture in the feed or the
    standings. Read-only, and it reuses wrappedStats so a number here
@@ -2683,6 +2812,9 @@ function openPlayer(uid){
   const all = byPlayer();
   const p = all.get(uid);
   if (!p){ toast('No profile for that runner yet'); return; }
+  // a holder chip in the badge sheet leads here — the sheet would otherwise sit
+  // on top of the profile it just opened
+  show($('#badgeSheet'), false);
   const ranked = [...all.values()].filter(x => x.runs > 0)
     .sort((a,b) => b.completed.length - a.completed.length || b.miles - a.miles);
   const s = wrappedStats(p, ranked);
@@ -2763,6 +2895,7 @@ function closePlayer(){
 }
 $('#pvX').onclick = closePlayer;
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#badgeSheet').classList.contains('hide')){ show($('#badgeSheet'), false); return; }
   if (e.key === 'Escape' && !$('#playerView').classList.contains('hide')) closePlayer();
 });
 
@@ -3286,6 +3419,10 @@ document.addEventListener('click', async e => {
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
+
+  // a badge column header, or any tile under it
+  const badgeTap = e.target.closest('[data-badge]');
+  if (badgeTap){ openBadge(badgeTap.dataset.badge); return; }
 
   const who = e.target.closest('[data-who]');
   if (who){ openPlayer(who.dataset.who); return; }
