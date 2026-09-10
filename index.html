@@ -698,52 +698,67 @@ body.noscroll{overflow:hidden}
 .badge-card.empty-b{opacity:.45}
 .badge-card.empty-b .badge-val b{background:none;color:var(--ink-faint)}
 
-/* ---- achievements: the Wall ---- */
-/* Runners down the side, badges across the top. The old 2-up card grid could only
-   afford six 24px faces per badge, which answered "who has this" with a puzzle and
-   never answered "what does Ally have" at all. A grid answers both at a glance.
-   Fixed layout, all widths in percentages: the grid always fits the card, so the
-   name column never has to freeze and never needs an opaque slab behind it. Tiles
-   shrink to suit the width instead. Past about a dozen badges they get too small
-   to tap and it starts scrolling — that's the point to split the grid, not to
-   bring the frozen column back. */
-.wall-wrap{padding:12px 12px 13px}
-.wall-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.wall-scroll::-webkit-scrollbar{display:none}
-.wall{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
-.wall th,.wall td{padding:0;text-align:center}
-.wall thead th{height:36px;vertical-align:bottom;padding-bottom:5px}
-.wall td{border-top:1px solid rgba(255,255,255,.07)}
-/* a hairline, not a panel — enough to separate the names from the grid */
-.wall th.nm,.wall td.nm{text-align:left;width:36%;
-  border-right:1px solid rgba(255,255,255,.09)}
-.wall thead th.nm{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink-faint);padding-left:2px;vertical-align:bottom}
-.wall .hbtn{appearance:none;border:0;background:none;color:inherit;cursor:pointer;
-  width:100%;padding:6px 0;border-radius:9px;font-size:clamp(14px,4.2vw,17px);line-height:1;
-  transition:background .15s}
-.wall .hbtn:hover{background:rgba(255,255,255,.08)}
-.wall .hbtn:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
-.wall .who{display:flex;align-items:center;gap:7px;height:40px;padding-right:10px;cursor:pointer}
-.wall .who img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
-.wall .who b{flex:1;min-width:0;font-size:13px;font-weight:600;
+/* ---- achievements: sticker books ---- */
+/* One book per runner, opened from a strip of faces. The strip carries each
+   runner's count, so you can see whose book is worth opening without opening it —
+   that's the job the old group grid was doing. */
+.strip{display:flex;gap:9px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:2px 2px 9px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.sbtn{flex:none;appearance:none;border:0;background:none;cursor:pointer;padding:0;
+  display:grid;justify-items:center;gap:5px;width:52px}
+.sav{position:relative;width:44px;height:44px}
+.sav img{width:44px;height:44px;border-radius:50%;object-fit:cover;display:block;
+  background:rgba(255,255,255,.1);box-shadow:0 0 0 2px transparent;transition:box-shadow .18s}
+.sbtn[aria-current="true"] .sav img{box-shadow:0 0 0 2px var(--mint)}
+.sav .c{position:absolute;right:-3px;bottom:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;
+  display:grid;place-items:center;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;
+  background:#12122a;border:1px solid rgba(255,255,255,.2);color:var(--ink-dim)}
+.sbtn[aria-current="true"] .sav .c{background:var(--mint);color:#06131a;border-color:transparent}
+.sbtn .nm{font-size:10.5px;font-weight:600;color:var(--ink-faint);max-width:52px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wall .who .n{flex:none;font-size:10.5px;font-weight:800;color:var(--ink-faint);font-variant-numeric:tabular-nums}
-/* your row reads as a tint on the same glass, all the way across */
-.wall tr.me td{background:rgba(94,242,192,.08)}
-.wall tr.me td.nm{background:linear-gradient(90deg,rgba(94,242,192,.16),rgba(94,242,192,.06))}
-.wall tr.me .who b{color:var(--mint)}
-.wall tr.me .who .n{color:var(--mint);opacity:.8}
-.wcell{display:inline-grid;place-items:center;width:min(26px,100%);aspect-ratio:1;
-  border-radius:8px;font-size:13px;background:rgba(255,255,255,.05);cursor:pointer}
-.wcell.on{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.3));
-  box-shadow:0 3px 10px -3px rgba(94,242,192,.55)}
-.wcell.off{color:rgba(242,244,255,.17);font-size:11px}
-.wall-key{display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;margin:11px 5px 0}
-.wall-key span{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-faint)}
-.wall-key i{width:14px;height:14px;border-radius:5px;flex:none}
-.wall-key i.on{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.3))}
-.wall-key i.off{background:rgba(255,255,255,.06)}
+.sbtn[aria-current="true"] .nm{color:var(--ink)}
+.sbtn:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:8px}
+
+/* the book's title plate */
+.plate{display:flex;align-items:center;gap:12px;padding:13px 14px}
+.plate > img{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.plate .t{flex:1;min-width:0}
+.plate .t b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plate .t span{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:1px}
+.plate .pct{flex:none;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.pbar{height:5px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin:0 14px}
+.pbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--violet))}
+.pnext{font-size:11.5px;color:var(--ink-faint);margin:9px 14px 13px}
+.pnext b{color:var(--amber);font-weight:700}
+
+/* the page: a dotted ground the stickers sit on, pressed in rather than raised */
+.album{margin-top:11px;padding:16px 11px 18px;border-radius:var(--r-lg);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0) 0 0/13px 13px,
+    linear-gradient(168deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 2px 14px rgba(0,0,0,.4)}
+.album-hd{display:flex;align-items:center;gap:9px;margin:0 4px 14px}
+.album-hd .ln{flex:1;height:1px;background:rgba(255,255,255,.12)}
+.album-hd span{font-size:9.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px}
+.stk{display:grid;justify-items:center;gap:7px;text-align:center;cursor:pointer}
+/* the die-cut: a thick light rim, a colour field of the badge's own, and a shadow
+   that lifts it off the page. The tilt is fixed per slot, so a sticker never jumps
+   when the tab redraws. */
+.stk .cut{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;font-size:30px;
+  border:3.5px solid #eef0ff;transition:transform .18s;
+  box-shadow:0 7px 14px -5px rgba(0,0,0,.8), inset 0 -6px 12px rgba(0,0,0,.22)}
+.stk.got:active .cut{transform:rotate(0deg) scale(1.06)!important}
+.stk .lb{font-size:10.5px;font-weight:700;line-height:1.25;letter-spacing:-.01em;min-height:26px}
+.stk .dt{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+/* the empty slot: a printed outline waiting for its sticker */
+.stk.slot .cut{border:2px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.03);
+  box-shadow:none;filter:grayscale(1);opacity:.5}
+.stk.slot .lb{color:var(--ink-faint);font-weight:600}
+.stk.slot .dt{color:rgba(242,244,255,.2)}
+.album-empty{text-align:center;padding:14px 10px 2px;font-size:12.5px;color:var(--ink-faint);line-height:1.5}
 
 /* ---- one badge, opened from a column header or a lit tile ---- */
 .bs-top{display:flex;align-items:center;gap:13px}
@@ -2161,64 +2176,100 @@ const RECORDS = [
 
 /* ============================================================
    ACHIEVEMENTS — earnable by anyone, as many times over as they like.
-   `progress` drives the bar on the ones you can work toward.
+   `progress` drives the "closest" line on the ones you can work toward.
+   `hue` is the sticker's colour in the book. Most badges are decided by a
+   single run, so they declare `run` and get both `earned` and `when` (the day
+   the sticker was collected) derived from it below — one test, so the badge and
+   its date can never disagree.
    ============================================================ */
 const paceOf = r => (r.seconds > 30 && r.miles > 0) ? r.seconds / r.miles : null;
 /* distinct city labels the weather lookup attached to their runs */
 const citiesOf = p => new Set(p.runList.map(r => r.weather && r.weather.p).filter(Boolean));
 const ordinal = n => { const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); };
+const hourOf = r => r.startedAt ? new Date(r.startedAt).getHours() : null;
+/* earliest day key among the runs that pass a test — day keys are YYYY-MM-DD, so
+   a string compare is a date compare */
+function firstRunDay(p, test){
+  let day = null;
+  for (const r of p.runList){
+    try { if (test(r) && r.day && (!day || r.day < day)) day = r.day; } catch { /* skip */ }
+  }
+  return day;
+}
+/* the day a streak of `n` first completed */
+function dayStreakHit(sortedKeys, n){
+  let run = 0, prev = null;
+  for (const k of sortedKeys){
+    if (prev){
+      const d = new Date(prev + 'T12:00:00'); d.setDate(d.getDate() + 1);
+      run = (dayKey(d) === k) ? run + 1 : 1;
+    } else run = 1;
+    prev = k;
+    if (run >= n) return k;
+  }
+  return null;
+}
 
 const ACHIEVEMENTS = [
-  { key:'speed', emoji:'⚡', title:'Speed Demon', req:'Log a mile under 8:00 pace',
-    earned: p => p.runList.some(r =>
-      (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
-      (r.miles >= 1 && paceOf(r) && paceOf(r) < 480)) },
+  { key:'speed', emoji:'⚡', title:'Speed Demon', req:'Log a mile under 8:00 pace', hue:46,
+    run: r => (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
+              (r.miles >= 1 && paceOf(r) && paceOf(r) < 480) },
 
   /* The tier above Speed Demon. Stacked on purpose: a 6:50 mile earns both, so
      nobody loses a badge they already had by getting faster. "Or under" is literal
      — 7:00.0 counts, where Speed Demon's 8:00 does not. */
-  { key:'stupidfast', emoji:'🚀', title:'Stupid Fast', req:'Log a mile at 7:00 pace or under',
-    earned: p => p.runList.some(r =>
-      (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s <= 420)) ||
-      (r.miles >= 1 && paceOf(r) && paceOf(r) <= 420)) },
+  { key:'stupidfast', emoji:'🚀', title:'Stupid Fast', req:'Log a mile at 7:00 pace or under', hue:352,
+    run: r => (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s <= 420)) ||
+              (r.miles >= 1 && paceOf(r) && paceOf(r) <= 420) },
 
-  { key:'tourist', emoji:'🗺️', title:'Tourist', req:'Log runs in 3 different places',
-    // only counts where someone tapped Add weather, which is optional — so this is
-    // flavour, never a fair race. The bar shows how close they are anyway.
-    earned: p => citiesOf(p).size >= 3,
-    progress: p => [Math.min(citiesOf(p).size, 3), 3] },
+  { key:'long', emoji:'🥾', title:'Long Hauler', req:'A single run of 3 miles or more', hue:24,
+    run: r => r.miles >= 3,
+    progress: p => [Math.min(Math.max(...p.runList.map(r => r.miles), 0), 3), 3] },
 
-  { key:'witching', emoji:'🧙‍♀️', title:'Witching Hour', req:'Log a run between midnight and 4 AM',
-    earned: p => p.runList.some(r => {
-      if (!r.startedAt) return false;
-      const h = new Date(r.startedAt).getHours();
-      return h >= 0 && h < 4;
-    }) },
-
-  { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row',
+  { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row', hue:158,
     earned: p => p.best >= 15,
+    when: p => dayStreakHit(p.completed, 15),
     progress: p => [Math.min(p.best, 15), 15] },
 
-  { key:'iron', emoji:'🏆', title:'Iron Legs', req:'All 30 days of September, no misses',
-    earned: p => p.completed.length >= 30,
-    progress: p => [p.completed.length, 30] },
-
-  { key:'night', emoji:'🌙', title:'Night Owl', req:'Log a run after 9:00 PM',
-    earned: p => p.runList.some(r => r.startedAt && new Date(r.startedAt).getHours() >= 21) },
-
-  { key:'early', emoji:'🌅', title:'Early Bird', req:'Log a run between 4:00 and 7:00 AM',
+  { key:'early', emoji:'🌅', title:'Early Bird', req:'Log a run between 4:00 and 7:00 AM', hue:196,
     // 4 AM is where Witching Hour stops, so the three time badges tile the night
     // end to end with no run earning two of them
-    earned: p => p.runList.some(r => {
-      if (!r.startedAt) return false;
-      const h = new Date(r.startedAt).getHours();
-      return h >= 4 && h < 7;
-    }) },
+    run: r => { const h = hourOf(r); return h !== null && h >= 4 && h < 7; } },
 
-  { key:'long', emoji:'🥾', title:'Long Hauler', req:'A single run of 3 miles or more',
-    earned: p => p.runList.some(r => r.miles >= 3),
-    progress: p => [Math.min(Math.max(...p.runList.map(r => r.miles), 0), 3), 3] }
+  { key:'night', emoji:'🌙', title:'Night Owl', req:'Log a run after 9:00 PM', hue:258,
+    run: r => { const h = hourOf(r); return h !== null && h >= 21; } },
+
+  { key:'tourist', emoji:'🗺️', title:'Tourist', req:'Log runs in 3 different places', hue:135,
+    // only counts where someone tapped Add weather, which is optional — so this is
+    // flavour, never a fair race. The "closest" line shows how near they are anyway.
+    earned: p => citiesOf(p).size >= 3,
+    when: p => {
+      const seen = new Set();
+      for (const r of [...p.runList].sort((a,b) => String(a.day).localeCompare(String(b.day)))){
+        const c = r.weather && r.weather.p;
+        if (c) seen.add(c);
+        if (seen.size >= 3) return r.day;
+      }
+      return null;
+    },
+    progress: p => [Math.min(citiesOf(p).size, 3), 3] },
+
+  { key:'witching', emoji:'🧙‍♀️', title:'Witching Hour', req:'Log a run between midnight and 4 AM', hue:288,
+    run: r => { const h = hourOf(r); return h !== null && h >= 0 && h < 4; } },
+
+  { key:'iron', emoji:'🏆', title:'Iron Legs', req:'All 30 days of September, no misses', hue:38,
+    earned: p => p.completed.length >= 30,
+    when: p => p.completed.length >= 30 ? p.completed[29] : null,
+    progress: p => [p.completed.length, 30] }
 ];
+
+/* Derive earned/when for the run-decided badges, so every achievement exposes the
+   same shape to the rest of the app whatever it is tested on. */
+for (const a of ACHIEVEMENTS){
+  if (!a.run) continue;
+  a.earned = p => p.runList.some(r => { try { return a.run(r); } catch { return false; } });
+  a.when   = p => firstRunDay(p, a.run);
+}
 
 /* Who holds a record, and everyone level with them.
    A tie is decided on the value people SEE, not the raw float — 12.3 and
@@ -2246,6 +2297,14 @@ function holderNames(winners){
        : n.length === 2 ? `${n[0]} & ${n[1]}`
        : `${n[0]} & ${n.length - 1} others`;
 }
+
+/* Whose book is open. Null means "mine", which is what the tab opens on. */
+let bookUid = null;
+/* Fixed tilts by slot, so a sticker sits the same way every time the tab redraws
+   — a sticker that jumps on every render reads as a bug, not as charm. */
+const TILT = [-5, 4, -3, 6, -6, 3, -4, 5, -2];
+/* dates on the stickers come from the app's existing shortDay(), defined with the
+   other day helpers further down — same "Sep 4" the feed and Wrapped already use */
 
 function renderBadges(){
   const players = [...byPlayer().values()].filter(p => p.runs > 0);
@@ -2280,52 +2339,92 @@ function renderBadges(){
     </div>`;
   }).join('');
 
-  // ---- achievements: the Wall ----
+  // ---- achievements: one sticker book per runner ----
   /* Every badge tested against every player once, up front. A badge whose test
      throws on one player's data costs that player that badge and nothing else,
-     and the rest of the grid still draws. */
+     and the rest of the book still draws. */
   const earnedBy = new Map(players.map(p => [p.uid, new Set(
     ACHIEVEMENTS.filter(a => { try { return a.earned(p); } catch { return false; } }).map(a => a.key))]));
   const badgeCount = p => earnedBy.get(p.uid).size;
 
-  // most badges first, ties alphabetical — a stable order, so nobody's row jumps
-  // around between renders while the group is level
-  const wallRows = [...players].sort((x, y) =>
+  // most badges first, ties alphabetical — a stable order, so a face never jumps
+  // to a different spot in the strip mid-scroll
+  const shelf = [...players].sort((x, y) =>
     badgeCount(y) - badgeCount(x) || x.name.localeCompare(y.name));
 
-  const wallHead = `<tr><th class="nm">Runner</th>${ACHIEVEMENTS.map(a =>
-    `<th><button class="hbtn" data-badge="${esc(a.key)}" title="${esc(a.title)} — ${esc(a.req)}"
-       aria-label="${esc(a.title)}. ${esc(a.req)}">${a.emoji}</button></th>`).join('')}</tr>`;
+  // the open book: whoever was last picked, else you, else whoever is top of the shelf
+  const open = shelf.find(p => p.uid === bookUid) || me || shelf[0];
 
-  const wallBody = wallRows.map(p => {
-    const got = earnedBy.get(p.uid);
-    return `<tr class="${p.uid === ME?.uid ? 'me' : ''}">
-      <td class="nm"><span class="who" data-who="${esc(p.uid)}">
-        <img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
-        <b>${esc(p.name)}</b><span class="n">${got.size}</span></span></td>
-      ${ACHIEVEMENTS.map(a => got.has(a.key)
-        ? `<td><span class="wcell on" data-badge="${esc(a.key)}"
-             title="${esc(p.name)} — ${esc(a.title)}">${a.emoji}</span></td>`
-        : `<td><span class="wcell off" data-badge="${esc(a.key)}"
-             title="${esc(p.name)} — ${esc(a.title)} not yet">·</span></td>`).join('')}
-    </tr>`;
+  const strip = shelf.map(p => `
+    <button class="sbtn" type="button" data-book="${esc(p.uid)}"
+            aria-current="${p.uid === open.uid}" aria-label="${esc(p.name)}'s book">
+      <span class="sav"><img src="${esc(p.photo || avatarFor(p.name))}" alt=""/>
+        <span class="c">${badgeCount(p)}</span></span>
+      <span class="nm">${p.uid === ME?.uid ? 'You' : esc(p.name)}</span>
+    </button>`).join('');
+
+  const got = earnedBy.get(open.uid);
+  const pct = Math.round(got.size / ACHIEVEMENTS.length * 100);
+  const near = closestBadge(open, got);
+
+  const page = ACHIEVEMENTS.map((a, i) => {
+    if (!got.has(a.key))
+      return `<div class="stk slot" data-badge="${esc(a.key)}" title="${esc(a.req)}">
+        <div class="cut">${a.emoji}</div>
+        <div class="lb">${esc(a.title)}</div><div class="dt">Empty</div></div>`;
+    let when = null;
+    try { when = a.when ? a.when(open) : null; } catch { /* no date, still earned */ }
+    return `<div class="stk got" data-badge="${esc(a.key)}" title="${esc(a.req)}">
+      <div class="cut" style="transform:rotate(${TILT[i % TILT.length]}deg);
+        background:radial-gradient(circle at 34% 26%, hsl(${a.hue} 78% 62%), hsl(${a.hue} 62% 38%))">${a.emoji}</div>
+      <div class="lb">${esc(a.title)}</div>
+      <div class="dt">${when ? esc(shortDay(when)) : 'Earned'}</div></div>`;
   }).join('');
 
   const mineCount = me ? badgeCount(me) : 0;
   $('#badgeSub').textContent = me ? `${mineCount} of ${ACHIEVEMENTS.length} earned` : '';
   $('#badges').innerHTML = players.length
     ? `<div class="h2" style="margin-top:0"><h2>Records</h2><span>best in the group</span></div>${recHTML}
-       <div class="h2"><h2>Badge Board</h2><span>${
-         me ? `you have ${mineCount} of ${ACHIEVEMENTS.length}` : 'everyone · everything'}</span></div>
-       <div class="glass wall-wrap"><div class="wall-scroll">
-         <table class="wall"><thead>${wallHead}</thead><tbody>${wallBody}</tbody></table>
-       </div></div>
-       <div class="wall-key">
-         <span><i class="on"></i>Earned</span>
-         <span><i class="off"></i>Not yet</span>
-         <span>Tap a badge for the rule and who has it</span>
+       <div class="h2"><h2>Badge Books</h2><span>tap a runner</span></div>
+       <div class="strip">${strip}</div>
+       <div class="glass">
+         <div class="plate">
+           <img src="${esc(open.photo || avatarFor(open.name))}" alt=""/>
+           <div class="t"><b>${open.uid === ME?.uid ? 'Your book' : esc(open.name) + '’s book'}</b>
+             <span>${got.size} of ${ACHIEVEMENTS.length} collected</span></div>
+           <div class="pct" style="color:${got.size ? 'var(--mint)' : 'var(--ink-faint)'}">${pct}%</div>
+         </div>
+         <div class="pbar"><i style="width:${pct}%"></i></div>
+         ${near ? `<div class="pnext">Closest: <b>${esc(near.label)}</b></div>`
+                : `<div class="pnext">Every badge left is a one-run job.</div>`}
+       </div>
+       <div class="album">
+         <div class="album-hd">
+           <span>${open.uid === ME?.uid ? 'You' : esc(open.name)} · September</span>
+           <span class="ln"></span><span>${got.size}/${ACHIEVEMENTS.length}</span>
+         </div>
+         <div class="pg">${page}</div>
+         ${got.size ? '' : `<div class="album-empty">Not one sticker yet.<br>Log a mile and the book opens.</div>`}
        </div>`
     : `<div class="empty"><span class="em">🏅</span>Nothing to award yet.<br>Log a mile and the race starts.</div>`;
+}
+
+/* Which unearned badge they're nearest to, for the line under the progress bar.
+   Only badges with a progress fn can answer this — the rest are one run away by
+   definition, which the fallback line says instead. */
+function closestBadge(p, got){
+  let best = null;
+  for (const a of ACHIEVEMENTS){
+    if (got.has(a.key) || !a.progress) continue;
+    try {
+      const [cur, goal] = a.progress(p);
+      if (!(goal > 0)) continue;
+      const ratio = cur / goal;
+      if (!best || ratio > best.ratio)
+        best = { ratio, label: `${a.title} — ${Number.isInteger(cur) ? cur : cur.toFixed(1)} of ${goal}` };
+    } catch { /* a progress fn that throws just isn't a candidate */ }
+  }
+  return best;
 }
 
 /* One badge, opened from a column header or from any tile in its column. This is
@@ -3423,7 +3522,11 @@ document.addEventListener('click', async e => {
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
 
-  // a badge column header, or any tile under it
+  // a face in the runner strip — open that book
+  const book = e.target.closest('[data-book]');
+  if (book){ bookUid = book.dataset.book; renderBadges(); return; }
+
+  // a sticker, filled or empty
   const badgeTap = e.target.closest('[data-badge]');
   if (badgeTap){ openBadge(badgeTap.dataset.badge); return; }
 
