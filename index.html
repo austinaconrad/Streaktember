@@ -702,37 +702,40 @@ body.noscroll{overflow:hidden}
 /* Runners down the side, badges across the top. The old 2-up card grid could only
    afford six 24px faces per badge, which answered "who has this" with a puzzle and
    never answered "what does Ally have" at all. A grid answers both at a glance.
-   Widths are picked so 9 badges + the name column land inside a 360px phone: any
-   more badges and it scrolls sideways under a frozen name column, which is fine. */
-.wall-wrap{padding:12px 10px 13px}
+   Fixed layout, all widths in percentages: the grid always fits the card, so the
+   name column never has to freeze and never needs an opaque slab behind it. Tiles
+   shrink to suit the width instead. Past about a dozen badges they get too small
+   to tap and it starts scrolling — that's the point to split the grid, not to
+   bring the frozen column back. */
+.wall-wrap{padding:12px 12px 13px}
 .wall-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .wall-scroll::-webkit-scrollbar{display:none}
-.wall{border-collapse:separate;border-spacing:0;width:100%}
+.wall{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed}
 .wall th,.wall td{padding:0;text-align:center}
-.wall thead th{height:38px;vertical-align:bottom;padding-bottom:5px}
-.wall td{width:28px;border-top:1px solid rgba(255,255,255,.07)}
-/* the frozen name column needs a solid ground of its own — the glass panel behind
-   it would otherwise show the scrolling cells straight through */
-.wall th.nm,.wall td.nm{position:sticky;left:0;z-index:2;background:#15152a;
-  text-align:left;width:104px;min-width:104px}
+.wall thead th{height:36px;vertical-align:bottom;padding-bottom:5px}
+.wall td{border-top:1px solid rgba(255,255,255,.07)}
+/* a hairline, not a panel — enough to separate the names from the grid */
+.wall th.nm,.wall td.nm{text-align:left;width:36%;
+  border-right:1px solid rgba(255,255,255,.09)}
 .wall thead th.nm{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-faint);padding-left:2px;vertical-align:bottom}
 .wall .hbtn{appearance:none;border:0;background:none;color:inherit;cursor:pointer;
-  width:100%;padding:6px 0;border-radius:9px;font-size:17px;line-height:1;transition:background .15s}
+  width:100%;padding:6px 0;border-radius:9px;font-size:clamp(14px,4.2vw,17px);line-height:1;
+  transition:background .15s}
 .wall .hbtn:hover{background:rgba(255,255,255,.08)}
 .wall .hbtn:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
-.wall .who{display:flex;align-items:center;gap:7px;height:40px;padding-right:9px;cursor:pointer}
+.wall .who{display:flex;align-items:center;gap:7px;height:40px;padding-right:10px;cursor:pointer}
 .wall .who img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
 .wall .who b{flex:1;min-width:0;font-size:13px;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wall .who .n{flex:none;font-size:10.5px;font-weight:800;color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.wall tr.me td{background:rgba(94,242,192,.075)}
-/* tint layered over the solid, so the frozen cell stays opaque while scrolling */
-.wall tr.me td.nm{background:linear-gradient(90deg,rgba(94,242,192,.17),rgba(94,242,192,.05)),#15152a}
+/* your row reads as a tint on the same glass, all the way across */
+.wall tr.me td{background:rgba(94,242,192,.08)}
+.wall tr.me td.nm{background:linear-gradient(90deg,rgba(94,242,192,.16),rgba(94,242,192,.06))}
 .wall tr.me .who b{color:var(--mint)}
 .wall tr.me .who .n{color:var(--mint);opacity:.8}
-.wcell{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:9px;font-size:13px;
-  background:rgba(255,255,255,.05);cursor:pointer}
+.wcell{display:inline-grid;place-items:center;width:min(26px,100%);aspect-ratio:1;
+  border-radius:8px;font-size:13px;background:rgba(255,255,255,.05);cursor:pointer}
 .wcell.on{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.3));
   box-shadow:0 3px 10px -3px rgba(94,242,192,.55)}
 .wcell.off{color:rgba(242,244,255,.17);font-size:11px}
