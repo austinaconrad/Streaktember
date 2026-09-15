@@ -460,6 +460,24 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   font:700 13px 'Outfit',sans-serif;color:var(--ink-faint);transition:background .15s,color .15s}
 .seg button.on{background:rgba(255,255,255,.11);color:var(--ink)}
 
+/* ---- the photo wall ---- */
+/* Three across is the most that keeps a face readable at phone width. Tiles are
+   square so the grid stays even whatever shape people's photos are. */
+.pwall{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pw{margin:0;position:relative;aspect-ratio:1;border-radius:13px;overflow:hidden;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+.pw img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.pw .ph{width:100%;height:100%}
+/* the caption floats on a wash so it reads over any photo; only the name takes
+   taps, so the gradient can't swallow a tap meant for the picture */
+.pw figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 5px;pointer-events:none;
+  display:flex;align-items:baseline;gap:5px;font-size:9.5px;line-height:1.25;
+  background:linear-gradient(transparent,rgba(0,0,0,.74))}
+.pw figcaption b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  pointer-events:auto;cursor:pointer}
+.pw figcaption span{flex:none;margin-left:auto;color:rgba(255,255,255,.66);font-weight:600;
+  font-variant-numeric:tabular-nums}
+
 /* ---- the month heatmap ---- */
 .hm{padding:14px 12px 12px}
 .hm-scale{display:flex;margin:0 0 8px 28px}
@@ -1053,7 +1071,12 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   <!-- ---------- FEED ---------- -->
   <section id="tab-feed" class="hide">
     <div class="h2"><h2>The Feed</h2><span id="feedCount">—</span></div>
+    <div class="seg" id="feedSeg" role="tablist">
+      <button class="on" data-feedview="posts" role="tab">Posts</button>
+      <button data-feedview="photos" role="tab">Photos</button>
+    </div>
     <div id="feed"><div class="skel"></div><div class="skel"></div></div>
+    <div id="photoWall" class="hide"></div>
   </section>
 
   <!-- ---------- FINALE ---------- -->
@@ -2092,7 +2115,69 @@ function renderMyRuns(){
 const FEED_STEP = 30;
 let feedShown = FEED_STEP;
 
+/* Posts or photos. Stored like the standings toggle, so the tab reopens on
+   whichever view you were last using. */
+const FEED_VIEW_KEY = 'streaktember.feedView';
+let feedView = (() => {
+  try { return localStorage.getItem(FEED_VIEW_KEY) === 'photos' ? 'photos' : 'posts'; }
+  catch { return 'posts'; }
+})();
+
+function setFeedView(v){
+  feedView = v === 'photos' ? 'photos' : 'posts';
+  try { localStorage.setItem(FEED_VIEW_KEY, feedView); } catch {}
+  $$('#feedSeg button').forEach(b => b.classList.toggle('on', b.dataset.feedview === feedView));
+  show($('#feed'), feedView === 'posts');
+  show($('#photoWall'), feedView === 'photos');
+  // the two views share no landmarks, so holding scroll position lands nowhere
+  const sc = document.getElementById('scroll');
+  if (sc) sc.scrollTop = 0;
+  renderFeed();
+}
+$('#feedSeg').onclick = e => {
+  const b = e.target.closest('button[data-feedview]');
+  if (b) setFeedView(b.dataset.feedview);
+};
+/* Match the markup to the stored view once at startup. Deliberately not
+   setFeedView() — that renders, and renderFeed() is what will call back here. */
+$$('#feedSeg button').forEach(b => b.classList.toggle('on', b.dataset.feedview === feedView));
+show($('#feed'), feedView === 'posts');
+show($('#photoWall'), feedView === 'photos');
+
+/* Every picture anyone attached this month, newest first. A run can hold two —
+   the watch screenshot and the selfie are different pictures and both belong. */
+function photoWallItems(){
+  const out = [];
+  for (const r of RUNS){                       // RUNS is already newest-first
+    if (!inChallenge(r.day)) continue;
+    if (r.hasShot)  out.push({ r, kind:'shot'  });
+    if (r.hasPhoto) out.push({ r, kind:'photo' });
+  }
+  return out;
+}
+
+function renderPhotoWall(){
+  const items = photoWallItems();
+  $('#feedCount').textContent = items.length
+    ? `${items.length} photo${items.length === 1 ? '' : 's'}` : '';
+  $('#photoWall').innerHTML = items.length
+    ? `<div class="pwall">${items.map(({ r, kind }) => {
+        const key = `${r.id}|${kind}`, hit = photoCache.get(key);
+        const who = nameOf(r.uid, r.name);
+        const label = `${who} · ${shortDay(r.day)}`;
+        return `<figure class="pw" data-photo="${esc(key)}">
+          ${hit ? `<img src="${esc(hit)}" alt="${esc(label)}"/>` : '<div class="ph"></div>'}
+          <figcaption><b data-who="${esc(r.uid)}" title="See ${esc(who)}'s profile">${
+            esc(r.uid === ME?.uid ? 'You' : who.split(' ')[0])
+          }</b><span>${esc(shortDay(r.day))}</span></figcaption>
+        </figure>`;
+      }).join('')}</div>`
+    : `<div class="empty"><span class="em">📷</span>No photos yet.<br>Add a selfie next time you log a mile.</div>`;
+  observePhotos();             // the feed tab is inside #scroll, so the observer works here
+}
+
 function renderFeed(){
+  if (feedView === 'photos') return renderPhotoWall();
   const el = $('#feed');
   const total = RUNS.length;
   const shown = Math.min(feedShown, total);
@@ -3055,7 +3140,25 @@ function openDay(uid, key){
     </div>
     ${runs.map(dayRunHTML).join('')}`;
   show($('#daySheet'), true);
-  observePhotos(); observeMaps();
+  hydrateMedia($('#dayBody'));
+}
+
+/* The feed's lazy loaders are IntersectionObservers rooted at #scroll. A sheet is
+   a fixed overlay OUTSIDE that element, so nothing in it can ever intersect that
+   root — observing it leaves every picture stuck on "loading photo…" forever.
+   A sheet holds one or two runs, so fetch them outright instead of lazily.
+   Both caches are shared with the feed, so anything already seen paints instantly. */
+function hydrateMedia(root){
+  if (!root) return;
+  for (const el of root.querySelectorAll('[data-photo]')){
+    if (el.querySelector(':scope > img')) continue;
+    const [id, kind] = el.dataset.photo.split('|');
+    loadPhoto(id, kind).then(url => paintPhoto(el, url)).catch(() => {});
+  }
+  // upgradeToMap measures the element, so let the sheet lay out for a frame first
+  requestAnimationFrame(() => {
+    for (const el of root.querySelectorAll('[data-map]')) upgradeToMap(el);
+  });
 }
 
 function playerCalendar(p){
@@ -3718,7 +3821,7 @@ document.addEventListener('click', async e => {
   const wrap = e.target.closest('[data-wrap]');
   if (wrap){ closePlayer(); openWrapped(wrap.dataset.wrap); return; }
 
-  const bigPhoto = e.target.closest('.shot > img, .selfie > img');
+  const bigPhoto = e.target.closest('.shot > img, .selfie > img, .pw > img');
   if (bigPhoto){
     $('#pvImg').src = bigPhoto.src;
     show($('#photoView'), true);
