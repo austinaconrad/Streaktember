@@ -2144,14 +2144,13 @@ $$('#feedSeg button').forEach(b => b.classList.toggle('on', b.dataset.feedview =
 show($('#feed'), feedView === 'posts');
 show($('#photoWall'), feedView === 'photos');
 
-/* Every picture anyone attached this month, newest first. A run can hold two —
-   the watch screenshot and the selfie are different pictures and both belong. */
+/* Selfies only, newest first. Watch screenshots are deliberately left out — a wall
+   of people is worth looking at, and a wall of stat screenshots is the same
+   numbers the posts already show. They still appear on the feed post itself. */
 function photoWallItems(){
   const out = [];
   for (const r of RUNS){                       // RUNS is already newest-first
-    if (!inChallenge(r.day)) continue;
-    if (r.hasShot)  out.push({ r, kind:'shot'  });
-    if (r.hasPhoto) out.push({ r, kind:'photo' });
+    if (inChallenge(r.day) && r.hasPhoto) out.push({ r, kind:'photo' });
   }
   return out;
 }
@@ -2172,7 +2171,7 @@ function renderPhotoWall(){
           }</b><span>${esc(shortDay(r.day))}</span></figcaption>
         </figure>`;
       }).join('')}</div>`
-    : `<div class="empty"><span class="em">📷</span>No photos yet.<br>Add a selfie next time you log a mile.</div>`;
+    : `<div class="empty"><span class="em">📷</span>No selfies yet.<br>Add one next time you log a mile.</div>`;
   observePhotos();             // the feed tab is inside #scroll, so the observer works here
 }
 
