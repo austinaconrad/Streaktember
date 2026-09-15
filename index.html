@@ -160,6 +160,30 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .cal-day.done{background:linear-gradient(140deg,rgba(94,242,192,.34),rgba(167,139,250,.28));color:#eafff8;border-color:rgba(94,242,192,.4)}
 .cal-day.miss{background:rgba(255,109,138,.14);color:var(--coral);border-color:rgba(255,109,138,.25)}
 .cal-day.today{outline:2px solid rgba(255,255,255,.55);outline-offset:1px}
+/* only days with miles on them open anything, so only those look pressable */
+.cal-day.tappable{appearance:none;font-family:inherit;cursor:pointer;transition:transform .12s}
+.cal-day.tappable:active{transform:scale(.9)}
+.cal-day.tappable:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+
+/* ---- one day, opened from a calendar ---- */
+/* above the player profile (86) so it works from someone else's calendar, below
+   the full-screen photo viewer (88) so tapping a picture still works from here */
+#daySheet{z-index:87}
+.day-hd{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+.day-hd > img{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.1)}
+.day-hd .t{flex:1;min-width:0}
+.day-hd .t b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-hd .t span{display:block;font-size:12px;color:var(--ink-faint);margin-top:1px}
+.day-hd .tot{flex:none;text-align:right}
+.day-hd .tot b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.day-hd .tot span{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+/* two runs in a day get a rule between them rather than two cards — the sheet is
+   already a card */
+.day-run + .day-run{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
+.day-when{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:2px}
+.day-when .at{font-size:13px;font-weight:700}
+.day-when .at em{font-style:normal;color:var(--ink-faint);font-weight:600}
 
 /* ---- feed ---- */
 .post{padding:16px;margin-bottom:14px}
@@ -1246,6 +1270,16 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
   </div>
 </div>
 
+<!-- ======================= ONE DAY ======================= -->
+<div id="daySheet" class="sheet hide">
+  <div class="card glass">
+    <div id="dayBody"></div>
+    <div class="sheet-btns" style="grid-template-columns:1fr">
+      <button class="btn ghost" id="dayClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ======================= ONE BADGE ======================= -->
 <div id="badgeSheet" class="sheet hide">
   <div class="card glass">
@@ -2079,6 +2113,40 @@ function renderFeed(){
   observePhotos(); observeMaps(); fetchCommentCounts();
 }
 
+/* The picture at the top of a run: its map if it was tracked, otherwise the
+   screenshot, otherwise the selfie, with whatever is left over tucked into the
+   corner. Photos and maps hydrate lazily off these data attributes, so anything
+   using this must call observePhotos() and observeMaps() after painting.
+   Shared by the feed and the calendar's day sheet so the two can't drift. */
+function runMedia(r, path){
+  path = path || (r.path || []).map(p => ({ lat: p.lat ?? p[0], lng: p.lng ?? p[1] }));
+  if (path.length > 1) mapPaths.set(r.id, path);          // legacy inline route
+  const known = mapPaths.get(r.id);
+  const hasMapData = (known && known.length > 1) || r.hasPath;
+  const mapAttr = hasMapData ? ` data-map="${r.id}"` : '';
+  const img = (kind, cls, alt) => {
+    const key = `${r.id}|${kind}`, hit = photoCache.get(key);
+    return `<div class="${cls}" data-photo="${key}">${
+      hit ? `<img src="${hit}" alt="${alt}"/>` : `<div class="ph">${cls === 'shot' ? 'loading photo…' : ''}</div>`}</div>`;
+  };
+  if (hasMapData)
+    return `<div class="route"${mapAttr}>${routeSVG(known || [])}${
+      r.hasPhoto ? img('photo','selfie','Run selfie')
+      : r.hasShot ? img('shot','selfie','Run screenshot') : ''}</div>`;
+  if (r.hasShot)
+    return `<div class="shot" data-photo="${r.id}|shot">${
+        photoCache.get(`${r.id}|shot`)
+          ? `<img src="${photoCache.get(`${r.id}|shot`)}" alt="Run screenshot"/>`
+          : `<div class="ph">loading photo…</div>`
+      }${r.hasPhoto ? img('photo','selfie','Run selfie') : ''}</div>`;
+  if (r.hasPhoto)
+    return `<div class="shot" data-photo="${r.id}|photo">${
+        photoCache.get(`${r.id}|photo`)
+          ? `<img src="${photoCache.get(`${r.id}|photo`)}" alt="Run selfie"/>`
+          : `<div class="ph">loading photo…</div>`}</div>`;
+  return `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
+}
+
 function postHTML(r, compact=false){
   const mine  = r.uid === ME?.uid;
   const path  = (r.path || []).map(p => ({lat:p.lat ?? p[0], lng:p.lng ?? p[1]}));
@@ -2127,37 +2195,7 @@ function postHTML(r, compact=false){
         <svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
       </button>` : ''}
     </div>
-    ${(() => {
-      if (path.length > 1) mapPaths.set(r.id, path);          // legacy inline route
-      const known = mapPaths.get(r.id);
-      const hasMapData = (known && known.length > 1) || r.hasPath;
-      const mapAttr = hasMapData ? ` data-map="${r.id}"` : '';
-      const img = (kind, cls, alt) => {
-        const key = `${r.id}|${kind}`, hit = photoCache.get(key);
-        return `<div class="${cls}" data-photo="${key}">${
-          hit ? `<img src="${hit}" alt="${alt}"/>` : `<div class="ph">${cls === 'shot' ? 'loading photo…' : ''}</div>`}</div>`;
-      };
-      // Lead with whatever best represents the run: the map if it was tracked,
-      // otherwise the screenshot, otherwise the selfie. Whatever's left over
-      // tucks into the corner.
-      const hasMap = hasMapData;
-      if (hasMap)
-        return `<div class="route"${mapAttr}>${routeSVG(known || [])}${
-          r.hasPhoto ? img('photo','selfie','Run selfie')
-          : r.hasShot ? img('shot','selfie','Run screenshot') : ''}</div>`;
-      if (r.hasShot)
-        return `<div class="shot" data-photo="${r.id}|shot">${
-            photoCache.get(`${r.id}|shot`)
-              ? `<img src="${photoCache.get(`${r.id}|shot`)}" alt="Run screenshot"/>`
-              : `<div class="ph">loading photo…</div>`
-          }${r.hasPhoto ? img('photo','selfie','Run selfie') : ''}</div>`;
-      if (r.hasPhoto)
-        return `<div class="shot" data-photo="${r.id}|photo">${
-            photoCache.get(`${r.id}|photo`)
-              ? `<img src="${photoCache.get(`${r.id}|photo`)}" alt="Run selfie"/>`
-              : `<div class="ph">loading photo…</div>`}</div>`;
-      return `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
-    })()}
+    ${runMedia(r, path)}
     <div class="pstats">
       <div class="pstat"><b class="mono">${(r.miles||0).toFixed(2)}</b><span>Miles</span></div>
       <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
@@ -2929,6 +2967,9 @@ $('#reactSheet').onclick = e => { if (e.target === $('#reactSheet')) show($('#re
 $('#bsClose').onclick = () => show($('#badgeSheet'), false);
 $('#badgeSheet').onclick = e => { if (e.target === $('#badgeSheet')) show($('#badgeSheet'), false); };
 
+$('#dayClose').onclick = () => show($('#daySheet'), false);
+$('#daySheet').onclick = e => { if (e.target === $('#daySheet')) show($('#daySheet'), false); };
+
 /* ============================================================
    11d. PLAYER PROFILE — tap anyone's picture in the feed or the
    standings. Read-only, and it reuses wrappedStats so a number here
@@ -2947,11 +2988,74 @@ function calCells(p){
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
     const k = dayKey(d), mi = days.get(k) || 0;
     const cls = done.has(k) ? 'done' : (k < tk ? 'miss' : '');
+    /* A day with miles on it opens that day's run; a day without stays a plain
+       square, because a sheet saying "nothing here" is worse than no sheet. The
+       uid rides along so the same cell works on anyone's calendar. */
+    const tag = mi > 0 && p.uid ? 'button' : 'div';
+    const attrs = mi > 0 && p.uid
+      ? ` type="button" data-day="${esc(k)}" data-dayuid="${esc(p.uid)}"`
+      : '';
     // a day under the goal still shows its mileage — it just isn't "done"
-    cells.push(`<div class="cal-day ${cls} ${k === tk ? 'today' : ''}" title="${k}${mi ? ` · ${mi.toFixed(2)} mi` : ''}">
-      <b>${d.getDate()}</b>${mi > 0 ? `<i>${mi.toFixed(mi >= 10 ? 0 : 1)}</i>` : ''}</div>`);
+    cells.push(`<${tag} class="cal-day ${cls} ${k === tk ? 'today' : ''}${
+      mi > 0 && p.uid ? ' tappable' : ''}"${attrs} title="${k}${mi ? ` · ${mi.toFixed(2)} mi` : ''}">
+      <b>${d.getDate()}</b>${mi > 0 ? `<i>${mi.toFixed(mi >= 10 ? 0 : 1)}</i>` : ''}</${tag}>`);
   }
   return cells.join('');
+}
+
+/* Every run someone logged on one day, oldest first — a day can hold more than
+   one, and the sheet shows all of them. */
+const runsOnDay = (uid, key) => RUNS
+  .filter(r => r.uid === uid && r.day === key)
+  .sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+
+/* One run as it appears in a day sheet: when it started, what the weather was,
+   the map or photos, the numbers, the splits and the note. Deliberately without
+   the reaction and comment row — those live on the feed post, and having two
+   live copies of the same controls in the DOM is how counts get out of step. */
+function dayRunHTML(r){
+  const at = r.startedAt
+    ? new Date(r.startedAt).toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' })
+    : '';
+  const pace = r.seconds && r.miles ? paceStr(r.seconds / r.miles) : '—:—';
+  return `<div class="day-run">
+    <div class="day-when">
+      <span class="at">${at ? esc(at) : '<em>Time not recorded</em>'}</span>
+      ${weatherPill(r.weather, true)}
+    </div>
+    ${runMedia(r)}
+    <div class="pstats">
+      <div class="pstat"><b class="mono">${(r.miles || 0).toFixed(2)}</b><span>Miles</span></div>
+      <div class="pstat"><b class="mono">${clock(r.seconds || 0)}</b><span>Time</span></div>
+      <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
+    </div>
+    ${splitChips(r.splits)}
+    ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
+  </div>`;
+}
+
+/* Tapping a day on anyone's calendar. Photos and maps hydrate the same lazy way
+   they do in the feed, so the observers have to run after the sheet is painted. */
+function openDay(uid, key){
+  const runs = runsOnDay(uid, key);
+  if (!runs.length) return;                 // only days with miles are tappable
+  const p = byPlayer().get(uid);
+  const name = nameOf(uid, p ? p.name : '');
+  const d = dayDate(key);
+  const total = runs.reduce((n, r) => n + (r.miles || 0), 0);
+
+  $('#dayBody').innerHTML = `
+    <div class="day-hd">
+      <img src="${esc((p && p.photo) || photoOf(uid, '') || avatarFor(name))}" alt=""/>
+      <div class="t"><b>${uid === ME?.uid ? 'You' : esc(name)}</b>
+        <span>${esc(d ? d.toLocaleDateString(undefined,
+          { weekday:'long', month:'long', day:'numeric' }) : key)}${
+          runs.length > 1 ? ` · ${runs.length} runs` : ''}</span></div>
+      <div class="tot"><b>${total.toFixed(2)}</b><span>Miles</span></div>
+    </div>
+    ${runs.map(dayRunHTML).join('')}`;
+  show($('#daySheet'), true);
+  observePhotos(); observeMaps();
 }
 
 function playerCalendar(p){
@@ -3047,8 +3151,11 @@ function closePlayer(){
 }
 $('#pvX').onclick = closePlayer;
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !$('#badgeSheet').classList.contains('hide')){ show($('#badgeSheet'), false); return; }
-  if (e.key === 'Escape' && !$('#playerView').classList.contains('hide')) closePlayer();
+  if (e.key !== 'Escape') return;
+  // innermost first: a day sheet can sit on top of a profile
+  if (!$('#daySheet').classList.contains('hide')){ show($('#daySheet'), false); return; }
+  if (!$('#badgeSheet').classList.contains('hide')){ show($('#badgeSheet'), false); return; }
+  if (!$('#playerView').classList.contains('hide')) closePlayer();
 });
 
 /* ---- the deck ---- */
@@ -3583,6 +3690,10 @@ document.addEventListener('click', async e => {
   const send  = e.target.closest('[data-csend]');
   const del   = e.target.closest('[data-del]');
   const pick  = e.target.closest('[data-pick]');
+
+  // a day on any calendar — open what they logged
+  const dayTap = e.target.closest('[data-day]');
+  if (dayTap){ openDay(dayTap.dataset.dayuid, dayTap.dataset.day); return; }
 
   // a face in the runner strip — open that book
   const book = e.target.closest('[data-book]');
