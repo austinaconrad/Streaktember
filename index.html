@@ -2392,10 +2392,6 @@ const ACHIEVEMENTS = [
     run: r => (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s <= 420)) ||
               (r.miles >= 1 && paceOf(r) && paceOf(r) <= 420) },
 
-  { key:'long', emoji:'🥾', title:'Long Hauler', req:'A single run of 3 miles or more', hue:24,
-    run: r => r.miles >= 3,
-    progress: p => [Math.min(Math.max(...p.runList.map(r => r.miles), 0), 3), 3] },
-
   { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row', hue:158,
     earned: p => p.best >= 15,
     when: p => dayStreakHit(p.completed, 15),
@@ -2408,6 +2404,13 @@ const ACHIEVEMENTS = [
 
   { key:'night', emoji:'🌙', title:'Night Owl', req:'Log a run after 9:00 PM', hue:258,
     run: r => { const h = hourOf(r); return h !== null && h >= 21; } },
+
+  /* Reads the weather code the run already carries, using the same rain and snow
+     ranges the Wrapped deck counts wet days with. Like Tourist, it can only see
+     runs where someone tapped Add weather — no weather, no badge, however hard
+     it was raining. */
+  { key:'noexcuses', emoji:'🌧️', title:'No Excuses', req:'Log a run in rain, snow or a storm', hue:210,
+    run: r => !!r.weather && r.weather.c != null && (RAINY(r.weather.c) || SNOWY(r.weather.c)) },
 
   { key:'tourist', emoji:'🗺️', title:'Tourist', req:'Log runs in 3 different places', hue:135,
     // only counts where someone tapped Add weather, which is optional — so this is
