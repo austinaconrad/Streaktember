@@ -460,38 +460,6 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
   font:700 13px 'Outfit',sans-serif;color:var(--ink-faint);transition:background .15s,color .15s}
 .seg button.on{background:rgba(255,255,255,.11);color:var(--ink)}
 
-/* ---- the map ---- */
-.mapwrap{padding:8px 8px 6px;overflow:hidden}
-.mapstage{position:relative;border-radius:19px;overflow:hidden;background:#12122a;
-  height:min(58dvh, 460px);min-height:300px}
-/* touch-action:none hands every finger to the pointer handlers — without it the
-   browser claims the drag for page scrolling and the map never moves */
-.mapstage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
-.mapstage canvas:active{cursor:grabbing}
-.mapnote{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;
-  font-size:13px;line-height:1.6;color:var(--ink-faint)}
-.mapctl{position:absolute;right:9px;bottom:9px;display:grid;gap:5px;z-index:2}
-.mapctl button{appearance:none;width:34px;height:34px;border-radius:11px;cursor:pointer;
-  font:700 17px/1 'Outfit',sans-serif;color:var(--ink);
-  background:rgba(16,16,34,.78);border:1px solid rgba(255,255,255,.16);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  display:grid;place-items:center;transition:background .15s}
-.mapctl button:hover{background:rgba(30,30,58,.9)}
-.mapctl button:active{transform:scale(.94)}
-.mapctl button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
-.mapcredit{padding:6px 8px 2px;font-size:9.5px;color:var(--ink-faint);letter-spacing:.02em;text-align:right}
-/* tapping a name isolates that runner and refits the map to their pins — which is
-   how you zoom in without building a whole gesture layer */
-.maplegend{display:flex;flex-wrap:wrap;gap:6px;margin:11px 2px 0}
-.legchip{appearance:none;display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 9px;border-radius:999px;
-  cursor:pointer;font:600 12.5px 'Outfit',sans-serif;color:var(--ink-dim);
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);transition:.15s}
-.legchip i{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 0 1.5px rgba(10,10,26,.8)}
-.legchip b{font-weight:700;color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.legchip.on{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:var(--ink)}
-.legchip.on b{color:var(--ink-dim)}
-.legchip:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
-
 /* ---- the photo wall ---- */
 /* Three across is the most that keeps a face readable at phone width. Tiles are
    square so the grid stays even whatever shape people's photos are. */
@@ -914,15 +882,9 @@ body.noscroll{overflow:hidden}
 nav{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-b));z-index:40;
   display:flex;gap:4px;padding:6px;border-radius:999px;background:rgba(18,18,40,.55);backdrop-filter:blur(28px) saturate(180%);
   -webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid var(--glass-brd);box-shadow:0 20px 40px -18px rgba(0,0,0,.8)}
-/* Six items once the Finale tab appears. Tightened padding keeps them on one row
-   on a normal phone, and the scroll is a safety valve for very narrow ones rather
-   than something anyone should ever see. */
-nav{max-width:calc(100% - 24px);overflow-x:auto;scrollbar-width:none}
-nav::-webkit-scrollbar{display:none}
 nav button{appearance:none;border:0;background:transparent;color:var(--ink-faint);font:600 11.5px/1 'Outfit',sans-serif;
-  padding:11px 10px;border-radius:999px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
-  transition:.2s;flex:none}
-@media(min-width:400px){nav button{padding:11px 14px;font-size:12.5px}}
+  padding:11px 13px;border-radius:999px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:.2s}
+@media(min-width:400px){nav button{padding:11px 17px;font-size:12.5px}}
 nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0ff)}
 
@@ -1122,23 +1084,6 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <div id="finale"></div>
   </section>
 
-  <!-- ---------- MAP ---------- -->
-  <section id="tab-map" class="hide">
-    <div class="h2"><h2>The Map</h2><span id="mapCount">—</span></div>
-    <div class="glass mapwrap">
-      <div class="mapstage" id="mapStage">
-        <div class="mapnote" id="mapNote">Finding everyone…</div>
-        <div class="mapctl" id="mapCtl">
-          <button type="button" data-mapctl="in"  aria-label="Zoom in">+</button>
-          <button type="button" data-mapctl="out" aria-label="Zoom out">−</button>
-          <button type="button" data-mapctl="fit" aria-label="Fit to the pins">⌖</button>
-        </div>
-      </div>
-      <div class="mapcredit" id="mapCredit"></div>
-    </div>
-    <div class="maplegend" id="mapLegend"></div>
-  </section>
-
   <!-- ---------- BADGES ---------- -->
   <section id="tab-badges" class="hide">
     <div class="h2"><h2>Badges</h2><span id="badgeSub">—</span></div>
@@ -1175,7 +1120,6 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <button class="on" data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Today</button>
     <button data-tab="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Feed</button>
     <button data-tab="finale" class="hide"><svg viewBox="0 0 24 24"><path d="M5 4h14v5a7 7 0 0 1-14 0z"/><path d="M9 20h6M12 16v4"/></svg>Final</button>
-    <button data-tab="map"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Map</button>
     <button data-tab="badges"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5"/></svg>Badges</button>
     <button data-tab="board"><svg viewBox="0 0 24 24"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>Standings</button>
   </nav>
@@ -2055,16 +1999,7 @@ const TAB_RENDER = {
   feed:   renderFeed,
   badges: renderBadges,
   board:  renderBoard,
-  finale: renderFinale,
-  /* Older runs keep their coordinates in a separate route document, so the first
-     open of this tab fetches the ones it still needs. Once per session. */
-  map:    () => {
-    if (mapLoaded) return renderMap();
-    mapLoaded = mapLoading = true;
-    renderMap();                                   // draw what's already cached
-    loadMapPoints().catch(err => console.warn('map points', err))
-      .finally(() => { mapLoading = false; renderMap(); });
-  }
+  finale: renderFinale
 };
 function renderTab(name){ try { TAB_RENDER[name]?.(); } catch (err){ console.error('render ' + name, err); } staleTabs.delete(name); }
 
@@ -3232,449 +3167,6 @@ function hydrateMedia(root){
   });
 }
 
-/* ============================================================
-   THE MAP — a pin wherever a run started, on a map you can move.
-
-   Coordinates aren't on the run document: a tracked run's route lives in its own
-   media doc, fetched on demand. New runs now carry a `start` point so they need
-   no fetch at all; older ones pull their route once per session and land in the
-   same cache the feed maps use. Manually logged runs have no coordinates and
-   simply don't appear — the count under the heading says how many.
-
-   Drawing is synchronous and driven by a view (centre + zoom). Tiles and faces
-   are fetched in the background and ask for a redraw when they land, so a drag
-   never waits on the network.
-   ============================================================ */
-const OHIO = { n: 42.10, s: 38.30, w: -85.00, e: -80.40 };   // the opening view
-const MAP_MINZ = 2;
-let mapView = null;                   // { lat, lng, z } — survives leaving the tab
-let mapFilter = null;                 // uid to show alone, or null for everyone
-let mapPins = [];                     // {r, lat, lng, hue, x, y, headY, face}
-let mapLoaded = false, mapLoading = false;
-let mapDirty = false, mapBusy = false;
-let mapCv = null;                     // the one canvas, reused across redraws
-
-/* Map colours are spread evenly round the wheel rather than hashed from names.
-   Two names can hash to hues nobody can tell apart — on a map that's the whole
-   game. Keyed on sorted uids so a colour doesn't move when someone's pin count
-   changes, and the legend carries the key, so these needn't match avatars. */
-function mapHues(uids){
-  const order = [...uids].sort();
-  const out = new Map();
-  order.forEach((u, i) => out.set(u, Math.round(i * 360 / Math.max(order.length, 1) + 18) % 360));
-  return out;
-}
-
-const startOf = r => {
-  if (r.start && isFinite(r.start.lat) && isFinite(r.start.lng)) return r.start;
-  const pts = mapPaths.get(r.id);
-  return (pts && pts.length && isFinite(pts[0].lat)) ? pts[0] : null;
-};
-
-/* Pull the routes we need to place pins. Runs saved from now on carry their own
-   start, so this shrinks to nothing over time. */
-async function loadMapPoints(){
-  const need = RUNS.filter(r => inChallenge(r.day) && r.hasPath && !startOf(r));
-  if (!need.length) return;
-  await pool(need, 6, r => loadPath(r.id));
-}
-
-/* world pixels at a zoom, and back again */
-const mapUnproject = (x, y, z) => {
-  const scale = Math.pow(2, z) * TILE;
-  const n = Math.PI - 2 * Math.PI * y / scale;
-  return {
-    lng: x / scale * 360 - 180,
-    lat: 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)))
-  };
-};
-
-/* A view that shows the whole box with room to spare. */
-function fitBounds(b, w, h, pad){
-  const x0 = lngToPx(b.w, 0), x1 = lngToPx(b.e, 0);
-  const y0 = latToPx(b.n, 0), y1 = latToPx(b.s, 0);
-  const spanX = Math.max(x1 - x0, 1e-9), spanY = Math.max(y1 - y0, 1e-9);
-  let z = Math.min(Math.log2(Math.max(w - pad * 2, 60) / spanX),
-                   Math.log2(Math.max(h - pad * 2, 60) / spanY));
-  if (!isFinite(z)) z = 12;
-  z = Math.max(MAP_MINZ, Math.min(MAX_ZOOM + 1, z));
-  const s = Math.pow(2, z);
-  const c = mapUnproject((x0 + x1) / 2 * s, (y0 + y1) / 2 * s, z);
-  return { lat: c.lat, lng: c.lng, z };
-}
-
-const pinBounds = () => {
-  if (!mapPins.length) return null;
-  let n = -90, s = 90, w = 180, e = -180;
-  for (const p of mapPins){
-    if (p.lat > n) n = p.lat; if (p.lat < s) s = p.lat;
-    if (p.lng < w) w = p.lng; if (p.lng > e) e = p.lng;
-  }
-  // a single pin, or a group who all start from one street, has no box to fit
-  const padY = Math.max((n - s) * 0.25, 0.004), padX = Math.max((e - w) * 0.25, 0.005);
-  return { n: n + padY, s: s - padY, w: w - padX, e: e + padX };
-};
-
-function mapStageSize(){
-  const stage = $('#mapStage');
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  return { stage, dpr, w: Math.round(stage.clientWidth * dpr), h: Math.round(stage.clientHeight * dpr) };
-}
-
-/* Fit the view to the pins currently shown, or fall back to the opening view. */
-function mapFit(){
-  const { w, h, dpr } = mapStageSize();
-  if (w < 20) return;
-  mapView = fitBounds(pinBounds() || OHIO, w, h, 54 * dpr);
-  scheduleMapDraw();
-}
-
-/* ---- tiles, cached so a pan doesn't refetch what it just drew ---- */
-const tileImgs = new Map();           // url -> HTMLImageElement | null (settled) 
-const tilePending = new Map();        // url -> promise, while in flight
-function tileNow(url){
-  if (tileImgs.has(url)) return tileImgs.get(url);
-  if (!tilePending.has(url)){
-    tilePending.set(url, loadTile(url).then(img => {
-      tilePending.delete(url);
-      if (tileImgs.size > 400) tileImgs.clear();       // a month of panning, bounded
-      tileImgs.set(url, img);
-      scheduleMapDraw();                               // paint it the moment it lands
-      return img;
-    }));
-  }
-  return undefined;                                    // not here yet
-}
-
-/* ---- faces ---- */
-/* One face per runner, drawn into their pins. Their uploaded photo where there is
-   one, otherwise the generated initial — which is a data URI and never fails. */
-const pinFaces = new Map();
-const facePending = new Set();
-function faceNow(uid, name, photo){
-  if (pinFaces.has(uid)) return pinFaces.get(uid);
-  if (facePending.has(uid)) return null;
-  facePending.add(uid);
-  const done = img => { pinFaces.set(uid, img); facePending.delete(uid); scheduleMapDraw(); };
-  const fallback = () => {
-    const alt = new Image();
-    alt.onload = () => done(alt);
-    alt.onerror = () => done(null);
-    alt.src = avatarFor(name);
-  };
-  const img = new Image();
-  img.crossOrigin = 'anonymous';     // Google's avatars allow it; data URIs don't care
-  img.onload = () => done(img);
-  img.onerror = fallback;            // a cross-origin refusal shouldn't cost the pin its face
-  img.src = photo || avatarFor(name);
-  return null;
-}
-
-/* Runs from the same doorstep project onto the same pixel, and a pin is far too
-   big to hide inside another one.
-
-   Fanning each cluster onto its own spiral was the first attempt, and it failed
-   the moment two people live near each other — the separate fans grew into one
-   another and made a mound with whole runners buried inside it. So instead every
-   pin pushes every other one away until nothing overlaps. Ties break by index
-   rather than randomly, so the same view always lays out the same way.
-
-   A pin may only be nudged so far from where it belongs, though. Without that
-   limit the whole pile keeps expanding until nothing touches, and at Ohio zoom
-   four houses in Dayton spread across half the state — a map that lies about
-   where people run. Bounded, a dense cluster stays a tight overlapping knot that
-   honestly reads as "a lot of runs here", and zooming in is what separates them:
-   the closer you get, the further apart they already are, and the nudging fades
-   to nothing. */
-function spreadPins(pins, r, w, h, passes){
-  if (pins.length < 2) return;
-  const minD   = r * 1.95;
-  const top    = r * 2.65;
-  const maxOff = r * 2.2;                             // how far from the truth a pin may sit
-  pins.forEach((p, i) => {
-    p.tx = p.x; p.ty = p.y;                           // where it actually belongs
-    p.x += Math.cos(i * 2.39996) * 0.6;               // coincident points need a seed
-    p.y += Math.sin(i * 2.39996) * 0.6;
-  });
-  for (let pass = 0; pass < passes; pass++){
-    let moved = false;
-    for (let i = 0; i < pins.length; i++){
-      for (let j = i + 1; j < pins.length; j++){
-        const a = pins[i], b = pins[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        let d = Math.hypot(dx, dy);
-        if (d >= minD) continue;
-        if (d < 1e-6){ dx = Math.cos(j); dy = Math.sin(j); d = 1; }
-        const push = (minD - d) / 2;
-        a.x -= dx / d * push; a.y -= dy / d * push;
-        b.x += dx / d * push; b.y += dy / d * push;
-        moved = true;
-      }
-    }
-    for (const p of pins){
-      // reel it back towards its real coordinate, then keep it on the map
-      const ox = p.x - p.tx, oy = p.y - p.ty, off = Math.hypot(ox, oy);
-      if (off > maxOff){ p.x = p.tx + ox / off * maxOff; p.y = p.ty + oy / off * maxOff; }
-      p.x = Math.min(Math.max(p.x, r + 2), w - r - 2);
-      p.y = Math.min(Math.max(p.y, top + 2), h - 2);
-    }
-    if (!moved) break;
-  }
-}
-
-/* A map pin: a round head on a tapered point, the face clipped inside it and the
-   runner's colour as the rim. The point sits on the coordinate. */
-function drawPin(ctx, p, r, dpr){
-  const tail = r * 1.65;
-  const cy = p.y - tail;
-  p.headY = cy;
-  const a = Math.acos(Math.max(-1, Math.min(1, r / tail)));
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,.55)';
-  ctx.shadowBlur = 5 * dpr;
-  ctx.shadowOffsetY = 2 * dpr;
-  ctx.beginPath();
-  ctx.arc(p.x, cy, r, Math.PI / 2 + a, Math.PI / 2 - a);   // the long way, over the top
-  ctx.lineTo(p.x, p.y);                                    // down to the point
-  ctx.closePath();
-  ctx.fillStyle = `hsl(${p.hue} 74% 56%)`;
-  ctx.fill();
-  ctx.restore();
-
-  const inner = r - 2.6 * dpr;
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(p.x, cy, inner, 0, Math.PI * 2);
-  ctx.clip();
-  if (p.face) ctx.drawImage(p.face, p.x - inner, cy - inner, inner * 2, inner * 2);
-  else { ctx.fillStyle = '#20203c'; ctx.fillRect(p.x - inner, cy - inner, inner * 2, inner * 2); }
-  ctx.restore();
-
-  ctx.beginPath();                                         // seats the face in the rim
-  ctx.arc(p.x, cy, inner, 0, Math.PI * 2);
-  ctx.lineWidth = 1 * dpr;
-  ctx.strokeStyle = 'rgba(8,8,20,.4)';
-  ctx.stroke();
-}
-
-/* ---- the draw ---- */
-function scheduleMapDraw(){
-  if (mapDirty) return;
-  mapDirty = true;
-  requestAnimationFrame(() => { mapDirty = false; drawMap(); });
-}
-
-function drawMap(){
-  const { stage, dpr, w, h } = mapStageSize();
-  const note = $('#mapNote');
-  if (w < 20 || h < 20) return;                 // hidden tab — redrawn on arrival
-
-  if (!mapPins.length){
-    note.innerHTML = mapLoading ? 'Finding everyone…'
-      : RUNS.some(r => inChallenge(r.day))
-        ? 'No runs with a location yet.<br>Tracked runs drop a pin where they started.'
-        : 'Nothing logged yet.<br>The first tracked mile puts a pin on the map.';
-    show(note, true);
-    if (mapCv) mapCv.style.visibility = 'hidden';
-    return;
-  }
-  show(note, false);
-
-  if (!mapCv){
-    mapCv = document.createElement('canvas');
-    stage.insertBefore(mapCv, stage.firstChild);
-    attachMapGestures(mapCv);
-  }
-  mapCv.style.visibility = '';
-  if (mapCv.width !== w || mapCv.height !== h){ mapCv.width = w; mapCv.height = h; }
-  if (!mapView) mapView = fitBounds(OHIO, w, h, 54 * dpr);
-
-  const z = mapView.z;
-  const s = Math.pow(2, z);
-  const left = lngToPx(mapView.lng, 0) * s - w / 2;
-  const top  = latToPx(mapView.lat, 0) * s - h / 2;
-
-  const ctx = mapCv.getContext('2d');
-  ctx.fillStyle = '#12122a';
-  ctx.fillRect(0, 0, w, h);
-
-  const zTile = Math.min(Math.floor(z), MAX_ZOOM);
-  const size  = TILE * Math.pow(2, z - zTile);
-  const span  = Math.pow(2, zTile);
-  const tx0 = Math.floor(left / size), tx1 = Math.floor((left + w) / size);
-  const ty0 = Math.floor(top / size),  ty1 = Math.floor((top + h) / size);
-  if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) <= MAX_TILES * 6){
-    for (let tx = tx0; tx <= tx1; tx++)
-      for (let ty = ty0; ty <= ty1; ty++){
-        if (ty < 0 || ty >= span) continue;
-        const wrapped = ((tx % span) + span) % span;
-        const img = tileNow(TILE_URL(zTile, wrapped, ty));
-        if (img) ctx.drawImage(img, Math.round(tx * size - left), Math.round(ty * size - top),
-                               Math.ceil(size), Math.ceil(size));
-      }
-  }
-
-  // pins shrink as the field fills up, so a busy month stays readable
-  const rad = (mapPins.length > 70 ? 11 : mapPins.length > 35 ? 13 : 15) * dpr;
-  for (const p of mapPins){
-    p.x = lngToPx(p.lng, 0) * s - left;
-    p.y = latToPx(p.lat, 0) * s - top;
-    p.face = faceNow(p.r.uid, nameOf(p.r.uid, p.r.name), photoOf(p.r.uid, p.r.photo));
-  }
-  // fewer passes while a finger is down — it has to keep up with the frame
-  spreadPins(mapPins, rad, w, h, mapBusy ? 16 : 60);
-  for (const p of [...mapPins].reverse()) drawPin(ctx, p, rad, dpr);
-
-  $('#mapCredit').textContent = MAP_CREDIT;
-}
-
-/* ---- moving the map ---- */
-function mapZoomAt(dz, px, py){
-  const { w, h, dpr } = mapStageSize();
-  if (w < 20) return;
-  if (!mapView) mapView = fitBounds(OHIO, w, h, 54 * dpr);
-  const z0 = mapView.z;
-  const z1 = Math.max(MAP_MINZ, Math.min(MAX_ZOOM + 2, z0 + dz));
-  if (z1 === z0) return;
-  // keep whatever sits under the finger exactly where it is
-  const s0 = Math.pow(2, z0);
-  const gx = lngToPx(mapView.lng, 0) * s0 - w / 2 + px;
-  const gy = latToPx(mapView.lat, 0) * s0 - h / 2 + py;
-  const g  = mapUnproject(gx, gy, z0);
-  const s1 = Math.pow(2, z1);
-  const c  = mapUnproject(lngToPx(g.lng, 0) * s1 - px + w / 2,
-                          latToPx(g.lat, 0) * s1 - py + h / 2, z1);
-  mapView = { lat: c.lat, lng: c.lng, z: z1 };
-  scheduleMapDraw();
-}
-
-function mapPanBy(dx, dy){
-  const { w, h } = mapStageSize();
-  if (!mapView || w < 20) return;
-  const s = Math.pow(2, mapView.z);
-  const c = mapUnproject(lngToPx(mapView.lng, 0) * s - dx,
-                         latToPx(mapView.lat, 0) * s - dy, mapView.z);
-  mapView = { lat: c.lat, lng: Math.max(-179.9, Math.min(179.9, c.lng)), z: mapView.z };
-  scheduleMapDraw();
-}
-
-/* Drag to pan, pinch or wheel to zoom, and a short still tap opens a pin. One
-   pointer handler covers mouse, touch and pen. */
-function attachMapGestures(cv){
-  const live = new Map();                   // pointerId -> {x, y}
-  let pinchD = 0, startX = 0, startY = 0, startT = 0, wandered = 0;
-  const local = e => {
-    const b = cv.getBoundingClientRect();
-    return { x: (e.clientX - b.left) * (cv.width / b.width),
-             y: (e.clientY - b.top)  * (cv.height / b.height) };
-  };
-
-  cv.addEventListener('pointerdown', e => {
-    cv.setPointerCapture(e.pointerId);
-    const p = local(e);
-    live.set(e.pointerId, p);
-    mapBusy = true;
-    if (live.size === 1){ startX = p.x; startY = p.y; startT = Date.now(); wandered = 0; }
-    if (live.size === 2){
-      const [a, b] = [...live.values()];
-      pinchD = Math.hypot(a.x - b.x, a.y - b.y);
-    }
-  });
-
-  cv.addEventListener('pointermove', e => {
-    const prev = live.get(e.pointerId);
-    if (!prev) return;
-    const p = local(e);
-    live.set(e.pointerId, p);
-    if (live.size === 1){
-      wandered += Math.hypot(p.x - prev.x, p.y - prev.y);
-      mapPanBy(p.x - prev.x, p.y - prev.y);
-    } else if (live.size === 2){
-      const [a, b] = [...live.values()];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinchD > 0 && d > 0){
-        mapZoomAt(Math.log2(d / pinchD), (a.x + b.x) / 2, (a.y + b.y) / 2);
-        wandered += 999;                    // a pinch is never a tap
-      }
-      pinchD = d;
-    }
-  });
-
-  const end = e => {
-    const p = live.get(e.pointerId);
-    live.delete(e.pointerId);
-    if (live.size < 2) pinchD = 0;
-    if (!live.size){
-      mapBusy = false;
-      scheduleMapDraw();                    // settle the pins at full quality
-      // a tap is short and stayed put; anything else was a drag
-      if (p && wandered < 8 && Date.now() - startT < 500){
-        const hit = pinAt(cv, e.clientX, e.clientY);
-        if (hit) openDay(hit.r.uid, hit.r.day);
-      }
-    }
-  };
-  cv.addEventListener('pointerup', end);
-  cv.addEventListener('pointercancel', end);
-
-  cv.addEventListener('wheel', e => {
-    e.preventDefault();
-    const p = local(e);
-    mapZoomAt(-e.deltaY * (e.deltaMode === 1 ? 0.06 : 0.0022), p.x, p.y);
-  }, { passive: false });
-
-  cv.addEventListener('dblclick', e => {
-    e.preventDefault();
-    const p = local(e);
-    mapZoomAt(1, p.x, p.y);
-  });
-}
-
-/* Nearest pin to the tap, within a fat finger's reach. Measured from the head,
-   not the point, because the head is what you aim at. */
-function pinAt(cv, clientX, clientY){
-  const box = cv.getBoundingClientRect();
-  const sx = cv.width / box.width, sy = cv.height / box.height;
-  const x = (clientX - box.left) * sx, y = (clientY - box.top) * sy;
-  const reach = 26 * sx;
-  let best = null, bestD = Infinity;
-  for (const p of mapPins){
-    if (p.x === undefined) continue;
-    const d = Math.hypot(p.x - x, (p.headY ?? p.y) - y);
-    if (d < bestD && d <= reach){ best = p; bestD = d; }
-  }
-  return best;
-}
-
-function renderMap(){
-  const mapped = RUNS.filter(r => inChallenge(r.day) && startOf(r));
-  const total  = RUNS.filter(r => inChallenge(r.day)).length;
-  $('#mapCount').textContent = total ? `${mapped.length} of ${total} runs mapped` : '';
-
-  // legend: everyone with a pin, most pins first
-  const byUid = new Map();
-  for (const r of mapped){
-    if (!byUid.has(r.uid)) byUid.set(r.uid, { uid:r.uid, name:nameOf(r.uid, r.name), n:0 });
-    byUid.get(r.uid).n++;
-  }
-  const people = [...byUid.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
-  const hues = mapHues(byUid.keys());
-  if (mapFilter && !byUid.has(mapFilter)) mapFilter = null;      // they dropped off the map
-  $('#mapLegend').innerHTML = people.length
-    ? `<button class="legchip ${mapFilter ? '' : 'on'}" type="button" data-mapfilter="">
-         Everyone <b>${mapped.length}</b></button>` +
-      people.map(p => `<button class="legchip ${mapFilter === p.uid ? 'on' : ''}" type="button"
-          data-mapfilter="${esc(p.uid)}">
-          <i style="background:hsl(${hues.get(p.uid)} 72% 58%)"></i>${
-          esc(p.uid === ME?.uid ? 'You' : p.name.split(' ')[0])} <b>${p.n}</b></button>`).join('')
-    : '';
-
-  mapPins = (mapFilter ? mapped.filter(r => r.uid === mapFilter) : mapped)
-    .map(r => ({ r, hue: hues.get(r.uid) ?? 0, ...startOf(r) }));
-  scheduleMapDraw();
-}
-
 function playerCalendar(p){
   return `<div class="cal-grid">${['S','M','T','W','T','F','S']
       .map(x => `<div class="cal-dow">${x}</div>`).join('')}</div>
@@ -4281,32 +3773,10 @@ function switchTab(name){
   activeTab = name;
   if (staleTabs.has(name)) renderTab(name);
   $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
-  ['today','feed','map','badges','board','finale'].forEach(t => show($('#tab-'+t), t === name));
+  ['today','feed','badges','board','finale'].forEach(t => show($('#tab-'+t), t === name));
   $('#scroll').scrollTo({top:0, behavior:'smooth'});
-  // the stage measures zero while the tab is hidden, so the map draws on arrival
-  if (name === 'map') requestAnimationFrame(scheduleMapDraw);
 }
 
-$('#mapLegend').addEventListener('click', e => {
-  const b = e.target.closest('[data-mapfilter]');
-  if (!b) return;
-  mapFilter = b.dataset.mapfilter || null;
-  renderMap();
-  mapFit();                    // and go to whoever is left, however far away
-});
-$('#mapCtl').addEventListener('click', e => {
-  const b = e.target.closest('[data-mapctl]');
-  if (!b) return;
-  const { w, h } = mapStageSize();
-  if (b.dataset.mapctl === 'fit') mapFit();
-  else mapZoomAt(b.dataset.mapctl === 'in' ? 0.9 : -0.9, w / 2, h / 2);
-});
-let mapResizeT = 0;
-window.addEventListener('resize', () => {
-  if (activeTab !== 'map') return;
-  clearTimeout(mapResizeT);
-  mapResizeT = setTimeout(scheduleMapDraw, 220);
-});
 $$('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 
 /* ---- motivation tile ---- */
@@ -5637,10 +5107,6 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
     hasShot: !!shot,
     hasPath: pts.length > 1,
     pathN: pts.length,
-    /* Where the run began, on the run document itself. The full route still lives
-       in its own doc — this one point is what the map tab needs, and having it
-       here saves fetching every route just to drop a pin. */
-    ...(pts.length ? { start: pts[0] } : {}),
     ...(weather ? { weather } : {}),
     ...(splits && splits.length ? { splits } : {}),
     startedAt: startedAt || Date.now(),
