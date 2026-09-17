@@ -230,6 +230,19 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .addrow:hover{color:var(--ink);border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.07)}
 .addrow:active{transform:scale(.99)}
 .addrow .k{font-size:15px;line-height:1}
+/* the leftover stretch: a distance box where a mile row has its remove button */
+.tailrow{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;
+  border-top:1px dashed rgba(255,255,255,.14)}
+.tailrow .n{flex:none;width:60px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-faint);white-space:nowrap}
+.tailrow .mi{flex:none;width:84px;position:relative}
+/* the stepper arrows land exactly where the "mi" sits, so they go */
+.tailrow .mi input{padding-right:26px;-moz-appearance:textfield;appearance:textfield}
+.tailrow .mi input::-webkit-outer-spin-button,
+.tailrow .mi input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tailrow .mi em{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;
+  font-size:11px;font-weight:600;color:var(--ink-faint);pointer-events:none}
+.tailrow .timepair{flex:1}
 #mnSplitSum{margin:11px 0 0}
 /* a small note under a field, for the things a label can't say in two words */
 .fieldnote{margin:-1px 0 9px;font-size:11.5px;line-height:1.45;color:var(--ink-faint);
@@ -1207,6 +1220,23 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <p class="fieldnote">One row per mile. These add up to your total time above.</p>
       <div id="mnSplits"></div>
       <button class="addrow" id="mnSplitAdd"><span class="k">＋</span>Add another mile</button>
+      <div class="tailrow" id="mnTailRow">
+        <span class="n">Last bit</span>
+        <div class="mi">
+          <input type="number" inputmode="decimal" step="0.01" min="0" max="0.99"
+                 placeholder="0.40" id="mnTailMi" aria-label="Distance of the last part of a mile" />
+          <em>mi</em>
+        </div>
+        <div class="timepair">
+          <input type="number" inputmode="numeric" step="1" min="0" max="120" placeholder="3"
+                 id="mnTailM" aria-label="Last bit minutes" />
+          <span>:</span>
+          <input type="number" inputmode="numeric" step="1" min="0" max="59" placeholder="00"
+                 id="mnTailS" aria-label="Last bit seconds" />
+        </div>
+      </div>
+      <p class="fieldnote" style="margin:7px 0 0">Only if your run ended part-way through a mile.
+        It counts toward your time, never toward the fastest-mile record.</p>
       <div id="mnSplitSum" class="pacehint"></div>
     </div>
     <div id="mnWhenWrap" class="field hide">
@@ -2292,7 +2322,7 @@ function postHTML(r, compact=false){
       <div class="pstat"><b class="mono">${clock(r.seconds||0)}</b><span>Time</span></div>
       <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
     </div>
-    ${splitChips(r.splits)}
+    ${splitChips(r)}
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
     <div class="reacts">
       <div class="ract-l">${reactBtns}</div>
@@ -2332,8 +2362,8 @@ const RECORDS = [
     note:'fastest single mile — a logged split where there is one, otherwise best average pace',
     value: p => Math.min(
       // a real split beats an average: a 5-miler at 8:00 can hide a 6:45 mile
-      ...p.runList.flatMap(r => Array.isArray(r.splits) ? r.splits.filter(s => s > 60) : []),
-      ...p.runList.filter(r => r.miles >= 1 && r.seconds > 30 && !(r.splits || []).length)
+      ...p.runList.flatMap(fullSplits),
+      ...p.runList.filter(r => r.miles >= 1 && r.seconds > 30 && !fullSplits(r).length)
                  .map(r => r.seconds / r.miles),
       Infinity) },
   { emoji:'🎯', title:'Best average pace', unit:'Per mile', better:'min', fmt:paceStr,
@@ -2382,14 +2412,14 @@ function dayStreakHit(sortedKeys, n){
 
 const ACHIEVEMENTS = [
   { key:'speed', emoji:'⚡', title:'Speed Demon', req:'Log a mile under 8:00 pace', hue:46,
-    run: r => (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s < 480)) ||
+    run: r => fullSplits(r).some(s => s < 480) ||
               (r.miles >= 1 && paceOf(r) && paceOf(r) < 480) },
 
   /* The tier above Speed Demon. Stacked on purpose: a 6:50 mile earns both, so
      nobody loses a badge they already had by getting faster. "Or under" is literal
      — 7:00.0 counts, where Speed Demon's 8:00 does not. */
   { key:'stupidfast', emoji:'🚀', title:'Stupid Fast', req:'Log a mile at 7:00 pace or under', hue:352,
-    run: r => (Array.isArray(r.splits) && r.splits.some(s => s > 60 && s <= 420)) ||
+    run: r => fullSplits(r).some(s => s <= 420) ||
               (r.miles >= 1 && paceOf(r) && paceOf(r) <= 420) },
 
   { key:'halfway', emoji:'💯', title:'Halfway Hero', req:'15 days logged in a row', hue:158,
@@ -2787,15 +2817,19 @@ function wrappedStats(p, ranked){
   const least = (arr, f) => arr.length ? arr.reduce((a,b) => f(b) < f(a) ? b : a) : null;
 
   // ---- mile splits ----
-  const splitRuns = runs.filter(r => Array.isArray(r.splits) && r.splits.length);
-  const allSplits = splitRuns.flatMap(r => r.splits.filter(s => s > 60));
-  // a negative split is a run whose last mile beat its first
-  const negatives = splitRuns.filter(r => r.splits.length > 1 && r.splits[r.splits.length-1] < r.splits[0]).length;
+  const splitRuns = runs.filter(r => fullSplits(r).length);
+  const allSplits = splitRuns.flatMap(fullSplits);
+  // a negative split is a run whose last FULL mile beat its first — the leftover
+  // stretch is always quicker and would call every run negative
+  const negatives = splitRuns.filter(r => {
+    const f = fullSplits(r);
+    return f.length > 1 && f[f.length - 1] < f[0];
+  }).length;
 
   // fastest single mile: a real split beats an average, same rule as the record board
   const fastest = Math.min(
     ...allSplits,
-    ...timed.filter(r => r.miles >= 1 && !(r.splits || []).length).map(r => r.seconds / r.miles),
+    ...timed.filter(r => r.miles >= 1 && !fullSplits(r).length).map(r => r.seconds / r.miles),
     Infinity);
 
   // opening ten days against closing ten — did the month make them faster?
@@ -3123,7 +3157,7 @@ function dayRunHTML(r){
       <div class="pstat"><b class="mono">${clock(r.seconds || 0)}</b><span>Time</span></div>
       <div class="pstat"><b class="mono">${pace}</b><span>Per mile</span></div>
     </div>
-    ${splitChips(r.splits)}
+    ${splitChips(r)}
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
   </div>`;
 }
@@ -3378,7 +3412,7 @@ async function deleteRun(id, run){
 function bestMileDay(p){
   let best = Infinity, day = null;
   for (const r of p.runList){
-    const splits = Array.isArray(r.splits) ? r.splits.filter(x => x > 60) : [];
+    const splits = fullSplits(r);
     let v = Infinity;
     if (splits.length) v = Math.min(...splits);
     else if (r.miles >= 1 && r.seconds > 30) v = r.seconds / r.miles;
@@ -4110,6 +4144,29 @@ function readSplits(){
 /* only the splits that were actually filled in count */
 const filledSplits = () => readSplits().filter(v => v > 0);
 
+/* The stretch at the end that wasn't a whole mile. Has to be both a distance
+   under a mile and a time, or it isn't a leg — half an entry is ignored rather
+   than half-saved. */
+function readTail(){
+  const mi = parseFloat($('#mnTailMi').value);
+  const m  = parseFloat($('#mnTailM').value) || 0;
+  const s  = parseFloat($('#mnTailS').value) || 0;
+  const secs = Math.round(m * 60 + s);
+  if (!(mi > 0) || mi >= 1 || secs <= 0) return null;
+  return { miles: Math.round(mi * 100) / 100, seconds: secs };
+}
+const clearTail = () => { $('#mnTailMi').value = ''; $('#mnTailM').value = ''; $('#mnTailS').value = ''; };
+
+/* What's left over after the whole miles they've timed — offered so nobody has
+   to do the subtraction, and only while the box is still empty. */
+function suggestTail(){
+  const el = $('#mnTailMi');
+  if (el.value !== '') return;
+  const mi = parseFloat($('#mnMiles').value);
+  const rest = Math.round(((mi || 0) - filledSplits().length) * 100) / 100;
+  el.placeholder = (rest > 0.01 && rest < 1) ? rest.toFixed(2) : '0.40';
+}
+
 function renderSplitRows(n){
   const current = readSplits();
   $('#mnSplits').innerHTML = splitRows(n);
@@ -4132,15 +4189,20 @@ function markTotalDerived(on){
 
 function updateSplitSum(){
   const vals = filledSplits();
+  const tail = readTail();
   const el = $('#mnSplitSum');
-  if (!vals.length){
+  suggestTail();
+  if (!vals.length && !tail){
     el.textContent = ''; el.classList.remove('on');
     markTotalDerived(false);
     return;
   }
-  const total = vals.reduce((a, b) => a + b, 0);
-  const best  = Math.min(...vals);
-  el.textContent = `${vals.length} mile${vals.length > 1 ? 's' : ''} · ${clock(total)} · best ${paceStr(best)}`;
+  // the leftover leg is part of the time even though it is never a mile
+  const total = vals.reduce((a, b) => a + b, 0) + (tail ? tail.seconds : 0);
+  const best  = vals.length ? Math.min(...vals) : null;
+  el.textContent = `${vals.length} mile${vals.length === 1 ? '' : 's'}` +
+    (tail ? ` + ${tail.miles.toFixed(2)} mi` : '') + ` · ${clock(total)}` +
+    (best ? ` · best ${paceStr(best)}` : '');
   el.classList.add('on');
   // splits are the source of truth once they exist — fill the total in for them
   markTotalDerived(true);
@@ -4167,6 +4229,7 @@ $('#mnSplitToggle').onclick = () => {
     renderSplitRows(Math.max(1, Math.min(MAX_SPLITS, Math.floor(mi || 1))));
   } else {
     $('#mnSplits').innerHTML = '';
+    clearTail();
     updateSplitSum();
   }
 };
@@ -4176,6 +4239,7 @@ $('#mnSplitAdd').onclick = () => {
   renderSplitRows(n + 1);
 };
 $('#mnSplits').oninput = updateSplitSum;
+$('#mnTailRow').oninput = updateSplitSum;
 $('#mnSplits').onclick = e => {
   const x = e.target.closest('[data-sx]');
   if (!x) return;
@@ -4191,11 +4255,43 @@ $('#mnSplits').onclick = e => {
 };
 
 /* the chips shown on a feed post */
-function splitChips(splits){
-  if (!Array.isArray(splits) || splits.length < 2) return '';
-  const best = Math.min(...splits);
-  return `<div class="splits">${splits.map((s, i) =>
-    `<span class="splitchip ${s === best ? 'best' : ''}"><i>${i + 1}</i>${paceStr(s)}</span>`).join('')}</div>`;
+/* ---- whole miles, and the leftover stretch, kept apart ----
+   A 2.4 mile run timed in three rows has two miles and a 0.4 mile tail. Counted
+   as a mile, that tail is a 3:20 "mile" that walks off with the Fastest mile
+   record, so every record and badge reads splits through here.
+
+   `tail` says so explicitly. Runs logged before that field existed are still
+   read correctly: if someone timed one more row than the run has whole miles,
+   that last row is the leftover, not a mile. Any other shape is left alone —
+   two rows on a 2.4 mile run is someone who timed two miles and stopped. */
+function mileSplits(r){
+  const all = (Array.isArray(r.splits) ? r.splits : []).filter(s => s > 0);
+  if (!all.length) return { full: [], tail: null };
+
+  const t = r.tail;
+  if (t && t.miles > 0 && t.miles < 1 && t.seconds > 0)
+    return { full: all, tail: { miles: +t.miles, seconds: +t.seconds } };
+
+  const whole = Math.floor((r.miles || 0) + 1e-9);
+  const rest  = Math.round(((r.miles || 0) - whole) * 1000) / 1000;
+  if (rest >= 0.02 && all.length === whole + 1)
+    return { full: all.slice(0, whole), tail: { miles: rest, seconds: all[all.length - 1] } };
+
+  return { full: all, tail: null };
+}
+/* just the whole miles — what a "fastest mile" is allowed to be */
+const fullSplits = r => mileSplits(r).full.filter(s => s > 60);
+
+function splitChips(r){
+  const { full, tail } = mileSplits(r || {});
+  if (full.length + (tail ? 1 : 0) < 2) return '';
+  const best = full.length ? Math.min(...full) : Infinity;
+  const chips = full.map((s, i) =>
+    `<span class="splitchip ${s === best ? 'best' : ''}"><i>${i + 1}</i>${paceStr(s)}</span>`);
+  // the tail shows its distance instead of a mile number, and can never be "best"
+  if (tail) chips.push(`<span class="splitchip" title="Part of a mile — not counted as one">` +
+    `<i>${tail.miles.toFixed(2)} mi</i>${clock(tail.seconds)}</span>`);
+  return `<div class="splits">${chips.join('')}</div>`;
 }
 
 /* ============================================================
@@ -4945,6 +5041,7 @@ $('#btnManual').onclick = () => {
   show($('#mnSplitWrap'), false);
   setOpt('#mnSplitToggle', false, '✕', 'Drop splits', '＋', 'Mile splits');
   $('#mnSplits').innerHTML = ''; $('#mnSplitSum').textContent = '';
+  clearTail();
   markTotalDerived(false);
   show($('#manualSheet'), true);
 };
@@ -5065,7 +5162,7 @@ $('#mnSave').onclick = async () => {
   const ok = await saveRun({ miles, seconds: secs, path: [], manual:true,
                              note: $('#mnNote').value.trim(), photo: mnPhoto.url, shot: mnShot.url,
                              day: dayKey(when), startedAt: when.getTime(), weather: mnWx,
-                             splits: filledSplits() });
+                             splits: filledSplits(), tail: readTail() });
   const crossed = crossedToday(before, miles, dayKey(when));
   btn.disabled = false; btn.textContent = 'Log it';
   if (ok){
@@ -5074,7 +5171,7 @@ $('#mnSave').onclick = async () => {
   }
 };
 
-async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather, splits}){
+async function saveRun({miles, seconds, path, manual, note, photo, shot, imported, day, startedAt, weather, splits, tail}){
   /* The rules cap miles at 200 and refuse a negative time. Offline, a write that
      breaks those is queued, reported as saved, then silently dropped by the server —
      so it has to be caught here, on the client, while the run is still recoverable. */
@@ -5112,6 +5209,9 @@ async function saveRun({miles, seconds, path, manual, note, photo, shot, importe
     pathN: pts.length,
     ...(weather ? { weather } : {}),
     ...(splits && splits.length ? { splits } : {}),
+    /* the final part-mile, kept out of `splits` so it can never be mistaken for
+       a mile by the records or the speed badges */
+    ...(tail && tail.miles > 0 && tail.seconds > 0 ? { tail } : {}),
     startedAt: startedAt || Date.now(),
     createdAt: serverTimestamp()
   }).then(() => null, e => ({ what:'run', e }));
