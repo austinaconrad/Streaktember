@@ -2174,8 +2174,10 @@ function renderCountdown(){
   let tone, title, sub;
   if (toLog === 0){
     tone  = 'safe';
-    title = 'That is the whole month.';
-    sub   = perfect ? 'Thirty for thirty.' : `${me.completed.length} days in the book.`;
+    title = perfect ? 'Certified goated behavior from you.'
+                    : 'Thanks for competing in Streaktember.';
+    sub   = perfect ? 'Aura farming from day 1 to day 30.'
+                    : 'See you next year!';
   } else if (!me || !me.runs){
     tone  = 'warn';
     title = 'No miles yet.';
@@ -2190,7 +2192,7 @@ function renderCountdown(){
     sub   = `${toLog} more and Iron Legs is yours${crowd}`;
   } else if (perfect){
     tone  = 'warn';
-    title = 'Today is the one that could end it.';
+    title = "Lace up. The calendar isn't going to fill itself in.";
     sub   = `Perfect through day ${d - 1}${crowd}`;
   } else {
     tone  = 'gone';
@@ -2200,7 +2202,7 @@ function renderCountdown(){
 
   el.className = `glass cdown ${tone}`;
   el.innerHTML = `
-    <div class="cd-n"><b>${toLog}</b><span>${toLog === 0 ? 'all done' : 'left to log'}</span></div>
+    <div class="cd-n"><b>${toLog}</b><span>${toLog === 0 ? 'all done' : 'days to go'}</span></div>
     <div class="cd-t"><b>${esc(title)}</b><span>${esc(sub)}</span></div>`;
   show(el, true);
 }
