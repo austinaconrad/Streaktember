@@ -314,6 +314,10 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .photoslot .addbtn{width:100%;padding:14px;font-size:14.5px;border-style:dashed}
 .photoslot figure{margin:0;position:relative;border-radius:var(--r-md);overflow:hidden;border:1px solid rgba(255,255,255,.14)}
 .photoslot figure img{display:block;width:100%;max-height:280px;object-fit:cover}
+/* says why the picture is moving, so a loop doesn't read as a glitch */
+.cliptag{position:absolute;left:10px;top:10px;font-size:9.5px;font-weight:800;letter-spacing:.11em;
+  text-transform:uppercase;padding:4px 8px;border-radius:999px;color:#06131a;
+  background:var(--mint);box-shadow:0 4px 12px -4px rgba(0,0,0,.6)}
 .photoslot .swap{position:absolute;right:9px;bottom:9px;display:flex;gap:7px}
 .photoslot .swap button{appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(10,10,25,.62);
   backdrop-filter:blur(14px);color:var(--ink);font:600 12.5px 'Outfit',sans-serif;padding:8px 13px;border-radius:999px;cursor:pointer}
@@ -1168,7 +1172,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
     <p class="sub" id="saveSub">—</p>
     <div class="route" id="savePreview"></div>
     <div id="svPhoto" class="photoslot"></div>
-    <input type="file" accept="image/*" id="svPhotoInput" class="vh" />
+    <input type="file" accept="image/*,video/*" id="svPhotoInput" class="vh" />
     <div class="pstats" style="margin-top:12px">
       <div class="pstat"><b class="mono" id="svMiles">—</b><span>Miles</span></div>
       <div class="pstat"><b class="mono" id="svTime">—</b><span>Time</span></div>
@@ -1195,7 +1199,7 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
       <div id="mnPhoto" class="photoslot"></div>
     </div>
     <input type="file" accept="image/*" id="mnShotInput" class="vh" />
-    <input type="file" accept="image/*" id="mnPhotoInput" class="vh" />
+    <input type="file" accept="image/*,video/*" id="mnPhotoInput" class="vh" />
     <div class="two mt-row" style="margin-top:14px">
       <div class="field"><label>Total miles</label><input id="mnMiles" type="number" inputmode="decimal" step="0.01" min="0" placeholder="1.00" /></div>
       <div class="field" id="mnTimeField"><label>Total time</label>
@@ -2202,7 +2206,8 @@ function renderPhotoWall(){
         const who = nameOf(r.uid, r.name);
         const label = `${who} · ${shortDay(r.day)}`;
         return `<figure class="pw" data-photo="${esc(key)}">
-          ${hit ? `<img src="${esc(hit)}" alt="${esc(label)}"/>` : '<div class="ph"></div>'}
+          ${hit ? `<img class="${isClip(hit) ? 'clip' : ''}" src="${esc(stillOf(hit))}" alt="${esc(label)}"/>`
+                : '<div class="ph"></div>'}
           <figcaption><b data-who="${esc(r.uid)}" title="See ${esc(who)}'s profile">${
             esc(r.uid === ME?.uid ? 'You' : who.split(' ')[0])
           }</b><span>${esc(shortDay(r.day))}</span></figcaption>
@@ -2248,7 +2253,8 @@ function runMedia(r, path){
   const img = (kind, cls, alt) => {
     const key = `${r.id}|${kind}`, hit = photoCache.get(key);
     return `<div class="${cls}" data-photo="${key}">${
-      hit ? `<img src="${hit}" alt="${alt}"/>` : `<div class="ph">${cls === 'shot' ? 'loading photo…' : ''}</div>`}</div>`;
+      hit ? `<img class="${isClip(hit) ? 'clip' : ''}" src="${stillOf(hit)}" alt="${alt}"/>`
+          : `<div class="ph">${cls === 'shot' ? 'loading photo…' : ''}</div>`}</div>`;
   };
   if (hasMapData)
     return `<div class="route"${mapAttr}>${routeSVG(known || [])}${
@@ -2257,14 +2263,15 @@ function runMedia(r, path){
   if (r.hasShot)
     return `<div class="shot" data-photo="${r.id}|shot">${
         photoCache.get(`${r.id}|shot`)
-          ? `<img src="${photoCache.get(`${r.id}|shot`)}" alt="Run screenshot"/>`
+          ? `<img src="${stillOf(photoCache.get(`${r.id}|shot`))}" alt="Run screenshot"/>`
           : `<div class="ph">loading photo…</div>`
       }${r.hasPhoto ? img('photo','selfie','Run selfie') : ''}</div>`;
   if (r.hasPhoto)
-    return `<div class="shot" data-photo="${r.id}|photo">${
-        photoCache.get(`${r.id}|photo`)
-          ? `<img src="${photoCache.get(`${r.id}|photo`)}" alt="Run selfie"/>`
-          : `<div class="ph">loading photo…</div>`}</div>`;
+    return `<div class="shot" data-photo="${r.id}|photo">${(() => {
+        const hit = photoCache.get(`${r.id}|photo`);
+        return hit ? `<img class="${isClip(hit) ? 'clip' : ''}" src="${stillOf(hit)}" alt="Run selfie"/>`
+                   : `<div class="ph">loading photo…</div>`;
+      })()}</div>`;
   return `<div class="route"${mapAttr}>${routeSVG(path)}</div>`;
 }
 
@@ -3012,7 +3019,7 @@ function wrappedCards(s){
 
   if (s.photos.length) cards.push(card('t-photos', 'Your month in pictures',
     `<div class="wshots n${Math.min(s.photos.length,9)}">${s.photos.map(x =>
-      `<figure><img src="${esc(x.url)}" alt=""/><figcaption>${esc(shortDay(x.day))}</figcaption></figure>`).join('')}</div>` +
+      `<figure><img src="${esc(stillOf(x.url))}" alt=""/><figcaption>${esc(shortDay(x.day))}</figcaption></figure>`).join('')}</div>` +
     line(`${s.photos.length} ${s.photos.length === 1 ? 'shot' : 'shots'} from the month`)));
 
   // with a single run this just restates the miles card
@@ -3867,7 +3874,16 @@ document.addEventListener('click', async e => {
 
   const bigPhoto = e.target.closest('.shot > img, .selfie > img, .pw > img');
   if (bigPhoto){
-    $('#pvImg').src = bigPhoto.src;
+    const pv = $('#pvImg');
+    // carry the loop into the full-screen view rather than freezing on a frame
+    pv.classList.remove('clip'); pv.__clip = null;
+    if (bigPhoto.__clip) mountClip(pv, bigPhoto.__clip);
+    else {
+      const holder = bigPhoto.closest('[data-photo]');
+      const clip = holder ? photoCache.get(holder.dataset.photo) : null;
+      if (isClip(clip)) mountClip(pv, clip);
+    }
+    pv.src = bigPhoto.src;
     show($('#photoView'), true);
     return;
   }
@@ -4785,6 +4801,112 @@ $('#gpxInput').onchange = async () => {
    ============================================================ */
 const PHOTO_MAX_BYTES = 700000;      // Firestore caps a document at ~1 MB
 
+/* ============================================================
+   LOOPING SELFIES
+   A clip is a strip of JPEG frames, not a video file. Two reasons, both learned
+   the hard way: there is no codec for an iPhone and a Pixel to disagree about,
+   and there is nothing for a browser's power saving to pause — the motivation
+   clip on Today is an animated image for exactly that reason, after a <video>
+   stopped looping after twice round. Frames also ride the existing photo
+   pipeline unchanged: one media document, same cache, same lazy loading.
+   ============================================================ */
+const CLIP_FPS = 10, CLIP_SECONDS = 2.4, CLIP_DIM = 380;
+const isClip  = v => !!v && typeof v === 'object' && Array.isArray(v.frames) && v.frames.length > 1;
+/* every place that just needs a picture gets the first frame */
+const stillOf = v => isClip(v) ? v.frames[0] : (typeof v === 'string' ? v : null);
+
+/* Pull evenly spaced frames out of a video file. Seeking rather than playing:
+   play() gives whatever the decoder happens to be showing, and iOS will not
+   play at all without a gesture, but currentTime + the seeked event is exact
+   and works while the element is off-screen. */
+async function videoStrip(file){
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto';
+  v.setAttribute('playsinline', '');                 // iOS needs the attribute too
+  v.src = url;
+  try {
+    await new Promise((res, rej) => {
+      v.onloadeddata = res;
+      v.onerror = () => rej(new Error('bad-video'));
+      setTimeout(() => rej(new Error('bad-video')), 20000);
+    });
+    const w0 = v.videoWidth, h0 = v.videoHeight;
+    if (!w0 || !h0) throw new Error('bad-video');
+    const dur = (isFinite(v.duration) && v.duration > 0) ? v.duration : CLIP_SECONDS;
+    const span = Math.min(dur, CLIP_SECONDS);
+    const n = Math.max(2, Math.round(span * CLIP_FPS));
+
+    const k = Math.min(1, CLIP_DIM / Math.max(w0, h0));
+    const c = document.createElement('canvas');
+    c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+    const ctx = c.getContext('2d');
+
+    // grab each frame once, encoding as we go so only one canvas is ever alive
+    const times = [], frames = [];
+    for (let i = 0; i < n; i++){
+      const t = span * (i / (n - 1 || 1));
+      // the last frame can sit past the final decodable one; back off a hair
+      await seekTo(v, Math.min(t, Math.max(0, dur - 0.04)));
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      times.push(t);
+      frames.push(c.toDataURL('image/jpeg', 0.55));
+    }
+
+    /* It all has to fit one Firestore document, so trade quality first, then
+       frame rate, and only then give up. */
+    const size = arr => arr.reduce((sum, s) => sum + s.length, 0);
+    for (let q = 0.42; size(frames) > PHOTO_MAX_BYTES && q >= 0.3; q -= 0.08){
+      for (let i = 0; i < frames.length; i++){
+        await seekTo(v, Math.min(times[i], Math.max(0, dur - 0.04)));
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+        frames[i] = c.toDataURL('image/jpeg', q);
+      }
+    }
+    let kept = frames;
+    while (size(kept) > PHOTO_MAX_BYTES && kept.length > 4)
+      kept = kept.filter((_, i) => i % 2 === 0);          // halve the frame rate
+    if (size(kept) > PHOTO_MAX_BYTES) throw new Error('too-big');
+    if (kept.length < 2) throw new Error('bad-video');
+    return { frames: kept, fps: Math.max(4, Math.round(CLIP_FPS * kept.length / n)) };
+  } finally {
+    v.src = '';
+    URL.revokeObjectURL(url);
+  }
+}
+function seekTo(v, t){
+  return new Promise((res, rej) => {
+    const done = () => { v.removeEventListener('seeked', done); res(); };
+    v.addEventListener('seeked', done);
+    setTimeout(() => { v.removeEventListener('seeked', done); rej(new Error('bad-video')); }, 8000);
+    v.currentTime = t;
+  });
+}
+
+/* One ticker for every clip on screen. Frames are swapped on an <img>, which the
+   browser has already decoded and cached, so this stays cheap. An element finds
+   its frames either from the photo cache (feed, wall, day sheet) or from a strip
+   hung on it directly (the preview in the log sheet, the full-screen viewer). */
+function mountClip(img, clip){
+  img.classList.add('clip');
+  img.__clip = clip;
+  for (const f of clip.frames) { const p = new Image(); p.src = f; }   // warm the decoder
+}
+let clipFrame = 0;
+setInterval(() => {
+  if (document.hidden) return;
+  const imgs = document.querySelectorAll('img.clip');
+  if (!imgs.length) return;
+  clipFrame++;
+  for (const img of imgs){
+    const holder = img.closest('[data-photo]');
+    const clip = img.__clip || (holder ? photoCache.get(holder.dataset.photo) : null);
+    if (!isClip(clip)) continue;
+    const next = clip.frames[clipFrame % clip.frames.length];
+    if (img.getAttribute('src') !== next) img.src = next;
+  }
+}, Math.round(1000 / CLIP_FPS));
+
 async function shrinkImage(file, maxDim = 900, quality = 0.62){
   let src;
   try { src = await createImageBitmap(file, { imageOrientation:'from-image' }); }
@@ -4814,11 +4936,15 @@ function photoSlot(slotId, inputId, label = '📸 Add a selfie'){
   const input = document.getElementById(inputId);
   const state = { url: null };
   const paint = () => {
-    slot.innerHTML = state.url
-      ? `<figure><img src="${state.url}" alt="Your post-run selfie"/>
+    const still = stillOf(state.url);
+    slot.innerHTML = still
+      ? `<figure><img src="${still}" alt="Your post-run selfie"/>
+           ${isClip(state.url) ? '<span class="cliptag">Loops</span>' : ''}
            <div class="swap"><button data-act="retake">Retake</button><button data-act="drop">Remove</button></div>
          </figure>`
       : `<button class="btn ghost addbtn" data-act="add">${label}</button>`;
+    // the preview carries its own frames — nothing has been saved to read yet
+    if (isClip(state.url)) mountClip(slot.querySelector('img'), state.url);
   };
   slot.onclick = e => {
     const act = e.target.closest('[data-act]')?.dataset.act;
@@ -4827,9 +4953,17 @@ function photoSlot(slotId, inputId, label = '📸 Add a selfie'){
   };
   input.onchange = async () => {
     const f = input.files?.[0]; if (!f) return;
-    slot.innerHTML = `<button class="btn ghost addbtn" disabled>Shrinking photo…</button>`;
-    try { state.url = await shrinkImage(f); }
-    catch (err){ console.error(err); toast(err.message === 'too-big' ? 'That photo is too large' : 'Could not read that photo'); state.url = null; }
+    const video = /^video\//.test(f.type || '');
+    slot.innerHTML = `<button class="btn ghost addbtn" disabled>${
+      video ? 'Making your loop…' : 'Shrinking photo…'}</button>`;
+    try { state.url = video ? await videoStrip(f) : await shrinkImage(f); }
+    catch (err){
+      console.error(err);
+      toast(err.message === 'too-big'
+              ? (video ? 'That video is too long to loop — try a shorter one' : 'That photo is too large')
+              : video ? 'Could not read that video' : 'Could not read that photo');
+      state.url = null;
+    }
     paint();
   };
   state.reset = () => { state.url = null; input.value = ''; paint(); };
@@ -4904,7 +5038,8 @@ const photoSeen  = new IntersectionObserver(async entries => {
 
 function paintPhoto(el, url){
   const ph = el.querySelector('.ph');
-  if (!url){ if (ph) ph.textContent = 'Photo unavailable'; return; }
+  const still = stillOf(url);
+  if (!still){ if (ph) ph.textContent = 'Photo unavailable'; return; }
   if (el.querySelector(':scope > img')) return;      // postHTML already drew it from cache
   const img = new Image();
   img.alt = 'Run selfie';
@@ -4913,8 +5048,9 @@ function paintPhoto(el, url){
     el.querySelectorAll(':scope > img').forEach(n => n.remove());   // never stack two
     ph?.remove();
     el.prepend(img);
+    if (isClip(url)) mountClip(img, url);            // the ticker takes it from here
   };
-  img.src = url;
+  img.src = still;
 }
 /* Only the top 12 posts carry a live comment listener, so every post below that
    showed "Comment" even when it had two. Fetch the count once per post, for exactly
