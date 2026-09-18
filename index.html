@@ -4815,72 +4815,111 @@ const isClip  = v => !!v && typeof v === 'object' && Array.isArray(v.frames) && 
 /* every place that just needs a picture gets the first frame */
 const stillOf = v => isClip(v) ? v.frames[0] : (typeof v === 'string' ? v : null);
 
-/* Pull evenly spaced frames out of a video file. Seeking rather than playing:
-   play() gives whatever the decoder happens to be showing, and iOS will not
-   play at all without a gesture, but currentTime + the seeked event is exact
-   and works while the element is off-screen. */
+/* Pull evenly spaced frames out of a video file.
+
+   Seeking rather than playing: play() gives whatever the decoder happens to be
+   showing, and iOS will not play at all without a gesture, but currentTime plus
+   the seeked event is exact and works off-screen.
+
+   Two things this learned the hard way on iPhones. A <video> that is never put
+   in the document often refuses to decode at all on iOS Safari, so it goes in
+   the page (two pixels, off to one side) and comes out again in the finally.
+   And one seek that never reports back must not sink the whole import — a frame
+   that fails is skipped, and only a clip that ends up with fewer than two
+   usable frames is a failure. */
+function videoEvent(el, names, ms, code){
+  return new Promise((res, rej) => {
+    const off = () => { names.forEach(n => el.removeEventListener(n, hit)); clearTimeout(timer); };
+    const hit = () => { off(); res(); };
+    const timer = setTimeout(() => { off(); rej(new Error(code)); }, ms);
+    names.forEach(n => el.addEventListener(n, hit, { once:true }));
+    el.addEventListener('error', () => { off(); rej(new Error(code)); }, { once:true });
+  });
+}
+
+/* Resolves true if the frame at t is ready to draw, false if this one is a dud. */
+async function seekTo(v, t){
+  if (Math.abs(v.currentTime - t) < 0.001 && v.readyState >= 2) return true;
+  try {
+    const wait = videoEvent(v, ['seeked'], 6000, 'slow-seek');
+    v.currentTime = t;
+    await wait;
+    return v.readyState >= 2;
+  } catch { return false; }
+}
+
 async function videoStrip(file){
   const url = URL.createObjectURL(file);
   const v = document.createElement('video');
-  v.muted = true; v.playsInline = true; v.preload = 'auto';
-  v.setAttribute('playsinline', '');                 // iOS needs the attribute too
+  v.muted = true; v.defaultMuted = true; v.playsInline = true; v.preload = 'auto';
+  v.setAttribute('muted', '');
+  v.setAttribute('playsinline', '');
+  v.setAttribute('webkit-playsinline', '');          // older iOS reads this one
+  // in the page but out of the way: iOS will not decode a detached video
+  v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+  document.body.appendChild(v);
   v.src = url;
+  v.load();
+
   try {
-    await new Promise((res, rej) => {
-      v.onloadeddata = res;
-      v.onerror = () => rej(new Error('bad-video'));
-      setTimeout(() => rej(new Error('bad-video')), 20000);
-    });
+    await videoEvent(v, ['loadedmetadata'], 30000, 'no-metadata');
+    if (v.readyState < 2)
+      await videoEvent(v, ['loadeddata', 'canplay', 'canplaythrough'], 30000, 'no-frames');
+
     const w0 = v.videoWidth, h0 = v.videoHeight;
-    if (!w0 || !h0) throw new Error('bad-video');
-    const dur = (isFinite(v.duration) && v.duration > 0) ? v.duration : CLIP_SECONDS;
+    console.info('[clip]', file.type || 'unknown type', Math.round(file.size / 1024) + 'KB',
+                 w0 + '×' + h0, (v.duration || 0).toFixed(1) + 's');
+    if (!w0 || !h0) throw new Error('no-frames');
+
+    /* Safari often won't paint a video into a canvas until its decoder has run
+       once. A muted play that is stopped immediately is enough, and is allowed
+       without a gesture; if the browser refuses, carry on and hope. */
+    try { const p = v.play(); if (p) { await p; } v.pause(); } catch { /* no gesture */ }
+
+    const dur  = (isFinite(v.duration) && v.duration > 0) ? v.duration : CLIP_SECONDS;
     const span = Math.min(dur, CLIP_SECONDS);
-    const n = Math.max(2, Math.round(span * CLIP_FPS));
+    const n    = Math.max(2, Math.round(span * CLIP_FPS));
+    const last = Math.max(0, dur - 0.05);
 
     const k = Math.min(1, CLIP_DIM / Math.max(w0, h0));
     const c = document.createElement('canvas');
     c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
     const ctx = c.getContext('2d');
 
-    // grab each frame once, encoding as we go so only one canvas is ever alive
     const times = [], frames = [];
     for (let i = 0; i < n; i++){
-      const t = span * (i / (n - 1 || 1));
-      // the last frame can sit past the final decodable one; back off a hair
-      await seekTo(v, Math.min(t, Math.max(0, dur - 0.04)));
+      const t = Math.min(span * (i / (n - 1 || 1)), last);
+      if (!await seekTo(v, t)) continue;             // a dud frame, not a dud video
       ctx.drawImage(v, 0, 0, c.width, c.height);
       times.push(t);
       frames.push(c.toDataURL('image/jpeg', 0.55));
     }
+    if (frames.length < 2) throw new Error('no-frames');
 
     /* It all has to fit one Firestore document, so trade quality first, then
        frame rate, and only then give up. */
     const size = arr => arr.reduce((sum, s) => sum + s.length, 0);
     for (let q = 0.42; size(frames) > PHOTO_MAX_BYTES && q >= 0.3; q -= 0.08){
       for (let i = 0; i < frames.length; i++){
-        await seekTo(v, Math.min(times[i], Math.max(0, dur - 0.04)));
+        if (!await seekTo(v, times[i])) continue;
         ctx.drawImage(v, 0, 0, c.width, c.height);
         frames[i] = c.toDataURL('image/jpeg', q);
       }
     }
     let kept = frames;
     while (size(kept) > PHOTO_MAX_BYTES && kept.length > 4)
-      kept = kept.filter((_, i) => i % 2 === 0);          // halve the frame rate
+      kept = kept.filter((_, i) => i % 2 === 0);     // halve the frame rate
     if (size(kept) > PHOTO_MAX_BYTES) throw new Error('too-big');
-    if (kept.length < 2) throw new Error('bad-video');
+    if (kept.length < 2) throw new Error('no-frames');
+    console.info('[clip] kept', kept.length, 'frames,', Math.round(size(kept) / 1024) + 'KB');
     return { frames: kept, fps: Math.max(4, Math.round(CLIP_FPS * kept.length / n)) };
   } finally {
-    v.src = '';
+    try { v.pause(); } catch {}
+    v.removeAttribute('src');
+    try { v.load(); } catch {}
+    v.remove();
     URL.revokeObjectURL(url);
   }
-}
-function seekTo(v, t){
-  return new Promise((res, rej) => {
-    const done = () => { v.removeEventListener('seeked', done); res(); };
-    v.addEventListener('seeked', done);
-    setTimeout(() => { v.removeEventListener('seeked', done); rej(new Error('bad-video')); }, 8000);
-    v.currentTime = t;
-  });
 }
 
 /* One ticker for every clip on screen. Frames are swapped on an <img>, which the
@@ -4958,10 +4997,19 @@ function photoSlot(slotId, inputId, label = '📸 Add a selfie'){
       video ? 'Making your loop…' : 'Shrinking photo…'}</button>`;
     try { state.url = video ? await videoStrip(f) : await shrinkImage(f); }
     catch (err){
-      console.error(err);
-      toast(err.message === 'too-big'
-              ? (video ? 'That video is too long to loop — try a shorter one' : 'That photo is too large')
-              : video ? 'Could not read that video' : 'Could not read that photo');
+      console.error('[clip]', err);
+      /* One message for every failure told nobody anything — and told me nothing
+         when it did fail. Each cause gets its own line, and the console carries
+         the format, size and duration alongside it. */
+      const why = {
+        'no-metadata': "Couldn't open that video — this browser may not support its format.",
+        'no-frames'  : "Couldn't read pictures out of that video. Try a shorter clip.",
+        'too-big'    : 'That video is too long to loop — try a shorter one.',
+        'too-big-photo': 'That photo is too large'
+      };
+      toast(why[video ? err.message : (err.message === 'too-big' ? 'too-big-photo' : '')] ||
+            (video ? "Couldn't use that video (" + (err.message || 'unknown') + ')'
+                   : 'Could not read that photo'), 6000);
       state.url = null;
     }
     paint();
