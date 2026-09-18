@@ -124,6 +124,29 @@ header{flex:none;display:flex;align-items:center;justify-content:space-between;
 .done-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;
   background:rgba(94,242,192,.16);border:1px solid rgba(94,242,192,.35);color:var(--mint);margin-top:9px}
 
+/* ---- the countdown ---- */
+/* The number is what you still have to LOG, not what's on the calendar, so it
+   drops the moment you log and the tile changes colour with it. */
+.cdown{display:flex;align-items:center;gap:14px;padding:13px 15px;margin-top:14px}
+.cd-n{flex:none;text-align:center;min-width:58px}
+.cd-n b{display:block;font-size:31px;font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums}
+.cd-n span{display:block;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);margin-top:5px;line-height:1.3}
+.cd-t{flex:1;min-width:0}
+.cd-t b{display:block;font-size:14px;font-weight:700;line-height:1.3;letter-spacing:-.012em}
+.cd-t span{display:block;font-size:11.5px;line-height:1.45;color:var(--ink-faint);margin-top:3px}
+.cdown.safe{border-color:rgba(94,242,192,.34);
+  background:linear-gradient(158deg,rgba(94,242,192,.13),rgba(255,255,255,.035))}
+.cdown.safe .cd-n b{color:var(--mint)}
+.cdown.warn{border-color:rgba(255,209,102,.38);
+  background:linear-gradient(158deg,rgba(255,209,102,.14),rgba(255,255,255,.035))}
+.cdown.warn .cd-n b{color:var(--amber)}
+.cdown.last{border-color:rgba(255,143,163,.4);
+  background:linear-gradient(158deg,rgba(255,143,163,.15),rgba(255,255,255,.035))}
+.cdown.last .cd-n b{color:var(--coral)}
+.cdown.gone .cd-n b{color:var(--ink-dim)}
+
 /* ---- motivation tile ---- */
 /* Text left, loop right, split down the middle. The clip lives in an absolutely
    positioned layer so the text column sets the tile's height — a video left to
@@ -1047,6 +1070,9 @@ nav button.on{color:#06131a;background:linear-gradient(135deg,var(--mint),#7ee0f
         <input type="file" accept="image/*" id="addPhotoInput" class="vh" />
       </div>
     </div>
+
+    <!-- ---------- COUNTDOWN ---------- -->
+    <div class="glass cdown hide" id="cdown"></div>
 
     <!-- ---------- MOTIVATION ---------- -->
     <div class="glass motiv">
@@ -2029,7 +2055,7 @@ function challengeDay(){
 let activeTab = 'today';
 const staleTabs = new Set();
 const TAB_RENDER = {
-  today:  () => { renderToday(); renderCalendar(); renderMyRuns(); },
+  today:  () => { renderToday(); renderCountdown(); renderCalendar(); renderMyRuns(); },
   feed:   renderFeed,
   badges: renderBadges,
   board:  renderBoard,
@@ -2041,6 +2067,7 @@ function renderAll(){
   renderTab(activeTab);
   for (const t of Object.keys(TAB_RENDER)) if (t !== activeTab) staleTabs.add(t);
   renderToday();                      // the header and today's ring are always on screen
+  renderCountdown();
   updateFinaleTab();
 }
 let fullRenderQueued = false;
@@ -2123,6 +2150,59 @@ function renderToday(){
     const p = PROFILE.get(ME.uid);
     $('#meAvatar').src = p?.photo || ME.photoURL || avatarFor(p?.name || ME.displayName || 'You');
   }
+}
+
+/* The countdown, and what it costs you.
+   A bare "12 days left" is wallpaper. What gives it teeth is the stake attached:
+   whether Iron Legs is still on the table, whether today is the day that ends it,
+   and how many other people are still clean. The big number counts what you have
+   left to LOG rather than days on the calendar, so logging today's mile takes it
+   down by one and turns the tile from amber to mint. */
+function renderCountdown(){
+  const el = $('#cdown');
+  const d = challengeDay();
+  if (d < 1 || d > 30 || !ME){ show(el, false); return; }
+
+  const players = [...byPlayer().values()].filter(p => p.runs > 0);
+  const me = byPlayer().get(ME.uid);
+  const done    = !!(me && me.doneToday);
+  const perfect = !!(me && me.alive);          // no missed day before today
+  const others  = players.filter(p => p.alive && p.uid !== ME.uid).length;
+  const toLog   = (30 - d) + (done ? 0 : 1);   // days you still have to put on the board
+  const crowd   = others ? ` · ${others} other${others === 1 ? '' : 's'} still perfect` : '';
+
+  let tone, title, sub;
+  if (toLog === 0){
+    tone  = 'safe';
+    title = 'That is the whole month.';
+    sub   = perfect ? 'Thirty for thirty.' : `${me.completed.length} days in the book.`;
+  } else if (!me || !me.runs){
+    tone  = 'warn';
+    title = 'No miles yet.';
+    sub   = `${toLog} days still open${crowd}`;
+  } else if (d === 30){
+    tone  = 'last';
+    title = 'Last day. One mile to go.';
+    sub   = perfect ? 'Twenty-nine down. Not here of all places.' : `Finish it${crowd}`;
+  } else if (perfect && done){
+    tone  = 'safe';
+    title = `Perfect through day ${d}.`;
+    sub   = `${toLog} more and Iron Legs is yours${crowd}`;
+  } else if (perfect){
+    tone  = 'warn';
+    title = 'Today is the one that could end it.';
+    sub   = `Perfect through day ${d - 1}${crowd}`;
+  } else {
+    tone  = 'gone';
+    title = done ? `Day ${d} done.` : `Day ${d} is still open.`;
+    sub   = `Best streak ${me.best}${me.streak ? ` · on ${me.streak} now` : ''}${crowd}`;
+  }
+
+  el.className = `glass cdown ${tone}`;
+  el.innerHTML = `
+    <div class="cd-n"><b>${toLog}</b><span>${toLog === 0 ? 'all done' : 'left to log'}</span></div>
+    <div class="cd-t"><b>${esc(title)}</b><span>${esc(sub)}</span></div>`;
+  show(el, true);
 }
 
 function renderCalendar(){
